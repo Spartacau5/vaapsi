@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Type } from '@/components/primitives/type'
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion'
+import { sealVariants } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 /**
@@ -14,9 +15,10 @@ import { cn } from '@/lib/utils'
  * That exclusivity is what makes it mean something: if three other things on the
  * page also had a signature gesture, none of them would.
  *
- * The physics are deliberately non-linear where everything else on the site is
- * eased: a stamp has mass, and the one place a shopper should feel weight is the
- * moment a garment's history is asserted as verified.
+ * The gesture is `sealVariants` in `lib/motion`, and the `stamp` easing there is
+ * the single sanctioned exception to the house curve — a stamp has mass, and the
+ * one place a shopper should feel weight is the moment a garment's history is
+ * asserted as verified.
  *
  * Under reduced motion it is simply present, at full size, in place. No shortened
  * animation, no fade — the settled state. There is no gap where a stamp was
@@ -41,15 +43,9 @@ export function Seal({
           <motion.span
             aria-hidden
             className="size-2.5 rounded-full bg-accent"
-            initial={{ scale: 6, opacity: 0 }}
-            animate={{ scale: [6, 0.9, 1], opacity: [0, 1, 1] }}
-            transition={{
-              duration: 0.42,
-              times: [0, 0.72, 1],
-              // Fast in, hard stop, small settle. This is the one curve on the
-              // site that is not the house easing, and it is deliberate.
-              ease: [0.16, 0.9, 0.2, 1],
-            }}
+            variants={sealVariants}
+            initial="hidden"
+            animate="shown"
           />
         )}
         {/* The ring the stamp lands inside. Present in both states, so nothing

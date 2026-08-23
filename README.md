@@ -68,6 +68,21 @@ src/
 Each folder carries a `README.md` stating what belongs in it. Read those before
 adding files.
 
+## Handoff documentation
+
+Four documents in [`docs/`](docs/). Read them in this order:
+
+| Document                                      | For                                                                                                      |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **[integration.md](docs/integration.md)**     | The dev team. Names every file that changes to go live, and every file not to touch                      |
+| **[data-contract.md](docs/data-contract.md)** | The backend team. Every type, every field, what is required. **The most important document in the repo** |
+| **[decisions.md](docs/decisions.md)**         | Anyone about to "simplify" something. Seventeen non-obvious calls and what each protects against         |
+| **[tokens.md](docs/tokens.md)**               | Anyone touching the visual system. Token reference and how to add a preset                               |
+
+`/kitchen-sink` renders every component in every state — cards with and without
+passports and sold, passports with full, partial and absent data, empty states,
+error states, skeletons. That is how to review the work.
+
 ## Handoff notes
 
 **The data layer is mocked behind typed adapters in `src/lib/data/`, and that is
@@ -123,10 +138,29 @@ display face swaps with no layout break and no font loading.
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `/`                         | Home. Hero built on one garment and its history, new-in rail, passport explainer, category grid, condition scale, editorial band |
 | `/shop`, `/shop/[category]` | Listing. Filters, sort and pagination all live in `searchParams` — no filter state in Zustand                                    |
-| `/product/[slug]`           | PDP. Gallery, condition and flaw disclosure, measurements, and the passport inline                                               |
-| `/passport/[id]`            | The standalone passport. **This is what the QR resolves to.** Print styles included                                              |
-| `/tokens`                   | Token specimen sheet. Internal reference, not linked                                                                             |
-| `/cart`, `/passport`        | Scaffolded, not yet built                                                                                                        |
+| `/product/[slug]`           | PDP. Gallery, condition and flaw disclosure, measurements, and the passport inline. Statically generated                         |
+| `/passport/[id]`            | The standalone passport. **This is what the QR resolves to.** Print styles included. Statically generated                        |
+| `/cart`                     | The bag, plus a drawer from the header sharing the same components                                                               |
+| `/checkout`                 | An honest placeholder. Deliberately **not** a fake payment screen                                                                |
+| `/passport`                 | The explainer                                                                                                                    |
+| `/kitchen-sink`             | Every component in every state. Internal, not indexed                                                                            |
+| `/tokens`                   | Token specimen sheet. Internal, not indexed                                                                                      |
+
+Add `?studio=1` to any URL for the theme switcher. Ctrl/⌘ + K toggles it.
+
+### Quality gates that run in CI
+
+Not conventions — tests. They fail the build.
+
+| Check                                                                  | Where                                    |
+| ---------------------------------------------------------------------- | ---------------------------------------- |
+| No hex, `font-family` or literal colour function outside `tokens.css`  | `styles/__tests__/token-hygiene.test.ts` |
+| WCAG contrast, **at every colour preset** including print              | `styles/__tests__/contrast.test.ts`      |
+| axe across every composed surface, in every state                      | `patterns/__tests__/a11y.test.tsx`       |
+| Fixture integrity (flaw→image, product↔passport, materials sum to 100) | `lib/data/__tests__/fixtures.test.ts`    |
+| No fixture imported outside `lib/data`                                 | ESLint `no-restricted-imports`           |
+| No urgency copy in the cart                                            | `patterns/__tests__/cart.test.tsx`       |
+| Structured data: a sold garment is never marked in stock               | `lib/seo/__tests__/seo.test.ts`          |
 
 ### Things that will surprise you
 

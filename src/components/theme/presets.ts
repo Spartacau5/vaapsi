@@ -18,9 +18,31 @@ export const DEFAULT_THEME = {
   fontPreset: 'modernist',
 } as const satisfies ThemeConfig
 
+/**
+ * Per-slot colour overrides, as bare HSL triplets ("0 100% 28%").
+ *
+ * Only three slots are overridable, and that is a deliberate limit: background,
+ * ink and accent are the three decisions a client actually has an opinion about.
+ * Exposing all ten would let someone set --line to hot pink and then be unable
+ * to explain to themselves what went wrong.
+ *
+ * Everything else in the preset still derives normally, so an override to `ink`
+ * carries through to every muted and subtle variant.
+ */
+export type ThemeOverrides = {
+  background?: string
+  ink?: string
+  accent?: string
+}
+
+export const OVERRIDABLE_SLOTS = ['background', 'ink', 'accent'] as const
+export type OverridableSlot = (typeof OVERRIDABLE_SLOTS)[number]
+
 export type ThemeConfig = {
   colorPreset: ColorPreset
   fontPreset: FontPreset
+  /** Absent or empty means "use the preset as shipped". */
+  overrides?: ThemeOverrides
 }
 
 /** Human labels for the Phase 8 panel. Kept beside the registry, not in it. */

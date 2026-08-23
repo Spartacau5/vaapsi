@@ -1,6 +1,5 @@
 import type {
   Cart,
-  CartId,
   Page,
   Passport,
   PassportId,
@@ -89,10 +88,28 @@ export interface DataAdapter {
   getSeller(idOrHandle: SellerId | string): Promise<Seller | null>
 
   // ---- cart
-  getCart(id: CartId | null): Promise<Cart>
-  /** One-of-one inventory: no quantity, and adding a sold garment fails. */
-  addToCart(cartId: CartId | null, productId: ProductId): Promise<Cart>
-  removeFromCart(cartId: CartId, lineId: string): Promise<Cart>
+  /**
+   * Resolve a set of remembered garments into a priced, availability-checked
+   * cart.
+   *
+   * The client stores **only** product IDs and when they were added. It never
+   * caches a price or an availability state, because a cart that remembers a
+   * price is a cart that lies after a repricing, and one that remembers
+   * availability is a cart that sells a garment twice.
+   *
+   * So the shape here is deliberately a *resolve*, not a read-write cart: the
+   * client owns membership, the adapter owns truth. Every totals figure is
+   * computed here rather than in the browser, because GST treatment on a C2C
+   * resale is unresolved (PRD Q6) and guessing at it client-side would be wrong
+   * in a way nobody notices until an invoice is read.
+   */
+  resolveCart(items: readonly CartItemRef[]): Promise<Cart>
+}
+
+/** What the persisted client store holds per garment. Nothing else. */
+export type CartItemRef = {
+  productId: ProductId
+  addedAt: string
 }
 
 /** Thrown when a mutation cannot proceed. Carries a code the UI can branch on. */

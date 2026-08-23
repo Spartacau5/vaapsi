@@ -55,18 +55,24 @@ export function ConditionScale() {
                 {CONDITIONS.map((condition) => {
                   const copy = conditionCopy[condition]
                   return (
+                    /*
+                      One wrapping div per group, containing exactly a dt and a
+                      dd. A definition list may wrap each pair in a div, but
+                      nothing may sit between that div and the dt/dd — an extra
+                      layout div in there makes the list invalid, and a screen
+                      reader stops announcing it as a list of definitions.
+                    */
                     <div
                       key={condition}
-                      className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 border-t border-line py-6 first:border-t-0 first:pt-0"
+                      className="border-t border-line py-6 first:border-t-0 first:pt-0"
                     >
-                      <Type as="span" size="xs" tone="subtle" numeric className="pt-1" aria-hidden>
-                        {conditionRank(condition)}
-                      </Type>
                       <Type as="dt" family="display" size="xl" weight="heading">
+                        <Type as="span" size="xs" tone="subtle" numeric className="pr-3">
+                          {conditionRank(condition)}
+                        </Type>
                         {copy.label}
                       </Type>
-                      <div />
-                      <Type as="dd" size="sm" tone="muted" measure="default">
+                      <Type as="dd" size="sm" tone="muted" measure="default" className="pt-1">
                         {copy.definition}
                       </Type>
                     </div>

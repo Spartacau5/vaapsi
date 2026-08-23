@@ -46,8 +46,13 @@
 
   /* Hairline rules and input borders. */
   --line: 0 0% 90%;
-  /* A border that has to be seen — focus rings, active tabs, table headers. */
-  --line-strong: 0 0% 78%;
+  /* A border that has to be *seen* — outlined buttons, inputs, active tabs.
+   * Darker than it looks like it should be, deliberately: WCAG 1.4.11 wants 3:1
+   * against the ground for any boundary that identifies a control, and the
+   * hairline value this started at measured 1.7:1. If a control's edge is the
+   * only thing telling you it is a control, that edge is not decoration.
+   * `--line` stays light — that one really is decoration. */
+  --line-strong: 0 0% 56%;
 
   /* #900000. The dot over the "i". The entire colour story.
    * This is the verification mark, the active state and the loading indicator.
@@ -89,7 +94,8 @@
   --ink-subtle: 0 0% 48%;
 
   --line: 0 0% 20%;
-  --line-strong: 0 0% 32%;
+  /* Lifted for the same 3:1 reason, against the near-black ground. */
+  --line-strong: 0 0% 40%;
 
   /* Same hue, lifted lightness. #900000 on a near-black ground fails contrast
    * and reads as brown; the dot has to stay recognisably the dot. */

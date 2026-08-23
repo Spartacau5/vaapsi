@@ -19,6 +19,7 @@ import { productPage } from '@/content/product'
 import { getPassportByProduct, getProduct, getSeller, listProducts } from '@/lib/data'
 import { formatMonthYear } from '@/lib/format/date'
 import { orderGalleryImages } from '@/lib/format/images'
+import { productJsonLd, productMetadata } from '@/lib/seo'
 
 type Params = { slug: string }
 
@@ -47,10 +48,7 @@ export async function generateStaticParams(): Promise<Params[]> {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const product = await getProduct(params.slug)
   if (product === null) return { title: 'Not found' }
-  return {
-    title: `${product.title} — ${product.brand}`,
-    description: product.conditionNotes,
-  }
+  return productMetadata(product)
 }
 
 /**
@@ -85,6 +83,20 @@ export default async function ProductPage({ params }: { params: Params }) {
 
   return (
     <Container>
+      {/*
+        Product structured data. Availability and condition are the fields that
+        matter here — a sold one-of-one garment marked InStock is both a Merchant
+        Center violation and a shopper sent to a page that cannot sell them
+        anything.
+      */}
+      <script
+        type="application/ld+json"
+        // Serialised from our own typed data; no user input reaches it.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd({ product, passport, seller })),
+        }}
+      />
+
       <Grid gap="loose" className="pt-6 desktop:pt-8">
         {/* ---- Gallery */}
         <Col mobile={4} tablet={8} desktop={7}>

@@ -2,43 +2,38 @@
 
 import { motion } from 'framer-motion'
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion'
+import {
+  STAGGER,
+  revealVariants,
+  revealViewport,
+  staggerItemVariants,
+  staggerVariants,
+} from '@/lib/motion'
 
 /**
- * The site's two motion primitives.
+ * The site's two motion wrappers.
  *
- * `Reveal` fades a block up on scroll, at low amplitude. `Stagger` orchestrates
- * a group of children into a short sequence on load.
+ * `Reveal` fades a block up on scroll. `Stagger` orchestrates a group into a
+ * short arrival sequence on load.
  *
- * Both read `useReducedMotion` — the single hook — and when motion is off they
- * render their children in the final state with no wrapper animation at all.
- * Not a shortened animation, not opacity 0.99: the settled state, immediately.
- * A reduced-motion user should never see a gap where something was going to
- * arrive.
+ * Neither defines a duration, an easing or a distance — those all come from
+ * `lib/motion`, which is the single place motion is described. See the hierarchy
+ * documented there.
  *
- * Amplitudes are deliberately small. 12px, not 60px. This is a near-monochrome
- * editorial register — things settle into place, they do not fly in.
+ * When motion is off, both render their children in the settled state with no
+ * wrapper animation at all. Not a shortened animation: the final state,
+ * immediately. A reduced-motion user must never see a gap where something was
+ * going to arrive.
  */
-
-/** The house curve, as Framer's array form of the tokenised cubic-bezier. */
-const EASE = [0.22, 0.61, 0.36, 1] as const
-
-const DURATION = {
-  fast: 0.16,
-  base: 0.26,
-  slow: 0.42,
-} as const
 
 export function Reveal({
   children,
   delay = 0,
-  y = 12,
   className,
   as = 'div',
 }: {
   children: React.ReactNode
   delay?: number
-  /** Travel distance in px. Keep it small. */
-  y?: number
   className?: string
   as?: 'div' | 'section' | 'li'
 }) {
@@ -52,12 +47,11 @@ export function Reveal({
   return (
     <Component
       className={className}
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      // `once` matters: an element that re-animates every time it scrolls back
-      // into view reads as a page that cannot settle.
-      viewport={{ once: true, margin: '-64px' }}
-      transition={{ duration: DURATION.slow, ease: EASE, delay }}
+      variants={revealVariants}
+      initial="hidden"
+      whileInView="shown"
+      viewport={revealViewport}
+      transition={{ delay }}
     >
       {children}
     </Component>
@@ -65,15 +59,14 @@ export function Reveal({
 }
 
 /**
- * Page-load sequence container. Children marked with `StaggerItem` arrive in
- * order. Used once, in the hero — a site where everything staggers is a site
- * where nothing is emphasised.
+ * Page-load sequence container. Used **once**, in the home hero — a site where
+ * everything staggers is a site where nothing is emphasised.
  */
 export function Stagger({
   children,
   className,
-  delay = 0.05,
-  step = 0.07,
+  delay = STAGGER.delay,
+  step = STAGGER.step,
   as = 'div',
 }: {
   children: React.ReactNode
@@ -92,12 +85,9 @@ export function Stagger({
   return (
     <Component
       className={className}
+      variants={staggerVariants(delay, step)}
       initial="hidden"
       animate="shown"
-      variants={{
-        hidden: {},
-        shown: { transition: { staggerChildren: step, delayChildren: delay } },
-      }}
     >
       {children}
     </Component>
@@ -107,12 +97,10 @@ export function Stagger({
 export function StaggerItem({
   children,
   className,
-  y = 12,
   as = 'div',
 }: {
   children: React.ReactNode
   className?: string
-  y?: number
   as?: 'div' | 'li' | 'span'
 }) {
   const reduced = useReducedMotion()
@@ -123,16 +111,8 @@ export function StaggerItem({
   }
 
   return (
-    <Component
-      className={className}
-      variants={{
-        hidden: { opacity: 0, y },
-        shown: { opacity: 1, y: 0, transition: { duration: DURATION.slow, ease: EASE } },
-      }}
-    >
+    <Component className={className} variants={staggerItemVariants}>
       {children}
     </Component>
   )
 }
-
-export { DURATION as MOTION_DURATION, EASE as MOTION_EASE }

@@ -13,6 +13,11 @@ import { home } from '@/content/home'
  * decision — ethnicwear is the largest cell because it is the category that is
  * specific to this market and unavailable on a Western resale site.
  *
+ * No hover transform on the images. It was there and it was cut in the Phase 7
+ * audit: a 2% scale on a photograph carries no information, and it made these
+ * tiles the only images on the site that move on hover — where the product card
+ * cross-fades to a detail shot, which actually tells you something.
+ *
  * The layout: on desktop, one 6-column tall cell beside two stacked 3-column
  * cells, then a row of three. On tablet it becomes two columns of equal cells;
  * on mobile a single column with the aspect ratios doing the varying, because
@@ -71,7 +76,7 @@ export function CategoryGrid() {
                             ? '(min-width: 1024px) 50vw, (min-width: 768px) 50vw, 100vw'
                             : '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw'
                         }
-                        className="ease object-cover transition-transform duration-slower group-hover/cat:scale-[1.02]"
+                        className="object-cover"
                       />
                     </div>
                     <Stack gap={1} className="pt-3">

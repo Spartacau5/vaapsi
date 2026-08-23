@@ -2,7 +2,6 @@ import { sizeSortIndex } from '@/lib/format/size'
 import { CONDITIONS } from '@/lib/types'
 import type {
   Cart,
-  CartId,
   CartLine,
   CartTotals,
   Condition,
@@ -16,8 +15,8 @@ import type {
   Seller,
   SellerId,
 } from '@/lib/types'
-import { DataError } from './adapter'
 import type {
+  CartItemRef,
   DataAdapter,
   ListProductsInput,
   ProductFacets,
@@ -124,35 +123,49 @@ function countBy<T extends string>(values: readonly T[]): readonly { value: T; c
 }
 
 // ---------------------------------------------------------------------------
-// Cart — module-scoped, intentionally naive. Replaced by the real adapter.
+// Cart
 // ---------------------------------------------------------------------------
 
 const MOCK_CART_ID = 'crt_mock_session'
 
-let cartLines: CartLine[] = []
+/**
+ * Status for a remembered garment, resolved fresh every time.
+ *
+ * `sold_out` is not an error state — it is the expected outcome of a slow
+ * checkout on one-of-one inventory, and the cart has to show it rather than
+ * silently dropping the line. A garment that vanishes from a bag is worse than
+ * one that says it has gone.
+ *
+ * `price_changed` is never emitted here. The client stores no price, so there is
+ * nothing to compare against; a real backend holding a server-side cart can
+ * detect it, and the type keeps the case open for when one does.
+ */
+function statusFor(availability: Product['availability']): CartLine['status'] {
+  switch (availability) {
+    case 'available':
+      return 'active'
+    case 'reserved':
+      return 'reserved'
+    case 'sold':
+      return 'sold_out'
+  }
+}
 
 function totals(lines: readonly CartLine[]): CartTotals {
+  // Only lines that can actually be bought count. A sold garment sitting in the
+  // bag must not inflate the total the shopper is about to be charged.
   const subtotalInr = lines
     .filter((line) => line.status === 'active')
-    .reduce((sum, line) => sum + line.priceAtAddInr, 0)
+    .reduce((sum, line) => sum + line.product.priceInr, 0)
+
   return {
     subtotalInr,
-    // Null until a PIN code is known and until the merchant-of-record model is
-    // settled. The front end does not invent money.
+    // Null until a PIN code is known, and null until the merchant-of-record
+    // model is settled. The front end does not invent money.
     shippingInr: null,
     taxInr: null,
     discountInr: 0,
     totalInr: subtotalInr,
-  }
-}
-
-function snapshotCart(): Cart {
-  return {
-    id: MOCK_CART_ID,
-    lines: [...cartLines],
-    totals: totals(cartLines),
-    currency: 'INR',
-    updatedAt: new Date().toISOString(),
   }
 }
 
@@ -227,47 +240,34 @@ export const mockAdapter: DataAdapter = {
     return sellers.find((s) => s.id === idOrHandle || s.handle === idOrHandle) ?? null
   },
 
-  async getCart(): Promise<Cart> {
-    return snapshotCart()
-  },
+  async resolveCart(items: readonly CartItemRef[]): Promise<Cart> {
+    const byId = new Map(products.map((product) => [product.id, product]))
 
-  async addToCart(_cartId: CartId | null, productId: ProductId): Promise<Cart> {
-    const product = products.find((p) => p.id === productId)
-    if (product === undefined) {
-      throw new DataError('not_found', `No garment with id ${productId}.`)
+    const lines: CartLine[] = items
+      .map((item) => {
+        const product = byId.get(item.productId)
+        // A garment that no longer exists at all is dropped rather than shown as
+        // an error. Delisted is different from sold, and there is nothing for a
+        // shopper to do about it.
+        if (product === undefined) return null
+        return {
+          id: `crl_${product.id}`,
+          product: toSummary(product),
+          priceAtAddInr: product.priceInr,
+          addedAt: item.addedAt,
+          status: statusFor(product.availability),
+        }
+      })
+      .filter((line): line is CartLine => line !== null)
+      // Newest first. A shopper who just added something expects to see it.
+      .sort((a, b) => Date.parse(b.addedAt) - Date.parse(a.addedAt))
+
+    return {
+      id: MOCK_CART_ID,
+      lines,
+      totals: totals(lines),
+      currency: 'INR',
+      updatedAt: new Date().toISOString(),
     }
-    if (product.availability !== 'available') {
-      throw new DataError(
-        'unavailable',
-        `${product.title} is ${product.availability}. Every garment here is one of one.`,
-      )
-    }
-    if (cartLines.some((line) => line.product.id === productId)) {
-      // Not an error the shopper caused, and not one they can fix by trying
-      // again — there is only ever one of these.
-      throw new DataError('already_in_cart', `${product.title} is already in your bag.`)
-    }
-
-    cartLines = [
-      ...cartLines,
-      {
-        id: `crl_${productId}`,
-        product: toSummary(product),
-        priceAtAddInr: product.priceInr,
-        addedAt: new Date().toISOString(),
-        status: 'active',
-      },
-    ]
-    return snapshotCart()
   },
-
-  async removeFromCart(_cartId: CartId, lineId: string): Promise<Cart> {
-    cartLines = cartLines.filter((line) => line.id !== lineId)
-    return snapshotCart()
-  },
-}
-
-/** Test helper. Not part of `DataAdapter` — do not call from app code. */
-export function __resetMockCart(): void {
-  cartLines = []
 }

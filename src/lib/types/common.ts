@@ -35,7 +35,15 @@ export type CartLineId = string
  * Ordered loosely most to least trustworthy; do not rely on the order in code,
  * use `provenanceRank` in `lib/format` if you need to sort.
  */
-export type Provenance = 'verified' | 'supplier' | 'self_declared' | 'ai_extracted' | 'ai_suggested'
+export const PROVENANCES = [
+  'verified',
+  'supplier',
+  'self_declared',
+  'ai_extracted',
+  'ai_suggested',
+] as const
+
+export type Provenance = (typeof PROVENANCES)[number]
 
 /**
  * A value carried together with where it came from.

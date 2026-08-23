@@ -6,6 +6,9 @@ import { Heart, Menu, Search, ShoppingBag } from 'lucide-react'
 import { Logo } from './logo'
 import { MobileNav } from './mobile-nav'
 import { NavLink } from './nav-link'
+import { CartBadge } from './cart/cart-badge'
+import { CartDrawer } from './cart/cart-drawer'
+import { useCartCount } from './cart/use-cart'
 import { navLabels, primaryNav } from '@/content/navigation'
 import { useUiStore } from '@/lib/store/ui'
 import { cn } from '@/lib/utils'
@@ -28,7 +31,8 @@ const SCROLL_THRESHOLD = 8
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false)
   const openMobileNav = useUiStore((state) => state.openMobileNav)
-  const cartCount = useUiStore((state) => state.cartCount)
+  const openCart = useUiStore((state) => state.openCart)
+  const { count: cartCount } = useCartCount()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > SCROLL_THRESHOLD)
@@ -73,22 +77,21 @@ export function SiteHeader() {
               <Heart className="size-5" strokeWidth={1.5} aria-hidden />
             </HeaderAction>
 
-            <HeaderAction
-              href="/cart"
-              label={cartCount === 0 ? navLabels.cartEmpty : navLabels.cartCount(cartCount)}
+            {/*
+              A button, not a link. It opens the drawer rather than navigating —
+              a shopper checking their bag mid-browse should not lose the listing
+              they were on. `/cart` remains a real route for the full view and
+              for anyone who lands on it directly.
+            */}
+            <button
+              type="button"
+              onClick={openCart}
+              aria-label={cartCount === 0 ? navLabels.cartEmpty : navLabels.cartCount(cartCount)}
+              className="relative p-2 text-ink-muted transition-colors hover:text-ink"
             >
               <ShoppingBag className="size-5" strokeWidth={1.5} aria-hidden />
-              {/* The count is the accent dot, grown up to hold a number. Same
-                  mark, same meaning: something here needs your attention. */}
-              {cartCount > 0 && (
-                <span
-                  aria-hidden
-                  className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-accent text-[10px] tabular-nums leading-none text-accent-ink"
-                >
-                  {cartCount > 9 ? '9+' : cartCount}
-                </span>
-              )}
-            </HeaderAction>
+              <CartBadge />
+            </button>
 
             <button
               type="button"
@@ -103,6 +106,7 @@ export function SiteHeader() {
       </header>
 
       <MobileNav />
+      <CartDrawer />
     </>
   )
 }

@@ -1,4 +1,5 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
+import { renderWithProviders as render } from '@/test-utils'
 import userEvent from '@testing-library/user-event'
 import { Dot, Logo } from '../logo'
 import { MobileNav } from '../mobile-nav'
@@ -8,6 +9,7 @@ import { SiteHeader } from '../site-header'
 import { SkipLink } from '../skip-link'
 import { footerMeta, navLabels, primaryNav } from '@/content/navigation'
 import { PASSPORT_NAME } from '@/content/passport'
+import { useCartStore } from '@/lib/store/cart'
 import { useUiStore } from '@/lib/store/ui'
 
 let pathname = '/'
@@ -17,7 +19,8 @@ jest.mock('next/navigation', () => ({
 
 beforeEach(() => {
   pathname = '/'
-  useUiStore.setState({ mobileNavOpen: false, searchOpen: false, cartCount: 0 })
+  useUiStore.setState({ mobileNavOpen: false, searchOpen: false, cartOpen: false })
+  useCartStore.setState({ items: [], hydrated: true })
 })
 
 // ---------------------------------------------------------------------------
@@ -125,26 +128,59 @@ describe('SiteHeader', () => {
 
   it('says the bag is empty rather than showing a zero', () => {
     render(<SiteHeader />)
-    expect(screen.getByRole('link', { name: navLabels.cartEmpty })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: navLabels.cartEmpty })).toBeInTheDocument()
     expect(screen.queryByText('0')).toBeNull()
   })
 
-  it('labels the cart with a readable count and caps the badge', () => {
-    useUiStore.setState({ cartCount: 3 })
+  it('labels the bag with a readable count and caps the badge', () => {
+    useCartStore.setState({
+      items: [
+        { productId: 'a', addedAt: '2026-08-01T00:00:00.000Z' },
+        { productId: 'b', addedAt: '2026-08-02T00:00:00.000Z' },
+        { productId: 'c', addedAt: '2026-08-03T00:00:00.000Z' },
+      ],
+      hydrated: true,
+    })
     const { unmount } = render(<SiteHeader />)
-    expect(screen.getByRole('link', { name: '3 items in your bag' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '3 items in your bag' })).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
     unmount()
 
-    useUiStore.setState({ cartCount: 14 })
+    useCartStore.setState({
+      items: Array.from({ length: 14 }, (_, i) => ({
+        productId: `p${i}`,
+        addedAt: '2026-08-01T00:00:00.000Z',
+      })),
+      hydrated: true,
+    })
     render(<SiteHeader />)
     expect(screen.getByText('9+')).toBeInTheDocument()
   })
 
   it('uses the singular for one item', () => {
-    useUiStore.setState({ cartCount: 1 })
+    useCartStore.setState({
+      items: [{ productId: 'a', addedAt: '2026-08-01T00:00:00.000Z' }],
+      hydrated: true,
+    })
     render(<SiteHeader />)
-    expect(screen.getByRole('link', { name: '1 item in your bag' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '1 item in your bag' })).toBeInTheDocument()
+  })
+
+  it('renders no badge before the persisted bag has been read', () => {
+    // A zero that jumps to three a frame later reads as a bug.
+    useCartStore.setState({
+      items: [{ productId: 'a', addedAt: '2026-08-01T00:00:00.000Z' }],
+      hydrated: false,
+    })
+    render(<SiteHeader />)
+    expect(screen.queryByText('1')).toBeNull()
+  })
+
+  it('opens the bag as a drawer rather than navigating away', async () => {
+    const user = userEvent.setup()
+    render(<SiteHeader />)
+    await user.click(screen.getByRole('button', { name: navLabels.cartEmpty }))
+    expect(useUiStore.getState().cartOpen).toBe(true)
   })
 
   it('transitions to a solid background on scroll rather than swapping markup', async () => {
@@ -184,13 +220,16 @@ describe('MobileNav', () => {
     expect(container.firstElementChild?.className).not.toContain('invisible')
   })
 
-  it('opens, moves focus to close, and closes on Escape', async () => {
+  it('opens, moves focus inside the panel, and closes on Escape', async () => {
     const user = userEvent.setup()
     render(<MobileNav />)
 
     act(() => useUiStore.getState().openMobileNav())
-    const close = await screen.findByRole('button', { name: navLabels.closeMenu })
-    expect(close).toHaveFocus()
+    const dialog = await screen.findByRole('dialog')
+    // Overlay focuses the first focusable thing in the panel. What matters is
+    // that focus is inside it and cannot be tabbed out — not which control.
+    expect(dialog.contains(document.activeElement)).toBe(true)
+    expect(screen.getByRole('button', { name: navLabels.closeMenu })).toBeInTheDocument()
 
     await user.keyboard('{Escape}')
     expect(useUiStore.getState().mobileNavOpen).toBe(false)

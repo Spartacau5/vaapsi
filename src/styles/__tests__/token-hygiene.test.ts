@@ -27,13 +27,20 @@ function walk(dir: string): string[] {
 }
 
 function scannedFiles(): { path: string; source: string }[] {
-  return [...walk(SRC), join(ROOT, 'tailwind.config.ts')]
-    .map((path) => ({
-      path: relative(ROOT, path).split(sep).join('/'),
-      source: readFileSync(path, 'utf8'),
-    }))
-    .filter((file) => file.path !== TOKENS_FILE)
-    .filter((file) => !file.path.includes('__tests__'))
+  return (
+    [...walk(SRC), join(ROOT, 'tailwind.config.ts')]
+      .map((path) => ({
+        path: relative(ROOT, path).split(sep).join('/'),
+        source: readFileSync(path, 'utf8'),
+      }))
+      .filter((file) => file.path !== TOKENS_FILE)
+      .filter((file) => !file.path.includes('__tests__'))
+      // The studio panel is deliberately unthemed, in full: colours, shadows and
+      // type. If it inherited --background and --ink, a client picking
+      // white-on-white would make the only control that can undo that choice
+      // invisible. Its fixed palette is the point, not an oversight.
+      .filter((file) => !file.path.startsWith('src/components/theme/studio/'))
+  )
 }
 
 /** Strip comments so a hex code mentioned in prose is not a failure. */

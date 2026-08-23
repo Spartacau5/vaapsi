@@ -1,13 +1,4 @@
-import {
-  DataError,
-  addToCart,
-  getCart,
-  getProductFacets,
-  listFeaturedProducts,
-  listProducts,
-  removeFromCart,
-} from '..'
-import { __resetMockCart } from '../mock'
+import { getProductFacets, listFeaturedProducts, listProducts, resolveCart } from '..'
 
 describe('listProducts filtering', () => {
   it('filters by category', async () => {
@@ -117,58 +108,65 @@ describe('listFeaturedProducts', () => {
   })
 })
 
-describe('cart', () => {
-  beforeEach(() => {
-    __resetMockCart()
-  })
+describe('resolveCart', () => {
+  const at = '2026-08-22T10:00:00.000Z'
 
-  it('starts empty with nothing invented for shipping or tax', async () => {
-    const cart = await getCart(null)
+  it('returns an empty cart with nothing invented for shipping or tax', async () => {
+    const cart = await resolveCart([])
     expect(cart.lines).toHaveLength(0)
     expect(cart.totals.subtotalInr).toBe(0)
     expect(cart.totals.shippingInr).toBeNull()
     expect(cart.totals.taxInr).toBeNull()
   })
 
-  it('adds a garment and totals it', async () => {
-    const cart = await addToCart(null, 'prd_levis_501_indigo')
+  it('resolves a remembered id into a priced line', async () => {
+    const cart = await resolveCart([{ productId: 'prd_levis_501_indigo', addedAt: at }])
     expect(cart.lines).toHaveLength(1)
-    expect(cart.totals.subtotalInr).toBe(265_000)
     expect(cart.lines[0]?.status).toBe('active')
-  })
-
-  it('refuses to add the same garment twice, because there is only one', async () => {
-    await addToCart(null, 'prd_levis_501_indigo')
-    await expect(addToCart(null, 'prd_levis_501_indigo')).rejects.toThrow(DataError)
-    await expect(addToCart(null, 'prd_levis_501_indigo')).rejects.toMatchObject({
-      code: 'already_in_cart',
-    })
-  })
-
-  it('refuses a reserved or sold garment', async () => {
-    await expect(addToCart(null, 'prd_cos_wool_coat_stone')).rejects.toMatchObject({
-      code: 'unavailable',
-    })
-    await expect(addToCart(null, 'prd_uniqlo_merino_crew_navy')).rejects.toMatchObject({
-      code: 'unavailable',
-    })
-  })
-
-  it('reports an unknown garment as not found', async () => {
-    await expect(addToCart(null, 'prd_nope')).rejects.toMatchObject({ code: 'not_found' })
-  })
-
-  it('removes a line', async () => {
-    const added = await addToCart(null, 'prd_levis_501_indigo')
-    const lineId = added.lines[0]?.id
-    expect(lineId).toBeDefined()
-    const after = await removeFromCart(added.id, lineId as string)
-    expect(after.lines).toHaveLength(0)
-    expect(after.totals.subtotalInr).toBe(0)
+    expect(cart.totals.subtotalInr).toBe(265_000)
   })
 
   it('has no quantity anywhere, because every garment is one of one', async () => {
-    const cart = await addToCart(null, 'prd_levis_501_indigo')
+    const cart = await resolveCart([{ productId: 'prd_levis_501_indigo', addedAt: at }])
     expect(cart.lines[0]).not.toHaveProperty('quantity')
+  })
+
+  it('keeps a sold line visible but out of the total', async () => {
+    const cart = await resolveCart([
+      { productId: 'prd_levis_501_indigo', addedAt: at },
+      { productId: 'prd_uniqlo_merino_crew_navy', addedAt: at },
+    ])
+    expect(cart.lines).toHaveLength(2)
+    const sold = cart.lines.find((line) => line.product.id === 'prd_uniqlo_merino_crew_navy')
+    expect(sold?.status).toBe('sold_out')
+    // Only the available garment counts. A sold line must not inflate the total.
+    expect(cart.totals.subtotalInr).toBe(265_000)
+  })
+
+  it('marks a reserved line and excludes it from the total too', async () => {
+    const cart = await resolveCart([{ productId: 'prd_cos_wool_coat_stone', addedAt: at }])
+    expect(cart.lines[0]?.status).toBe('reserved')
+    expect(cart.totals.subtotalInr).toBe(0)
+  })
+
+  it('drops a garment that no longer exists rather than erroring', async () => {
+    const cart = await resolveCart([
+      { productId: 'prd_gone_forever', addedAt: at },
+      { productId: 'prd_levis_501_indigo', addedAt: at },
+    ])
+    expect(cart.lines).toHaveLength(1)
+  })
+
+  it('orders newest first', async () => {
+    const cart = await resolveCart([
+      { productId: 'prd_levis_501_indigo', addedAt: '2026-08-01T00:00:00.000Z' },
+      { productId: 'prd_nicobar_poplin_shirtdress', addedAt: '2026-08-20T00:00:00.000Z' },
+    ])
+    expect(cart.lines[0]?.product.id).toBe('prd_nicobar_poplin_shirtdress')
+  })
+
+  it('never caches a price — the line price is resolved from the product', async () => {
+    const cart = await resolveCart([{ productId: 'prd_levis_501_indigo', addedAt: at }])
+    expect(cart.lines[0]?.priceAtAddInr).toBe(cart.lines[0]?.product.priceInr)
   })
 })

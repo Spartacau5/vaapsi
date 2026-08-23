@@ -1,27 +1,34 @@
 import { DEFAULT_THEME, isColorPreset, isFontPreset } from './presets'
-import type { ThemeConfig } from './presets'
+import type { ThemeConfig, ThemeOverrides } from './presets'
 
 /**
  * Theme config ⇄ shareable URL token.
  *
- * The Phase 8 studio panel needs a client to be able to send a link that opens
- * the site in the exact configuration they were looking at. There is no
- * database behind that and there does not need to be one: the whole config is
- * two enum values, so it fits in a query parameter.
+ * The studio panel needs a client to be able to send a link that opens the site
+ * in the exact configuration they were looking at. There is no database behind
+ * that and there does not need to be one: the whole config is two enum values
+ * and at most three colours, so it fits in a query parameter.
  *
- * Encoded as compact base64url in `?t=`. Compact matters — a URL a client will
- * paste into an email should not wrap.
+ * Encoded as compact base64url in `?t=`. Compact matters — a URL a client pastes
+ * into an email should not wrap.
  *
- * The encoding is versioned. When a third axis is added, bump `VERSION` and
- * teach `decodeTheme` to read the old form, so links already sent out keep
- * working. Links from a client that has moved on to a newer front end are the
- * exact failure mode this parameter exists to prevent.
+ * ## Versioning
+ *
+ * The encoding is versioned, and **v1 links still decode**. Phase 1 shipped
+ * `1.<colour>.<font>`; Phase 8 added per-slot overrides as
+ * `2.<colour>.<font>.<overrides>`. A link Arpit sent before the panel existed
+ * must still open correctly, because links live in inboxes far longer than
+ * front-end versions live in a repo. When a fourth field arrives, bump to 3 and
+ * add another reader — do not repurpose a field.
  */
 
 export const THEME_QUERY_PARAM = 't'
 
-const VERSION = 1
+const VERSION = 2
 const SEPARATOR = '.'
+
+/** Order is load-bearing: overrides are positional in the token. */
+const OVERRIDE_SLOTS = ['background', 'ink', 'accent'] as const
 
 function toBase64Url(input: string): string {
   const base64 =
@@ -42,17 +49,52 @@ function fromBase64Url(input: string): string | null {
   }
 }
 
-/** `{ colorPreset: 'inverse', fontPreset: 'didone' }` → `MS5pbnZlcnNlLmRpZG9uZQ`. */
+/**
+ * Overrides are encoded as an HSL triplet with spaces and percent signs
+ * stripped: `0 100% 28%` becomes `0-100-28`. Shorter than the raw triplet and
+ * base64url-safe before encoding, which keeps the token short.
+ */
+function packOverrides(overrides: ThemeOverrides): string {
+  return OVERRIDE_SLOTS.map((slot) => {
+    const value = overrides[slot]
+    if (value === undefined) return ''
+    return value.trim().replace(/%/g, '').split(/\s+/).join('-')
+  }).join(',')
+}
+
+function unpackOverrides(packed: string): ThemeOverrides {
+  const parts = packed.split(',')
+  const overrides: Record<string, string> = {}
+
+  OVERRIDE_SLOTS.forEach((slot, index) => {
+    const raw = parts[index]
+    if (raw === undefined || raw === '') return
+    const [h, s, l] = raw.split('-')
+    // Anything that is not three numbers is dropped rather than applied. A
+    // half-parsed colour is worse than the preset default.
+    if (h === undefined || s === undefined || l === undefined) return
+    if ([h, s, l].some((n) => !/^\d+(\.\d+)?$/.test(n))) return
+    overrides[slot] = `${h} ${s}% ${l}%`
+  })
+
+  return overrides
+}
+
 export function encodeTheme(config: ThemeConfig): string {
-  return toBase64Url([VERSION, config.colorPreset, config.fontPreset].join(SEPARATOR))
+  const packed = packOverrides(config.overrides ?? {})
+  const fields: (string | number)[] = [VERSION, config.colorPreset, config.fontPreset]
+  // Omit the overrides field entirely when there are none, so a link with no
+  // custom colours stays as short as it was before the panel existed.
+  if (packed.replace(/,/g, '') !== '') fields.push(packed)
+  return toBase64Url(fields.join(SEPARATOR))
 }
 
 /**
  * Read a token back.
  *
  * Never throws and never partially applies. A token that is malformed, from a
- * future version, or naming a preset that no longer exists returns null, and
- * the caller falls back to the default theme. A half-applied theme from a stale
+ * future version, or naming a preset that no longer exists returns null, and the
+ * caller falls back to the default theme — a half-applied theme from a stale
  * link looks like a bug to whoever opened it.
  */
 export function decodeTheme(token: string | null | undefined): ThemeConfig | null {
@@ -62,13 +104,21 @@ export function decodeTheme(token: string | null | undefined): ThemeConfig | nul
   if (decoded === null) return null
 
   const parts = decoded.split(SEPARATOR)
-  if (parts.length !== 3) return null
+  if (parts.length < 3 || parts.length > 4) return null
 
-  const [version, colorPreset, fontPreset] = parts
-  if (Number(version) !== VERSION) return null
+  const [version, colorPreset, fontPreset, packed] = parts
+  const parsedVersion = Number(version)
+
+  // v1 had no overrides field. Still decodes — links outlive releases.
+  if (parsedVersion !== 1 && parsedVersion !== VERSION) return null
+  if (parsedVersion === 1 && parts.length !== 3) return null
   if (!isColorPreset(colorPreset) || !isFontPreset(fontPreset)) return null
 
-  return { colorPreset, fontPreset }
+  const overrides = packed === undefined ? {} : unpackOverrides(packed)
+
+  return Object.keys(overrides).length === 0
+    ? { colorPreset, fontPreset }
+    : { colorPreset, fontPreset, overrides }
 }
 
 /** Decode, falling back to the default. Convenient for render paths. */

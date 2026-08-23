@@ -55,44 +55,54 @@ export function PassportFront({ passport }: { passport: Passport }) {
         {/* ---- Materials */}
         <Col mobile={4} tablet={4} desktop={4} as="section">
           <Eyebrow as="h3">{passportCopy.sections.materials}</Eyebrow>
-          <Stack gap={3} as="dl" className="pt-4">
+          <dl className="pt-4">
             {passport.materials.map((material) => (
-              <div key={material.name.value}>
-                <Row gap={3} justify="between" align="baseline" wrap={false}>
-                  <Type as="dt" size="sm" truncate>
-                    {material.name.value}
-                    {material.isRecycled.value && (
-                      <Type as="span" size="xs" tone="subtle" className="pl-2">
-                        recycled
-                      </Type>
-                    )}
-                  </Type>
-                  <Row gap={2} align="center" wrap={false} className="shrink-0">
-                    <Type as="dd" size="sm" numeric tone="muted">
+              /*
+                One wrapping div per group, holding exactly a dt and a dd.
+                Anything between the wrapper and the dt/dd invalidates the list
+                and a screen reader stops announcing it as definitions — which
+                matters here, because "Cotton / 99%" only means anything as a
+                pair.
+              */
+              <div
+                key={material.name.value}
+                className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 py-1.5"
+              >
+                <Type as="dt" size="sm" truncate>
+                  {material.name.value}
+                  {material.isRecycled.value && (
+                    <Type as="span" size="xs" tone="subtle" className="pl-2">
+                      recycled
+                    </Type>
+                  )}
+                </Type>
+                <Type as="dd" size="sm" tone="muted" className="text-right">
+                  <Row gap={2} align="center" wrap={false} justify="end">
+                    <Type as="span" size="sm" tone="inherit" numeric>
                       {material.percentage.value}%
                     </Type>
                     <ProvenanceDot provenance={material.percentage.provenance} />
                   </Row>
-                </Row>
-                {material.provenance.value !== null && (
-                  <Type as="p" size="xs" tone="subtle" className="pt-0.5">
-                    {material.provenance.value}
-                  </Type>
-                )}
+                  {material.provenance.value !== null && (
+                    <Type as="span" size="xs" tone="subtle" className="block pt-0.5">
+                      {material.provenance.value}
+                    </Type>
+                  )}
+                </Type>
               </div>
             ))}
+          </dl>
 
-            {/*
-              If the declared composition does not sum to 100, say so. Quietly
-              swallowing a 97% total is exactly the kind of small dishonesty
-              that makes the rest of the document unbelievable.
-            */}
-            {materialTotal !== 100 && (
-              <Type size="xs" tone="subtle" className="border-t border-line pt-2">
-                Declared composition totals {materialTotal}%. The remainder is not recorded.
-              </Type>
-            )}
-          </Stack>
+          {/*
+            If the declared composition does not sum to 100, say so. Quietly
+            swallowing a 97% total is exactly the kind of small dishonesty that
+            makes the rest of the document unbelievable.
+          */}
+          {materialTotal !== 100 && (
+            <Type size="xs" tone="subtle" className="mt-2 border-t border-line pt-2">
+              Declared composition totals {materialTotal}%. The remainder is not recorded.
+            </Type>
+          )}
         </Col>
 
         {/* ---- Care */}

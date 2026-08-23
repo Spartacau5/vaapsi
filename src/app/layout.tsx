@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { SiteFooter } from '@/components/patterns/site-footer'
 import { SiteHeader } from '@/components/patterns/site-header'
 import { SkipLink } from '@/components/patterns/skip-link'
+import { Suspense } from 'react'
 import { ThemeProvider } from '@/components/theme'
+import { StudioMount } from '@/components/theme/studio/studio-mount'
 import { fontVariables } from '@/components/theme/fonts'
 import { DEFAULT_THEME } from '@/components/theme/presets'
 import { common } from '@/content'
@@ -55,6 +57,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </main>
             <SiteFooter />
+            {/*
+            The studio panel. Gated on `?studio=1`, dynamically imported, and
+            wrapped in Suspense because `useSearchParams` opts its subtree into
+            client rendering — without the boundary that would deopt every
+            statically-rendered page in the app.
+          */}
+            <Suspense fallback={null}>
+              <StudioMount />
+            </Suspense>
           </ThemeProvider>
         </Providers>
       </body>
