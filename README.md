@@ -85,6 +85,38 @@ the intended integration seam.**
 - All copy lives in `src/content/`. English only for v1, but nothing is
   hardcoded into JSX, so a locale layer drops in without touching components.
 
+### The two foundations
+
+**1. `src/lib/types/` — the data contract.**
+
+Written to be mapped onto Prisma models. It describes a _resale marketplace_,
+not a retail catalogue: every garment is one-of-one, so there is no quantity
+anywhere and availability is `available | reserved | sold`.
+
+The `Passport` type mirrors the EuFSI structure field-for-field, then extends it
+with what makes a passport worth showing a shopper: `chain` (an ordered
+lifecycle event log), `ownersCount`, `authentication`, and `impact` — whose
+`basis` is required, because a number without a stated source is marketing.
+
+`Sourced<T>` wraps every passport field that carries a source badge. It is
+non-optional on purpose. An optional provenance field gets dropped somewhere in
+the pipeline, and then the storefront is making claims nobody can stand behind.
+
+**2. `src/styles/tokens.css` — the design tokens.**
+
+Every visual value in the app is a CSS custom property defined here, and this is
+the only file in the repo allowed to contain a colour literal or a
+`font-family`. A Jest test enforces that (`src/styles/__tests__`), so the rule
+holds after the first sprint rather than just on the day it was written.
+
+Two colour presets (`mono`, `inverse`) and five font pairings, all applied as
+`data-theme` and `data-font` attributes on `<html>`. See
+[src/components/theme/README.md](src/components/theme/README.md).
+
+`/tokens` renders a full specimen sheet. Set `data-theme="inverse"` on `<html>`
+in devtools and the whole page restyles; reassign `--font-display` and the
+display face swaps with no layout break and no font loading.
+
 ### Conventions worth knowing
 
 - Money is stored as an **integer number of paise**, never a float, and

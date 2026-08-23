@@ -1,0 +1,107 @@
+import type {
+  Cart,
+  CartId,
+  Page,
+  Passport,
+  PassportId,
+  Product,
+  ProductCategory,
+  ProductId,
+  ProductSummary,
+  Seller,
+  SellerId,
+  Condition,
+} from '@/lib/types'
+
+/**
+ * The integration seam.
+ *
+ * This is the whole surface the storefront uses to reach data. Swapping the
+ * mock implementation for TanStack Query against real endpoints means writing
+ * one more object that satisfies this interface and changing which one
+ * `lib/data/index.ts` exports. Nothing else in the app moves.
+ *
+ * Every method is async even where the mock answers instantly, so no call site
+ * needs to change when a real network hop appears behind it.
+ */
+
+export type ProductSort = 'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'alphabetical'
+
+/**
+ * PLP filters. All optional; omitting one means "do not filter on this".
+ *
+ * Prices are in **paise**, matching the contract. Passing rupees here is the
+ * single most likely integration mistake, which is why the field names carry
+ * the `Inr` suffix that the rest of the contract uses for paise.
+ */
+export type ProductFilters = {
+  category?: ProductCategory
+  brands?: readonly string[]
+  conditions?: readonly Condition[]
+  /** `Size.normalized` values, not printed labels. */
+  sizes?: readonly string[]
+  minPriceInr?: number
+  maxPriceInr?: number
+  /** True to show only garments that have a passport. */
+  hasPassport?: boolean
+  /** Free-text query across title, brand and subcategory. */
+  query?: string
+}
+
+export type ListProductsInput = {
+  filters?: ProductFilters
+  sort?: ProductSort
+  /** Opaque cursor from a previous page. */
+  cursor?: string | null
+  limit?: number
+}
+
+/**
+ * Facets for the filter panel, computed against the *unfiltered* set so counts
+ * do not collapse to zero as a shopper narrows down.
+ */
+export type ProductFacets = {
+  brands: readonly { value: string; count: number }[]
+  categories: readonly { value: ProductCategory; count: number }[]
+  conditions: readonly { value: Condition; count: number }[]
+  sizes: readonly { value: string; label: string; count: number }[]
+  priceRangeInr: { min: number; max: number }
+}
+
+export interface DataAdapter {
+  // ---- catalogue
+  listProducts(input?: ListProductsInput): Promise<Page<ProductSummary>>
+  getProduct(idOrSlug: ProductId | string): Promise<Product | null>
+  /** Facet counts for the filter panel. */
+  getProductFacets(): Promise<ProductFacets>
+  /**
+   * Editorial selection for the home page. Curated, not algorithmic — Phase 1
+   * excludes recommendations, and a home page that pretends to personalise
+   * without the data behind it is worse than one that does not try.
+   */
+  listFeaturedProducts(limit?: number): Promise<readonly ProductSummary[]>
+
+  // ---- passport
+  getPassport(id: PassportId): Promise<Passport | null>
+  getPassportByProduct(productId: ProductId): Promise<Passport | null>
+
+  // ---- seller
+  getSeller(idOrHandle: SellerId | string): Promise<Seller | null>
+
+  // ---- cart
+  getCart(id: CartId | null): Promise<Cart>
+  /** One-of-one inventory: no quantity, and adding a sold garment fails. */
+  addToCart(cartId: CartId | null, productId: ProductId): Promise<Cart>
+  removeFromCart(cartId: CartId, lineId: string): Promise<Cart>
+}
+
+/** Thrown when a mutation cannot proceed. Carries a code the UI can branch on. */
+export class DataError extends Error {
+  constructor(
+    readonly code: 'not_found' | 'unavailable' | 'already_in_cart',
+    message: string,
+  ) {
+    super(message)
+    this.name = 'DataError'
+  }
+}
