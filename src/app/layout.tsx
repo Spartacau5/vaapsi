@@ -1,4 +1,7 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+import { SiteFooter } from '@/components/patterns/site-footer'
+import { SiteHeader } from '@/components/patterns/site-header'
+import { SkipLink } from '@/components/patterns/skip-link'
 import { ThemeProvider } from '@/components/theme'
 import { fontVariables } from '@/components/theme/fonts'
 import { DEFAULT_THEME } from '@/components/theme/presets'
@@ -6,19 +9,34 @@ import { common } from '@/content'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: common.meta.title,
+  title: {
+    default: common.meta.title,
+    template: `%s — ${common.meta.title}`,
+  },
   description: common.meta.description,
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   /*
+   * The shell. Every route renders inside this and nothing else defines a
+   * header or footer.
+   *
    * `data-theme` and `data-font` are rendered server-side at their defaults, so
-   * the first paint is already correct and there is no flash. ThemeProvider only
-   * takes over if a `?t=` link asks for something else.
+   * the first paint is already correct and there is no flash. ThemeProvider
+   * takes over only if a `?t=` link asks for something else.
    *
    * All seven font variables land on <html> via className. The two semantic
    * slots — --font-display and --font-body — are assigned in tokens.css by the
    * `data-font` attribute, never here.
+   *
+   * Landmarks: one <header>, one <main id="main">, one <footer>. The skip link
+   * targets `#main`, and `scroll-mt` on it keeps the sticky header from covering
+   * the heading a keyboard user just jumped to.
    */
   return (
     <html
@@ -27,8 +45,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       data-theme={DEFAULT_THEME.colorPreset}
       data-font={DEFAULT_THEME.fontPreset}
     >
-      <body>
-        <ThemeProvider>{children}</ThemeProvider>
+      <body className="flex min-h-screen flex-col">
+        <ThemeProvider>
+          <SkipLink />
+          <SiteHeader />
+          <main id="main" tabIndex={-1} className="flex-1 scroll-mt-20 focus:outline-none">
+            {children}
+          </main>
+          <SiteFooter />
+        </ThemeProvider>
       </body>
     </html>
   )

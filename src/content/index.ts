@@ -1,2 +1,6 @@
 export { common } from './common'
 export { conditionCopy, productPage } from './product'
+export { footerMeta, footerNav, navLabels, primaryNav } from './navigation'
+export type { NavItem } from './navigation'
+export { PASSPORT_NAME, passportCopy } from './passport'
+export { states } from './states'

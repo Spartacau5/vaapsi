@@ -20,6 +20,29 @@ const config: Config = {
     './src/content/**/*.{ts,tsx}',
   ],
   theme: {
+    /**
+     * Breakpoints, named for the device class they describe.
+     *
+     * mobile 375–767 · tablet 768–1023 · desktop 1024–1439 · wide 1440+
+     *
+     * Mobile is the unprefixed base — this is a mobile-first system, and the
+     * design brief says design for the middle and derive outward. `sm` exists
+     * only for large phones; `tablet` is where marketplace layouts break, so it
+     * gets a name rather than being an alias nobody reaches for.
+     *
+     * The Tailwind-conventional aliases point at the same widths, so a dev
+     * arriving from another project is not wrong, just less explicit.
+     */
+    screens: {
+      sm: '480px',
+      tablet: '768px',
+      md: '768px',
+      desktop: '1024px',
+      lg: '1024px',
+      wide: '1440px',
+      xl: '1440px',
+      print: { raw: 'print' },
+    },
     extend: {
       colors: {
         // ---- Vaapsi semantic slots

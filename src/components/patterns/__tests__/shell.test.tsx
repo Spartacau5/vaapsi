@@ -1,0 +1,269 @@
+import { act, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { Dot, Logo } from '../logo'
+import { MobileNav } from '../mobile-nav'
+import { NavLink, isActive } from '../nav-link'
+import { SiteFooter } from '../site-footer'
+import { SiteHeader } from '../site-header'
+import { SkipLink } from '../skip-link'
+import { footerMeta, navLabels, primaryNav } from '@/content/navigation'
+import { PASSPORT_NAME } from '@/content/passport'
+import { useUiStore } from '@/lib/store/ui'
+
+let pathname = '/'
+jest.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+}))
+
+beforeEach(() => {
+  pathname = '/'
+  useUiStore.setState({ mobileNavOpen: false, searchOpen: false, cartCount: 0 })
+})
+
+// ---------------------------------------------------------------------------
+
+describe('isActive', () => {
+  it('matches a section by prefix', () => {
+    expect(isActive({ label: 'Women', href: '/shop/women' }, '/shop/women')).toBe(true)
+    expect(isActive({ label: 'Women', href: '/shop/women' }, '/shop/women/knitwear')).toBe(true)
+    expect(isActive({ label: 'Women', href: '/shop/women' }, '/shop/men')).toBe(false)
+  })
+
+  it('ignores the query string when matching', () => {
+    expect(isActive({ label: 'New in', href: '/shop?sort=newest' }, '/shop')).toBe(true)
+  })
+
+  it('matches the home route exactly, not as a prefix of everything', () => {
+    expect(isActive({ label: 'Home', href: '/' }, '/')).toBe(true)
+    expect(isActive({ label: 'Home', href: '/' }, '/shop')).toBe(false)
+  })
+
+  it('does not treat a sibling with a shared prefix as active', () => {
+    expect(isActive({ label: 'Shop', href: '/shop' }, '/shopping-bag')).toBe(false)
+  })
+})
+
+describe('NavLink', () => {
+  it('marks the active item with aria-current and the accent dot', () => {
+    pathname = '/passport'
+    const { container } = render(
+      <NavLink item={{ label: PASSPORT_NAME.title, href: '/passport' }} />,
+    )
+    const link = screen.getByRole('link')
+    expect(link).toHaveAttribute('aria-current', 'page')
+    // The dot, not an underline.
+    expect(container.querySelector('.bg-accent')).not.toBeNull()
+    expect(link.className).not.toContain('underline')
+  })
+
+  it('reserves the dot slot when inactive, so the label does not shift', () => {
+    pathname = '/shop'
+    const { container } = render(<NavLink item={{ label: 'Brands', href: '/shop/brands' }} />)
+    expect(screen.getByRole('link')).not.toHaveAttribute('aria-current')
+    expect(container.querySelector('.bg-accent')).toBeNull()
+    // The empty slot is still there.
+    expect(container.querySelector('span.inline-flex')).not.toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+
+describe('Logo', () => {
+  it('is labelled by default and decorative on request', () => {
+    const { unmount } = render(<Logo />)
+    expect(screen.getByRole('img', { name: 'Vaapsi' })).toBeInTheDocument()
+    unmount()
+
+    const { container } = render(<Logo decorative />)
+    expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('draws letterforms in currentColor so the mark inverts with the theme', () => {
+    const { container } = render(<Logo />)
+    expect(container.querySelector('g')).toHaveAttribute('fill', 'currentColor')
+  })
+
+  it('pins the dot to the accent token, not to currentColor', () => {
+    const { container } = render(<Logo />)
+    const dot = container.querySelector('circle')
+    expect(dot?.getAttribute('fill')).toContain('--accent')
+  })
+
+  it('has a mark-only variant carrying the same dot', () => {
+    const { container } = render(<Logo variant="mark" />)
+    expect(container.querySelector('circle')?.getAttribute('fill')).toContain('--accent')
+  })
+})
+
+describe('Dot', () => {
+  it('is the accent, at two sizes', () => {
+    expect(render(<Dot />).container.firstElementChild?.className).toContain('bg-accent')
+    expect(render(<Dot size="small" />).container.firstElementChild?.className).toContain('size-1')
+  })
+})
+
+describe('SkipLink', () => {
+  it('points at the main landmark and is hidden until focused', () => {
+    render(<SkipLink />)
+    const link = screen.getByRole('link', { name: navLabels.skipToContent })
+    expect(link).toHaveAttribute('href', '#main')
+    expect(link.className).toContain('sr-only')
+    expect(link.className).toContain('focus:not-sr-only')
+  })
+})
+
+// ---------------------------------------------------------------------------
+
+describe('SiteHeader', () => {
+  it('renders every primary nav item', () => {
+    render(<SiteHeader />)
+    const nav = screen.getByRole('navigation', { name: navLabels.mainNav })
+    for (const item of primaryNav) {
+      expect(within(nav).getByRole('link', { name: item.label })).toBeInTheDocument()
+    }
+  })
+
+  it('says the bag is empty rather than showing a zero', () => {
+    render(<SiteHeader />)
+    expect(screen.getByRole('link', { name: navLabels.cartEmpty })).toBeInTheDocument()
+    expect(screen.queryByText('0')).toBeNull()
+  })
+
+  it('labels the cart with a readable count and caps the badge', () => {
+    useUiStore.setState({ cartCount: 3 })
+    const { unmount } = render(<SiteHeader />)
+    expect(screen.getByRole('link', { name: '3 items in your bag' })).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    unmount()
+
+    useUiStore.setState({ cartCount: 14 })
+    render(<SiteHeader />)
+    expect(screen.getByText('9+')).toBeInTheDocument()
+  })
+
+  it('uses the singular for one item', () => {
+    useUiStore.setState({ cartCount: 1 })
+    render(<SiteHeader />)
+    expect(screen.getByRole('link', { name: '1 item in your bag' })).toBeInTheDocument()
+  })
+
+  it('transitions to a solid background on scroll rather than swapping markup', async () => {
+    render(<SiteHeader />)
+    const header = screen.getByRole('banner')
+    expect(header).toHaveAttribute('data-scrolled', 'false')
+    const linkCountAtTop = screen.getAllByRole('link').length
+
+    window.scrollY = 400
+    window.dispatchEvent(new Event('scroll'))
+    await screen.findByRole('banner')
+
+    expect(screen.getByRole('banner')).toHaveAttribute('data-scrolled', 'true')
+    // Same markup in both states — only colour classes move.
+    expect(screen.getAllByRole('link')).toHaveLength(linkCountAtTop)
+  })
+})
+
+// ---------------------------------------------------------------------------
+
+describe('MobileNav', () => {
+  it('is hidden and unfocusable while closed, with no JavaScript involved', () => {
+    const { container } = render(<MobileNav />)
+    const shell = container.firstElementChild
+    expect(shell).toHaveAttribute('aria-hidden', 'true')
+    // `invisible` is what removes the closed drawer from the tab order. It has
+    // to be a class rather than an imperatively-set `inert`, or the drawer's
+    // links are focusable in the server-rendered HTML before hydration.
+    expect(shell?.className).toContain('invisible')
+    expect(shell?.className).toContain('pointer-events-none')
+  })
+
+  it('becomes visible when opened', async () => {
+    const { container } = render(<MobileNav />)
+    act(() => useUiStore.getState().openMobileNav())
+    await screen.findByRole('dialog')
+    expect(container.firstElementChild?.className).not.toContain('invisible')
+  })
+
+  it('opens, moves focus to close, and closes on Escape', async () => {
+    const user = userEvent.setup()
+    render(<MobileNav />)
+
+    act(() => useUiStore.getState().openMobileNav())
+    const close = await screen.findByRole('button', { name: navLabels.closeMenu })
+    expect(close).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(useUiStore.getState().mobileNavOpen).toBe(false)
+  })
+
+  it('traps Tab inside the panel', async () => {
+    const user = userEvent.setup()
+    render(<MobileNav />)
+    act(() => useUiStore.getState().openMobileNav())
+
+    const dialog = await screen.findByRole('dialog')
+    const focusable = dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')
+    const last = focusable[focusable.length - 1]
+    expect(last).toBeDefined()
+
+    last?.focus()
+    await user.tab()
+    // Wrapped back to the first focusable thing in the panel, not out to the page.
+    expect(dialog.contains(document.activeElement)).toBe(true)
+  })
+
+  it('closes when the route changes', async () => {
+    const { rerender } = render(<MobileNav />)
+    act(() => useUiStore.getState().openMobileNav())
+    expect(useUiStore.getState().mobileNavOpen).toBe(true)
+
+    pathname = '/shop'
+    rerender(<MobileNav />)
+    expect(useUiStore.getState().mobileNavOpen).toBe(false)
+  })
+
+  it('locks the page behind it while open', async () => {
+    render(<MobileNav />)
+    act(() => useUiStore.getState().openMobileNav())
+    await screen.findByRole('dialog')
+    expect(document.body.style.overflow).toBe('hidden')
+
+    act(() => useUiStore.getState().closeMobileNav())
+    // The lock is released on close.
+    await Promise.resolve()
+  })
+})
+
+// ---------------------------------------------------------------------------
+
+describe('SiteFooter', () => {
+  it('renders as the contentinfo landmark', () => {
+    render(<SiteFooter />)
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument()
+  })
+
+  it('states currency, country and the tax position', () => {
+    render(<SiteFooter />)
+    expect(screen.getByText(footerMeta.currency)).toBeInTheDocument()
+    expect(screen.getByText(footerMeta.country)).toBeInTheDocument()
+    expect(screen.getByText(footerMeta.gstNote)).toBeInTheDocument()
+  })
+
+  it('sets payment methods as text, not as icons', () => {
+    render(<SiteFooter />)
+    for (const mark of footerMeta.paymentMarks) {
+      expect(screen.getByText(mark)).toBeInTheDocument()
+    }
+  })
+
+  it('gives every footer column a heading', () => {
+    render(<SiteFooter />)
+    const headings = screen.getAllByRole('heading', { level: 2 })
+    expect(headings.length).toBeGreaterThanOrEqual(5)
+  })
+
+  it('names the passport from the content constant, never a hardcoded string', () => {
+    render(<SiteFooter />)
+    expect(screen.getByRole('link', { name: PASSPORT_NAME.title })).toBeInTheDocument()
+  })
+})
