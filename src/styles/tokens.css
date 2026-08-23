@@ -167,7 +167,7 @@
   --leading-none: 1;
   --leading-tight: 1.08;
   --leading-snug: 1.25;
-  --leading-normal: 1.55;
+  --leading-normal: 1.5;
   --leading-relaxed: 1.7;
 }
 
@@ -307,15 +307,37 @@
   --gutter: var(--space-5);
 }
 
+/* ---- vertical rhythm ---------------------------------------------------- *
+ * One token for the space between page sections, and one for the tighter
+ * spacing inside them.
+ *
+ * These exist because section padding was hardcoded in eight components with
+ * three slightly different values, which is both a scroll problem and a
+ * consistency problem. Tuning the whole site's density is now two numbers.
+ *
+ * Deliberately tighter than the generous editorial default this started at.
+ * The register is still Zara/COS, but that reference works at a scale where a
+ * section fills the viewport with product — copying its padding onto sections
+ * that hold four cards produces dead space, not restraint.
+ */
+:root {
+  --space-section: var(--space-10);
+  --space-section-tight: var(--space-6);
+}
+
 @media (min-width: 768px) {
   :root {
     --gutter: var(--space-8);
+    --space-section: var(--space-12);
+    --space-section-tight: var(--space-8);
   }
 }
 
 @media (min-width: 1280px) {
   :root {
     --gutter: var(--space-12);
+    --space-section: var(--space-16);
+    --space-section-tight: var(--space-10);
   }
 }
 

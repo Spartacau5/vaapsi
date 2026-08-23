@@ -18,10 +18,10 @@ export function PassportFront({ passport }: { passport: Passport }) {
   const materialTotal = passport.materials.reduce((sum, m) => sum + m.percentage.value, 0)
 
   return (
-    <Stack gap={16}>
+    <Stack gap={10}>
       {/* ---- Journey. The most space, deliberately. */}
       <section aria-labelledby="passport-journey">
-        <Stack gap={6}>
+        <Stack gap={5}>
           <Row gap={4} justify="between" align="end">
             <Stack gap={1}>
               <Eyebrow>{passportCopy.sections.journey}</Eyebrow>
@@ -134,9 +134,9 @@ export function PassportFront({ passport }: { passport: Passport }) {
 
       {/* ---- Impact. Never a floating number. */}
       {passport.impact !== undefined && (
-        <section aria-labelledby="passport-impact" className="border-t border-line pt-10">
+        <section aria-labelledby="passport-impact" className="border-t border-line pt-8">
           <Eyebrow as="h3">{passportCopy.sections.impact}</Eyebrow>
-          <Grid gap="loose" className="pt-6">
+          <Grid gap="loose" className="pt-5">
             <Col mobile={2} tablet={4} desktop={3}>
               <Type as="p" family="display" size="3xl" weight="heading" numeric>
                 {passport.impact.waterLitresSaved.toLocaleString('en-IN')}

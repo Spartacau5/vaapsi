@@ -13,7 +13,7 @@ import { states } from '@/content/states'
 export default function NotFound() {
   return (
     <Container>
-      <Stack gap={4} className="max-w-measure py-24 desktop:py-32">
+      <Stack gap={4} className="max-w-measure py-section">
         <Eyebrow>{states.notFound.eyebrow}</Eyebrow>
         <Type as="h1" family="display" size="3xl" weight="heading">
           {states.notFound.title}

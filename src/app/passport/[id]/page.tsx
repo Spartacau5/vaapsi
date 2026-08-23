@@ -76,9 +76,9 @@ export default async function PassportPage({ params }: { params: Params }) {
 
   return (
     <Container>
-      <article className="py-10 desktop:py-16 print:py-0">
+      <article className="py-section-tight print:py-0">
         {/* ---- Identity. A scanned code arrives with no context. */}
-        <header className="border-b border-line pb-10">
+        <header className="border-b border-line pb-8">
           <Stack gap={3}>
             <Eyebrow>{PASSPORT_NAME.title}</Eyebrow>
 
@@ -119,7 +119,7 @@ export default async function PassportPage({ params }: { params: Params }) {
           </Stack>
         </header>
 
-        <div className="pt-10">
+        <div className="pt-8">
           <PassportDocument
             front={<PassportFront passport={passport} />}
             back={<PassportBack passport={passport} shareUrl={shareUrl} />}

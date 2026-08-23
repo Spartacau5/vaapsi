@@ -23,7 +23,7 @@ export function LoadMore({ shown, total }: { shown: number; total: number }) {
 
   if (remaining <= 0) {
     return (
-      <Stack gap={2} align="center" className="py-16">
+      <Stack gap={2} align="center" className="py-section-tight">
         <Type size="sm" tone="subtle">
           {shop.loadMore.exhausted}
         </Type>
@@ -32,7 +32,7 @@ export function LoadMore({ shown, total }: { shown: number; total: number }) {
   }
 
   return (
-    <Stack gap={3} align="center" className="py-16">
+    <Stack gap={3} align="center" className="py-section-tight">
       <button
         type="button"
         onClick={loadMore}

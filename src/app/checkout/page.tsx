@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function CheckoutPage() {
   return (
     <Container>
-      <Stack gap={4} className="max-w-measure py-24 desktop:py-32">
+      <Stack gap={4} className="max-w-measure py-section">
         <Eyebrow>{cart.checkout.action}</Eyebrow>
         <Type as="h1" family="display" size="3xl" weight="heading">
           {cart.checkout.notBuiltTitle}

@@ -22,7 +22,7 @@ export async function PassportBack({
   shareUrl: string
 }) {
   return (
-    <Stack gap={12}>
+    <Stack gap={8}>
       {/* ---- Signature and status */}
       <section aria-labelledby="passport-signed">
         <Grid gap="loose" rowGap="loose">
@@ -63,7 +63,7 @@ export async function PassportBack({
       </section>
 
       {/* ---- Original declaration + corrections */}
-      <section aria-labelledby="passport-declaration" className="border-t border-line pt-10">
+      <section aria-labelledby="passport-declaration" className="border-t border-line pt-8">
         <Grid gap="loose" rowGap="loose">
           <Col mobile={4} tablet={8} desktop={5}>
             <Eyebrow as="h3">{passportCopy.sections.declaration}</Eyebrow>
@@ -148,7 +148,7 @@ export async function PassportBack({
       </section>
 
       {/* ---- Identifiers */}
-      <section aria-labelledby="passport-ids" className="border-t border-line pt-10">
+      <section aria-labelledby="passport-ids" className="border-t border-line pt-8">
         <Eyebrow as="h3">{passportCopy.sections.identifiers}</Eyebrow>
         <Type as="h4" id="passport-ids" className="sr-only">
           {passportCopy.sections.identifiers}
@@ -171,7 +171,7 @@ export async function PassportBack({
       </section>
 
       {/* ---- Legend, on demand rather than always visible. */}
-      <section className="border-t border-line pt-10 print:break-inside-avoid">
+      <section className="border-t border-line pt-8 print:break-inside-avoid">
         <details className="group/legend">
           <summary className="cursor-pointer text-xs uppercase tracking-caps text-ink-muted transition-colors hover:text-ink print:list-none">
             {passportCopy.provenance.legendTitle}
@@ -185,7 +185,7 @@ export async function PassportBack({
       {/* ---- End of life */}
       {(passport.endOfLife.recyclerLookupUrl !== null ||
         passport.endOfLife.collectionPointUrl !== null) && (
-        <section className="border-t border-line pt-10">
+        <section className="border-t border-line pt-8">
           <Eyebrow as="h3">When it is finished</Eyebrow>
           <Row gap={6} className="pt-4">
             {passport.endOfLife.collectionPointUrl !== null && (

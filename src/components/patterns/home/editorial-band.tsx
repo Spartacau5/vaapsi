@@ -18,9 +18,9 @@ import { home } from '@/content/home'
  */
 export function EditorialBand() {
   return (
-    <Reveal as="section" className="py-8">
+    <Reveal as="section" className="py-section-tight">
       <section className="relative">
-        <div className="relative aspect-[4/5] w-full overflow-hidden tablet:aspect-[16/9] desktop:aspect-[21/9]">
+        <div className="relative aspect-[4/3] w-full overflow-hidden tablet:aspect-[16/9] desktop:aspect-[24/9]">
           <Image
             src="https://picsum.photos/seed/vaapsi-editorial-band/2400/1200"
             alt={home.editorial.imageAlt}
@@ -33,15 +33,15 @@ export function EditorialBand() {
 
           <div className="absolute inset-0 flex items-end">
             <Container>
-              <Stack gap={3} className="pb-10 desktop:pb-16">
+              <Stack gap={2} className="pb-8 desktop:pb-12">
                 <Type
                   as="p"
                   family="display"
-                  size="3xl"
+                  size="2xl"
                   weight="heading"
                   tone="inherit"
                   measure="narrow"
-                  className="text-background desktop:text-4xl"
+                  className="text-background desktop:text-3xl"
                 >
                   {home.editorial.statement}
                 </Type>

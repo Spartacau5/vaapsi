@@ -38,7 +38,7 @@ export function EmptyState() {
   const culprit = CULPRIT_ORDER.find((key) => active.includes(key)) ?? null
 
   return (
-    <div className="border-t border-line py-20">
+    <div className="border-t border-line py-section">
       <Stack gap={4} className="max-w-measure-narrow">
         <Type as="p" family="display" size="2xl" weight="heading">
           {shop.empty.title}

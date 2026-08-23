@@ -26,7 +26,7 @@ export function CartView() {
 
   return (
     <Container>
-      <div className="py-8 desktop:py-12">
+      <div className="py-6 desktop:py-8">
         <Row gap={3} align="baseline">
           <Type as="h1" family="display" size="3xl" weight="heading">
             {copy.title}
@@ -49,7 +49,7 @@ export function CartView() {
           <span className="sr-only">Loading your bag</span>
         </div>
       ) : isError ? (
-        <div className="border-t border-line py-16">
+        <div className="border-t border-line py-section-tight">
           <Stack gap={3} className="max-w-measure-narrow">
             <Type as="p" family="display" size="xl" weight="heading">
               We could not check your bag
@@ -65,7 +65,7 @@ export function CartView() {
           <EmptyBag />
         </div>
       ) : (
-        <Grid gap="loose" className="border-t border-line pt-8">
+        <Grid gap="loose" className="border-t border-line pt-6">
           <Col mobile={4} tablet={8} desktop={7}>
             <ul>
               {lines.map((line) => (
@@ -84,7 +84,7 @@ export function CartView() {
         </Grid>
       )}
 
-      <div className="pb-24" />
+      <div className="pb-section" />
     </Container>
   )
 }

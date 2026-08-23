@@ -50,7 +50,7 @@ export async function ShopView({
 
   return (
     <Container>
-      <div className="py-8 desktop:py-12">
+      <div className="py-6 desktop:py-8">
         <Stack gap={2}>
           {eyebrow !== undefined && <Eyebrow>{eyebrow}</Eyebrow>}
           <Type as="h1" family="display" size="3xl" weight="heading">
@@ -80,7 +80,7 @@ export async function ShopView({
         </Row>
       </Row>
 
-      <Grid gap="loose" className="pt-8">
+      <Grid gap="loose" className="pt-6">
         <Col mobile={4} tablet={8} desktop={3} className="hidden desktop:block">
           <FilterRail facets={facets} />
         </Col>

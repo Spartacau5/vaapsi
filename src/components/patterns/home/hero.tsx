@@ -34,7 +34,7 @@ export function Hero({ product, passport }: { product: Product; passport: Passpo
   const condition = conditionCopy[product.condition]
 
   return (
-    <section aria-labelledby="hero-title" className="pt-8 desktop:pt-12">
+    <section aria-labelledby="hero-title" className="pt-6 desktop:pt-8">
       <Container>
         <Grid gap="loose" rowGap="loose" className="items-center">
           {/* Image first in the DOM, so a screen reader and a phone both meet
@@ -44,7 +44,12 @@ export function Hero({ product, passport }: { product: Product; passport: Passpo
               href={`/product/${product.slug}`}
               className="block focus-visible:outline-offset-4"
             >
-              <div className="relative aspect-[3/4] overflow-hidden bg-surface">
+              {/*
+                4:5 rather than 3:4. At half-column width on a laptop a 3:4 crop
+                is taller than the viewport, which means the fold cuts through
+                the garment and the facts beside it are all a shopper sees.
+              */}
+              <div className="relative aspect-[4/5] overflow-hidden bg-surface">
                 {primary !== undefined && (
                   <Image
                     src={primary.url}
@@ -61,7 +66,7 @@ export function Hero({ product, passport }: { product: Product; passport: Passpo
 
           <Col mobile={4} tablet={8} desktop={5} startDesktop={8}>
             <Stagger>
-              <Stack gap={5}>
+              <Stack gap={4}>
                 <StaggerItem>
                   <Eyebrow>{home.hero.eyebrow}</Eyebrow>
                 </StaggerItem>
@@ -80,14 +85,14 @@ export function Hero({ product, passport }: { product: Product; passport: Passpo
                 </StaggerItem>
 
                 <StaggerItem>
-                  <Type size="lg" tone="muted" measure="narrow">
+                  <Type size="base" tone="muted" measure="narrow">
                     {home.hero.lede}
                   </Type>
                 </StaggerItem>
 
                 {/* The garment itself, named plainly. */}
                 <StaggerItem>
-                  <Stack gap={1} className="border-t border-line pt-5">
+                  <Stack gap={1} className="border-t border-line pt-4">
                     <Type size="sm" weight="emphasis">
                       {product.brand}
                     </Type>
@@ -109,7 +114,7 @@ export function Hero({ product, passport }: { product: Product; passport: Passpo
                 {/* The history. Facts only, and only the ones we have. */}
                 {highlights !== null && (
                   <StaggerItem>
-                    <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-5">
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-line pt-4 tablet:grid-cols-4 desktop:grid-cols-2">
                       {highlights.madePlace !== null && (
                         <Fact label={home.hero.facts.made} value={highlights.madePlace} />
                       )}

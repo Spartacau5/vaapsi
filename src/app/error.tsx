@@ -33,7 +33,7 @@ export default function Error({
 
   return (
     <Container>
-      <Stack gap={4} className="max-w-measure py-24 desktop:py-32">
+      <Stack gap={4} className="max-w-measure py-section">
         <Eyebrow>{states.error.eyebrow}</Eyebrow>
         <Type as="h1" family="display" size="3xl" weight="heading">
           {states.error.title}

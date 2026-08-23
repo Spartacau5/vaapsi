@@ -164,6 +164,10 @@ const config: Config = {
         40: 'var(--space-40)',
         48: 'var(--space-48)',
         gutter: 'var(--gutter)',
+        // Vertical rhythm between and inside page sections. Use these rather
+        // than picking a number — see the note in tokens.css.
+        section: 'var(--space-section)',
+        'section-tight': 'var(--space-section-tight)',
       },
 
       borderRadius: {

@@ -1,8 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Reveal } from '../reveal'
-import { Col, Container, Grid, Stack } from '@/components/primitives/layout'
-import { Eyebrow, Type } from '@/components/primitives/type'
+import { Col, Grid, Stack } from '@/components/primitives/layout'
+import { Section } from '@/components/primitives/section'
+import { Type } from '@/components/primitives/type'
 import { home } from '@/content/home'
 
 /**
@@ -18,10 +19,14 @@ import { home } from '@/content/home'
  * tiles the only images on the site that move on hover — where the product card
  * cross-fades to a detail shot, which actually tells you something.
  *
- * The layout: on desktop, one 6-column tall cell beside two stacked 3-column
- * cells, then a row of three. On tablet it becomes two columns of equal cells;
- * on mobile a single column with the aspect ratios doing the varying, because
- * an uneven grid at 375px is just a wonky list.
+ * The layout: on desktop, one tall cell beside two stacked ones, then a row of
+ * three. The unevenness is the point — a four-up row of identical squares reads
+ * as a menu where every option is equally unchosen.
+ *
+ * **Cells are much shorter than they were.** The tall one was 36rem minimum,
+ * which made this single section a full viewport on desktop and nearly two on
+ * mobile — a lot of screen for what is, functionally, six links. Landscape crops
+ * on mobile rather than portrait, so the whole set is scannable at once.
  */
 
 /** Per-cell shape at desktop. Index-matched to `home.categories.items`. */
@@ -36,71 +41,62 @@ const CELLS = [
 
 export function CategoryGrid() {
   return (
-    <Reveal as="section" className="py-20 desktop:py-24">
-      <section aria-labelledby="categories-title">
-        <Container>
-          <Stack gap={2} className="pb-8">
-            <Eyebrow>{home.categories.eyebrow}</Eyebrow>
-            <Type as="h2" id="categories-title" family="display" size="2xl" weight="heading">
-              {home.categories.title}
-            </Type>
-          </Stack>
-
-          <Grid gap="default" rowGap="default" as="ul">
-            {home.categories.items.map((item, index) => {
-              const cell = CELLS[index] ?? { desktop: 4 as const, tall: false }
-              return (
-                <Col
-                  key={item.href}
-                  mobile={4}
-                  tablet={4}
-                  desktop={cell.desktop}
-                  as="li"
-                  className={cell.tall ? 'desktop:row-span-2' : undefined}
-                >
-                  <Link href={item.href} className="group/cat block focus-visible:outline-offset-4">
-                    <div
-                      className={
-                        cell.tall
-                          ? 'relative aspect-[4/5] overflow-hidden bg-surface desktop:h-full desktop:min-h-[36rem]'
-                          : 'relative aspect-[16/9] overflow-hidden bg-surface desktop:aspect-[16/10]'
+    <Reveal>
+      <Section eyebrow={home.categories.eyebrow} heading={home.categories.title}>
+        <Grid gap="default" rowGap="default" as="ul">
+          {home.categories.items.map((item, index) => {
+            const cell = CELLS[index] ?? { desktop: 4 as const, tall: false }
+            return (
+              <Col
+                key={item.href}
+                mobile={4}
+                tablet={4}
+                desktop={cell.desktop}
+                as="li"
+                className={cell.tall ? 'desktop:row-span-2' : undefined}
+              >
+                <Link href={item.href} className="group/cat block focus-visible:outline-offset-4">
+                  <div
+                    className={
+                      cell.tall
+                        ? 'relative aspect-[16/10] overflow-hidden bg-surface desktop:aspect-auto desktop:h-full desktop:min-h-[22rem]'
+                        : 'relative aspect-[16/10] overflow-hidden bg-surface desktop:aspect-[16/11]'
+                    }
+                  >
+                    <Image
+                      src={`https://picsum.photos/seed/vaapsi-cat-${item.label.toLowerCase()}/1200/1500`}
+                      alt=""
+                      aria-hidden
+                      fill
+                      sizes={
+                        cell.desktop === 6
+                          ? '(min-width: 1024px) 50vw, (min-width: 768px) 50vw, 100vw'
+                          : '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw'
                       }
+                      className="object-cover"
+                    />
+                  </div>
+                  <Stack gap={0} className="pt-2">
+                    <Type
+                      as="h3"
+                      family="display"
+                      size={cell.tall ? 'lg' : 'base'}
+                      weight="heading"
                     >
-                      <Image
-                        src={`https://picsum.photos/seed/vaapsi-cat-${item.label.toLowerCase()}/1200/1500`}
-                        alt=""
-                        aria-hidden
-                        fill
-                        sizes={
-                          cell.desktop === 6
-                            ? '(min-width: 1024px) 50vw, (min-width: 768px) 50vw, 100vw'
-                            : '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw'
-                        }
-                        className="object-cover"
-                      />
-                    </div>
-                    <Stack gap={1} className="pt-3">
-                      <Type
-                        as="h3"
-                        family="display"
-                        size={cell.tall ? 'xl' : 'lg'}
-                        weight="heading"
-                      >
-                        {item.label}
+                      {item.label}
+                    </Type>
+                    {'note' in item && item.note !== undefined && (
+                      <Type size="sm" tone="subtle">
+                        {item.note}
                       </Type>
-                      {'note' in item && item.note !== undefined && (
-                        <Type size="sm" tone="subtle">
-                          {item.note}
-                        </Type>
-                      )}
-                    </Stack>
-                  </Link>
-                </Col>
-              )
-            })}
-          </Grid>
-        </Container>
-      </section>
+                    )}
+                  </Stack>
+                </Link>
+              </Col>
+            )
+          })}
+        </Grid>
+      </Section>
     </Reveal>
   )
 }

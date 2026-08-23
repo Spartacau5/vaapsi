@@ -246,3 +246,35 @@ indexed — but it is a soft 404.
 Fixing it properly needs either `dynamicParams = false` (which would 404 every
 newly listed garment until the next deploy) or a non-streaming render. Neither
 trade is worth it. Documented so nobody files it twice.
+
+---
+
+## 18. Density: one token, and the PDP gallery is two-up
+
+Section rhythm was hardcoded in eight components with three drifting values, and
+those values were generous enough that a five-section page was mostly padding.
+It is now `--space-section` / `--space-section-tight` in `tokens.css`, consumed
+through the `Section` primitive. **Tuning the whole site's density is two
+numbers.**
+
+The reference register is still Zara / COS. But that reference works at a scale
+where a section is a full-bleed photograph filling the viewport — copying its
+padding onto a section holding four cards and a paragraph gives you dead space,
+not restraint. Restraint is about how much is on the page, not how far apart it
+sits.
+
+Three specific layout changes, because padding alone was not the problem:
+
+- **The PDP gallery is a two-up grid** with the primary image spanning both
+  columns. A single stacked column of four 3:4 images is roughly 4,150px on a
+  1440 screen; two-up is about 2,000px. The condition block — the thing that
+  decides the purchase — was four screens down and is now closer to two. At half
+  width each detail image is still ~385px wide, which is enough to read a fabric
+  or spot a mark.
+- **The condition scale is a grid, not a five-row list.** All five grades visible
+  at once, because being able to compare them is the entire point of a scale.
+- **The category grid's tall cell dropped from 36rem to 22rem** and its crops went
+  landscape on mobile. Six links do not need a full viewport.
+
+What did _not_ change: type sizes, the grid, the gutters, or any of the
+information on the page. This is a spacing and layout pass, not a content cut.

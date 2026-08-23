@@ -173,6 +173,11 @@ extended to tell them apart (see `decisions.md` and `src/lib/utils/cn.ts`).
 **Radius is near-square on purpose, and it is a token so it can be tested rather
 than being an assumption baked into fifty components.**
 
+**Vertical rhythm is `--space-section`, consumed through the `Section`
+primitive** (`components/primitives/section.tsx`). Do not pick a `py-` value for
+a page section — use `Section`, or `py-section` / `py-section-tight` if you need
+the raw utility. Those two tokens are the density dial for the whole site.
+
 The JS side of motion lives in `src/lib/motion/index.ts` and mirrors the duration
 tokens in seconds. Keep the two in step — everything animated reads from there,
 and no component defines a duration inline.

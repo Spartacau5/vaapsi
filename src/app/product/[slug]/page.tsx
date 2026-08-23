@@ -97,7 +97,7 @@ export default async function ProductPage({ params }: { params: Params }) {
         }}
       />
 
-      <Grid gap="loose" className="pt-6 desktop:pt-8">
+      <Grid gap="loose" className="pt-4 desktop:pt-6">
         {/* ---- Gallery */}
         <Col mobile={4} tablet={8} desktop={7}>
           <Gallery images={images} sold={sold} />
@@ -106,7 +106,7 @@ export default async function ProductPage({ params }: { params: Params }) {
         {/* ---- Detail column, sticky on desktop */}
         <Col mobile={4} tablet={8} desktop={4} startDesktop={9}>
           <div className="desktop:sticky desktop:top-24">
-            <Stack gap={6} className="pt-6 desktop:pt-0">
+            <Stack gap={5} className="pt-6 desktop:pt-0">
               <Stack gap={2}>
                 <Row gap={3} justify="between" align="start">
                   <Eyebrow>{product.brand}</Eyebrow>
@@ -129,17 +129,17 @@ export default async function ProductPage({ params }: { params: Params }) {
                 )}
               </Stack>
 
-              <div className="border-t border-line pt-6">
+              <div className="border-t border-line pt-5">
                 <SizeAndMeasurements size={product.size} measurements={product.measurements} />
               </div>
 
-              <div className="border-t border-line pt-6">
+              <div className="border-t border-line pt-5">
                 <AddToBag productId={product.id} availability={product.availability} />
               </div>
 
               {/* Seller */}
               {seller !== null && (
-                <div className="border-t border-line pt-6">
+                <div className="border-t border-line pt-5">
                   <Eyebrow as="h2">{delivery.seller.heading}</Eyebrow>
                   <Stack gap={1} className="pt-3">
                     <Type size="sm" weight="emphasis">
@@ -161,12 +161,12 @@ export default async function ProductPage({ params }: { params: Params }) {
               )}
 
               {/* Delivery */}
-              <div className="border-t border-line pt-6">
+              <div className="border-t border-line pt-5">
                 <PincodeCheck />
               </div>
 
               {/* Returns */}
-              <div className="border-t border-line pt-6">
+              <div className="border-t border-line pt-5">
                 <Eyebrow as="h2">{delivery.returns.heading}</Eyebrow>
                 <Type size="xs" tone="muted" className="pt-2">
                   {delivery.returns.body}
@@ -178,7 +178,7 @@ export default async function ProductPage({ params }: { params: Params }) {
       </Grid>
 
       {/* ---- Condition, with real weight */}
-      <div className="mt-20 border-t border-line pt-16 desktop:mt-24">
+      <div className="mt-section border-t border-line pt-section-tight">
         <Grid gap="loose">
           <Col mobile={4} tablet={8} desktop={7}>
             <ConditionBlock product={product} />
@@ -196,9 +196,9 @@ export default async function ProductPage({ params }: { params: Params }) {
       {passport !== null && passportUrl !== null && (
         <section
           aria-labelledby="passport-heading"
-          className="mt-20 border-t border-line pt-16 desktop:mt-24"
+          className="mt-section border-t border-line pt-section-tight"
         >
-          <Row gap={4} justify="between" align="end" className="pb-10">
+          <Row gap={4} justify="between" align="end" className="pb-8">
             <Stack gap={2}>
               <Eyebrow>{PASSPORT_NAME.title}</Eyebrow>
               <Type as="h2" id="passport-heading" family="display" size="3xl" weight="heading">
@@ -220,7 +220,7 @@ export default async function ProductPage({ params }: { params: Params }) {
         </section>
       )}
 
-      <div className="pb-24" />
+      <div className="pb-section" />
     </Container>
   )
 }

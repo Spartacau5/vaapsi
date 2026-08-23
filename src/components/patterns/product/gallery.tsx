@@ -10,11 +10,12 @@ import { cn } from '@/lib/utils'
 /**
  * Product gallery.
  *
- * Desktop: a plain scrolling column. Every image at full width, one after
- * another, and the detail column beside it stays put. No lightbox, no thumbnail
- * strip, no zoom-on-hover — on resale, the photographs *are* the product
- * description, and making a shopper click through them one at a time to check
- * for flaws is hostile.
+ * Desktop: a two-up grid with the primary image spanning both columns. No
+ * lightbox, no thumbnail strip, no zoom-on-hover — on resale the photographs
+ * *are* the product description, and making a shopper click through them one at
+ * a time to check for flaws is hostile. But a single stacked column of five 3:4
+ * images put the condition block five screens down, and that block is what
+ * decides the purchase.
  *
  * Mobile: a swipeable, snapping track with a position indicator. Native scroll
  * again rather than a carousel library, so momentum, rubber-banding and the
@@ -83,26 +84,48 @@ export function Gallery({ images, sold }: { images: readonly ProductImage[]; sol
         </Row>
       </div>
 
-      {/* ---- Desktop: scrolling column */}
-      <ul className="hidden desktop:block">
+      {/* ---- Desktop: two-up grid */}
+      {/*
+        Two across, not one. A single column of five 3:4 images is roughly five
+        viewport heights before a shopper reaches the condition block — and the
+        condition block is the thing that decides the purchase. Pairing them
+        halves that without losing any detail: at half-column width on a 1440
+        screen each image is still ~430px wide, which is more than enough to
+        read a fabric or spot a mark, and clicking through to a lightbox for more
+        is a choice the shopper can make.
+
+        The primary image spans both columns. It is the establishing shot and it
+        earns the width; everything after it is supporting detail and does not.
+      */}
+      <ul className="hidden gap-2 desktop:grid desktop:grid-cols-2">
         {images.map((image, position) => (
-          <li key={image.id} className="mb-2">
+          <li key={image.id} className={position === 0 ? 'desktop:col-span-2' : undefined}>
             <figure>
-              <div className="relative aspect-[3/4] bg-surface">
+              <div
+                className={cn(
+                  'relative bg-surface',
+                  // The lead image is wider, so a 4:5 crop keeps it from being
+                  // absurdly tall at full column width.
+                  position === 0 ? 'aspect-[4/5]' : 'aspect-[3/4]',
+                )}
+              >
                 <Image
                   src={image.url}
                   alt={image.alt}
                   fill
-                  sizes="(min-width: 1024px) 55vw, 100vw"
+                  sizes={
+                    position === 0
+                      ? '(min-width: 1024px) 55vw, 100vw'
+                      : '(min-width: 1024px) 28vw, 50vw'
+                  }
                   priority={position === 0}
                   className={cn('object-cover', sold && 'saturate-0')}
                 />
               </div>
               {/*
                 Flaw photographs are captioned. Every other kind is not — a
-                caption on a styling shot is noise, but an unlabelled close-up
-                of a mark leaves a shopper guessing whether it is damage or
-                texture.
+                caption on a styling shot is noise, but an unlabelled close-up of
+                a mark leaves a shopper guessing whether it is damage or texture.
               */}
               {image.kind === 'flaw' && (
                 <figcaption className="pt-2">

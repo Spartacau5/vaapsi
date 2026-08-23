@@ -21,9 +21,9 @@ export function SiteFooter() {
   const year = new Date().getUTCFullYear()
 
   return (
-    <footer className="mt-24 border-t border-line">
+    <footer className="mt-section border-t border-line">
       <Container>
-        <div className="py-16">
+        <div className="py-section-tight">
           <Grid rowGap="loose">
             <Col mobile={4} tablet={8} desktop={3}>
               <Link href="/" aria-label={navLabels.home} className="inline-block text-ink">
@@ -40,7 +40,7 @@ export function SiteFooter() {
                   {footerNav.map((group) => (
                     <Col key={group.heading} mobile={2} tablet={2} desktop={2} as="section">
                       <Eyebrow as="h2">{group.heading}</Eyebrow>
-                      <Stack gap={2} as="ul" className="mt-4">
+                      <Stack gap={1} as="ul" className="mt-3">
                         {group.items.map((item) => (
                           <li key={item.href}>
                             <Link
@@ -63,7 +63,7 @@ export function SiteFooter() {
         </div>
 
         {/* India block. Currency, country, tax and payment, stated plainly. */}
-        <div className="border-t border-line py-8">
+        <div className="border-t border-line py-6">
           <Row gap={6} justify="between" align="start">
             <Stack gap={2}>
               <Row gap={3}>

@@ -23,7 +23,7 @@ export function PageScaffold({
 }) {
   return (
     <Container>
-      <Stack gap={4} className="py-24 desktop:py-32">
+      <Stack gap={4} className="py-section">
         <Eyebrow>{eyebrow}</Eyebrow>
         <Type as="h1" family="display" size="4xl" weight="heading">
           {title}

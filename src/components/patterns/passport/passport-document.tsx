@@ -50,7 +50,7 @@ export function PassportDocument({
         gap={0}
         justify="between"
         align="center"
-        className="mb-10 border-b border-line pb-4 print:hidden"
+        className="mb-8 border-b border-line pb-3 print:hidden"
       >
         <fieldset>
           <legend className="sr-only">Which side of the passport to show</legend>
