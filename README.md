@@ -117,6 +117,55 @@ Two colour presets (`mono`, `inverse`) and five font pairings, all applied as
 in devtools and the whole page restyles; reassign `--font-display` and the
 display face swaps with no layout break and no font loading.
 
+### Surfaces built
+
+| Route                       | What it is                                                                                                                       |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                         | Home. Hero built on one garment and its history, new-in rail, passport explainer, category grid, condition scale, editorial band |
+| `/shop`, `/shop/[category]` | Listing. Filters, sort and pagination all live in `searchParams` — no filter state in Zustand                                    |
+| `/product/[slug]`           | PDP. Gallery, condition and flaw disclosure, measurements, and the passport inline                                               |
+| `/passport/[id]`            | The standalone passport. **This is what the QR resolves to.** Print styles included                                              |
+| `/tokens`                   | Token specimen sheet. Internal reference, not linked                                                                             |
+| `/cart`, `/passport`        | Scaffolded, not yet built                                                                                                        |
+
+### Things that will surprise you
+
+**The dot does five jobs.** The wordmark, the active nav marker, the cart badge,
+the loading indicator, and the verification seal. That is deliberate — a shopper
+learns the mark once. There is no spinner anywhere in this codebase.
+
+**Provenance is encoded by fill, not colour.** Solid, half, hollow, dashed,
+dotted. The constraint is the point: the mark has to survive greyscale, an 8px
+render, and being printed on a care label. A red/amber/green badge set would fail
+all three and would imply "good/warning/bad" when `supplier` is not worse than
+`verified`, just differently sourced.
+
+**Print is a colour preset, not a stylesheet.** `@media print` in `tokens.css`
+redefines the same slots to black on white, so the entire site converts in
+fourteen lines. Same mechanism as the theme switcher, pointed at paper.
+
+**`notFound()` returns HTTP 200 on dynamic routes.** Next has already streamed
+the shell by the time the lookup fails, so the status cannot be changed. Next
+injects `<meta name="robots" content="noindex">`, so it is not indexed — but it is
+a soft 404. Fixing it needs either `dynamicParams = false` (which would 404 every
+new listing until the next deploy) or a non-streaming render. Neither trade is
+worth it; the note is here so nobody files it twice.
+
+**One dependency beyond the pinned stack:** `qrcode`, used server-side to render
+the passport QR to SVG. No client JS, no canvas, no layout shift.
+
+### Still stubbed or provisional
+
+| What                    | Where                       | Blocked on                               |
+| ----------------------- | --------------------------- | ---------------------------------------- |
+| PIN-code serviceability | `product/pincode-check.tsx` | Parcel provider (PRD Q8)                 |
+| Returns policy copy     | `content/delivery.ts`       | C2C returns policy (PRD Q7)              |
+| GST / tax line          | `content/navigation.ts`     | Merchant of record (PRD Q6)              |
+| Add to bag              | `product/add-to-bag.tsx`    | Phase 6                                  |
+| Care symbols            | `passport/front.tsx`        | GINETEX icon set; labels shown meanwhile |
+| Product photography     | fixtures                    | Client (PRD Q10)                         |
+| The passport's name     | `content/passport.ts`       | Client                                   |
+
 ### Conventions worth knowing
 
 - Money is stored as an **integer number of paise**, never a float, and

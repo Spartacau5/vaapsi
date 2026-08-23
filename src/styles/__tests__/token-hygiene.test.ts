@@ -61,6 +61,11 @@ describe('token hygiene', () => {
       // `content/` is copy, never applied as CSS. Naming the accent in prose —
       // "the accent is #900000" — is documentation, not a hardcoded style.
       .filter((file) => !file.path.startsWith('src/content/'))
+      // A QR code needs genuine black-on-white contrast to scan reliably, on
+      // screen and printed on a care label. It is the one place in the app where
+      // a colour cannot come from a token, and it is a scanning requirement
+      // rather than a design decision.
+      .filter((file) => file.path !== 'src/components/patterns/passport/qr.tsx')
       .filter((file) => HEX_COLOR.test(stripComments(file.source)))
       .map((file) => file.path)
     expect(offenders).toEqual([])
@@ -152,6 +157,13 @@ describe('tokens.css completeness', () => {
       expect(block).toContain('--font-display:')
       expect(block).toContain('--font-body:')
     }
+  })
+
+  it('carries a print preset, so paper does not inherit the screen palette', () => {
+    expect(tokens).toContain('@media print')
+    const printBlock = tokens.split('@media print')[1] ?? ''
+    expect(printBlock).toContain('--background: 0 0% 100%')
+    expect(printBlock).toContain('--ink: 0 0% 0%')
   })
 
   it('uses one motion curve, not several', () => {

@@ -18,6 +18,13 @@
     {
       "files": ["src/lib/data/**/*.ts"],
       "rules": { "no-restricted-imports": "off" }
+    },
+    // Tests are the one legitimate consumer outside lib/data. Asserting that the
+    // UI handles a passport with no impact block means reaching for the fixture
+    // that has none; going through the adapter would test the adapter instead.
+    {
+      "files": ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+      "rules": { "no-restricted-imports": "off" }
     }
   ]
 }

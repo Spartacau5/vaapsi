@@ -69,3 +69,59 @@
     }
   }
 }
+
+/*
+ * Print.
+ *
+ * The passport route is a physical destination — a QR sewn into a garment
+ * resolves there, and someone will print it. These rules strip the storefront
+ * chrome so a printed passport is a clean document rather than a screenshot of a
+ * website: no nav, no footer, no links to things that are not on the paper.
+ *
+ * Kept here rather than in tokens.css because it is layout, not a token.
+ */
+@media print {
+  /* The shell has nothing to say on paper. */
+  header,
+  footer,
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  main {
+    /* Undo the flex column, so print pagination is normal block flow. */
+    display: block;
+  }
+
+  /* Backgrounds do not print. Anything relying on a surface fill for structure
+   * needs a rule instead, or it disappears. */
+  .bg-surface,
+  .bg-surface-raised {
+    background: transparent !important;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Never split a record entry across a page break. */
+  li,
+  dl,
+  figure,
+  details {
+    break-inside: avoid;
+  }
+
+  /* Disclosures print open. A collapsed section on paper is lost content. */
+  details > summary {
+    display: none;
+  }
+  details > *:not(summary) {
+    display: block !important;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}

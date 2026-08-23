@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme'
 import { fontVariables } from '@/components/theme/fonts'
 import { DEFAULT_THEME } from '@/components/theme/presets'
 import { common } from '@/content'
+import { Providers } from './providers'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -46,14 +47,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       data-font={DEFAULT_THEME.fontPreset}
     >
       <body className="flex min-h-screen flex-col">
-        <ThemeProvider>
-          <SkipLink />
-          <SiteHeader />
-          <main id="main" tabIndex={-1} className="flex-1 scroll-mt-20 focus:outline-none">
-            {children}
-          </main>
-          <SiteFooter />
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider>
+            <SkipLink />
+            <SiteHeader />
+            <main id="main" tabIndex={-1} className="flex-1 scroll-mt-20 focus:outline-none">
+              {children}
+            </main>
+            <SiteFooter />
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )

@@ -1,4 +1,5 @@
 export * from './currency'
 export * from './size'
 export * from './date'
+export * from './images'
 export * from './provenance'

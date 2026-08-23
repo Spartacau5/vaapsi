@@ -20,6 +20,11 @@ export function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(true)
 
   useEffect(() => {
+    // `matchMedia` is absent in jsdom and in a few older webviews. Bail out
+    // rather than throwing, which leaves `reduced` at its safe default of true:
+    // if we cannot ask, we do not animate.
+    if (typeof window.matchMedia !== 'function') return
+
     const query = window.matchMedia('(prefers-reduced-motion: reduce)')
     setReduced(query.matches)
 

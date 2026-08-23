@@ -312,3 +312,40 @@
     --gutter: var(--space-12);
   }
 }
+
+/* ==========================================================================
+ * 8. PRINT
+ * ==========================================================================
+ * Print is a third colour preset, and it belongs here rather than in a print
+ * stylesheet full of literals.
+ *
+ * Paper is white and ink is black, whichever preset the shopper was viewing.
+ * Printing the inverse theme would empty a cartridge and produce something
+ * unreadable. Because every component resolves its colour through these slots,
+ * redefining them here converts the whole site to a print-safe palette in
+ * fourteen lines — the same trick as the theme switcher, pointed at paper.
+ */
+@media print {
+  :root,
+  [data-theme='mono'],
+  [data-theme='inverse'] {
+    --background: 0 0% 100%;
+    --surface: 0 0% 100%;
+    --surface-raised: 0 0% 100%;
+
+    --ink: 0 0% 0%;
+    --ink-muted: 0 0% 25%;
+    --ink-subtle: 0 0% 40%;
+
+    --line: 0 0% 70%;
+    --line-strong: 0 0% 45%;
+
+    /* The dot stays. It is the verification mark, and a printed passport that
+     * loses it loses the thing it is evidence of. */
+    --accent: 0 100% 28%;
+    --accent-ink: 0 0% 100%;
+
+    --elevation-overlay: none;
+    --elevation-sheet: none;
+  }
+}

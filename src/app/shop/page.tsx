@@ -1,15 +1,26 @@
 import type { Metadata } from 'next'
-import { PageScaffold } from '@/components/patterns/page-scaffold'
+import { Suspense } from 'react'
+import { ProductGridSkeleton } from '@/components/patterns/shop/product-grid'
+import { ShopView } from '@/components/patterns/shop/shop-view'
+import { Container } from '@/components/primitives/layout'
+import { shop } from '@/content/shop'
+import type { RawSearchParams } from '@/lib/plp/search-params'
 
 export const metadata: Metadata = { title: 'Shop' }
 
-export default function ShopPage() {
+export default function ShopPage({ searchParams }: { searchParams: RawSearchParams }) {
   return (
-    <PageScaffold
-      eyebrow="Shop"
-      title="Everything available"
-      phase="Phase 4"
-      note="One-of-one pieces, newest first. Filters, sort and the product grid arrive with the listing page."
-    />
+    <Suspense
+      key={JSON.stringify(searchParams)}
+      fallback={
+        <Container>
+          <div className="pt-24">
+            <ProductGridSkeleton />
+          </div>
+        </Container>
+      }
+    >
+      <ShopView searchParams={searchParams} title={shop.title} />
+    </Suspense>
   )
 }
