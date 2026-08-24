@@ -9,9 +9,9 @@ import { products } from '@/lib/data/fixtures/products'
  * garment, its history, and the fact that a garment without a passport still
  * renders a complete hero.
  */
-const withPassport = products.find((p) => p.id === 'prd_rawmango_chanderi_kurta')
-const withoutPassport = products.find((p) => p.id === 'prd_zara_linen_blazer_sand')
-const passport = passports.find((p) => p.id === 'psp_rawmango_chanderi_kurta')
+const withPassport = products.find((p) => p.id === 'prd_bhaane_trucker_indigo')
+const withoutPassport = products.find((p) => p.id === 'prd_zara_denim_waistcoat')
+const passport = passports.find((p) => p.id === 'psp_bhaane_trucker_indigo')
 
 describe('Hero', () => {
   it('leads with the thesis as the page heading', () => {

@@ -34,8 +34,8 @@ beforeEach(() => {
 })
 
 const AVAILABLE = 'prd_levis_501_indigo'
-const SOLD = 'prd_uniqlo_merino_crew_navy'
-const RESERVED = 'prd_cos_wool_coat_stone'
+const SOLD = 'prd_diesel_denim_shoulder_bag'
+const RESERVED = 'prd_acne_denim_maxi_skirt'
 
 function seed(...productIds: string[]) {
   useCartStore.setState({
@@ -111,7 +111,7 @@ describe('CartView', () => {
     render(<CartView />)
     expect(await screen.findByText(copy.line.soldOut)).toBeInTheDocument()
     // Still there, still named.
-    expect(screen.getByText('Extra Fine Merino crewneck in navy')).toBeInTheDocument()
+    expect(screen.getByText('Denim shoulder bag with detachable sling')).toBeInTheDocument()
     // The total is the available garment only.
     expect(screen.getByText(copy.summary.excludedNote(1))).toBeInTheDocument()
   })

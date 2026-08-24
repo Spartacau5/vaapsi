@@ -9,6 +9,7 @@ import { ProductCard } from '@/components/patterns/product-card'
 import { ConditionBlock } from '@/components/patterns/product/condition-block'
 import { SizeAndMeasurements } from '@/components/patterns/product/measurements'
 import { PincodeCheck } from '@/components/patterns/product/pincode-check'
+import { ProductDrawers } from '@/components/patterns/product/product-drawer'
 import { AddToBag } from '@/components/patterns/product/add-to-bag'
 import { ProductGridSkeleton } from '@/components/patterns/shop/product-grid'
 import { Col, Container, Grid, Row, Rule, Stack } from '@/components/primitives/layout'
@@ -46,12 +47,12 @@ export default async function KitchenSinkPage() {
   const summaries = page.items
 
   const withPassport = await getProduct('prd_levis_501_indigo')
-  const withoutPassport = await getProduct('prd_zara_linen_blazer_sand')
-  const noFlaws = await getProduct('prd_rawmango_chanderi_kurta')
+  const withoutPassport = await getProduct('prd_zara_denim_waistcoat')
+  const noFlaws = await getProduct('prd_bhaane_trucker_indigo')
 
-  const fullPassport = await getPassport('psp_uniqlo_merino_crew_navy')
+  const fullPassport = await getPassport('psp_diesel_denim_shoulder_bag')
   const correctedPassport = await getPassport('psp_levis_501_indigo')
-  const partialPassport = await getPassport('psp_nicobar_poplin_shirtdress')
+  const partialPassport = await getPassport('psp_nicobar_chambray_shirtdress')
 
   const card = (availability: Availability, hasPassport: boolean): ProductSummary | null => {
     const base = summaries.find((item) => (item.passportId !== null) === hasPassport)
@@ -244,6 +245,28 @@ export default async function KitchenSinkPage() {
               <Type size="xs" tone="subtle" className="pt-3">
                 Try 110001 (fast), 560001 (slower), 900001 (unserviceable)
               </Type>
+            </Col>
+          </Grid>
+        </Section>
+      )}
+
+      {/* ---------------------------------------------------------------- */}
+      {withPassport !== null && (
+        <Section title="Product drawers — the reference-material pattern">
+          <Grid>
+            <Col mobile={4} tablet={4} desktop={4}>
+              <Type size="xs" tone="subtle" className="pb-3">
+                With a passport — materials and care are populated
+              </Type>
+              <ProductDrawers product={withPassport} passport={fullPassport} seller={null} />
+            </Col>
+            <Col mobile={4} tablet={4} desktop={4}>
+              <Type size="xs" tone="subtle" className="pb-3">
+                Without a passport — both say so rather than showing blanks
+              </Type>
+              {withoutPassport !== null && (
+                <ProductDrawers product={withoutPassport} passport={null} seller={null} />
+              )}
             </Col>
           </Grid>
         </Section>

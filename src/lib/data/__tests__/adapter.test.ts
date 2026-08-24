@@ -2,9 +2,11 @@ import { getProductFacets, listFeaturedProducts, listProducts, resolveCart } fro
 
 describe('listProducts filtering', () => {
   it('filters by category', async () => {
-    const page = await listProducts({ filters: { category: 'ethnicwear' } })
-    expect(page.total).toBe(2)
-    expect(page.items.every((item) => item.category === 'ethnicwear')).toBe(true)
+    // Three of the eight denim pieces are bottoms: the 501s, the maxi skirt and
+    // the wide-leg jeans.
+    const page = await listProducts({ filters: { category: 'bottoms' } })
+    expect(page.total).toBe(3)
+    expect(page.items.every((item) => item.category === 'bottoms')).toBe(true)
   })
 
   it('filters by passport presence in both directions', async () => {
@@ -24,9 +26,11 @@ describe('listProducts filtering', () => {
   })
 
   it('searches title, brand and subcategory', async () => {
-    expect((await listProducts({ filters: { query: 'kurta' } })).total).toBe(1)
+    expect((await listProducts({ filters: { query: 'trucker' } })).total).toBe(1)
     expect((await listProducts({ filters: { query: 'nicobar' } })).total).toBe(1)
-    expect((await listProducts({ filters: { query: 'jeans' } })).total).toBe(1)
+    // Two pieces are jeans — the 501s and the wide-legs — so a query that hits
+    // both is a better test of the search than one that hits exactly one.
+    expect((await listProducts({ filters: { query: 'jeans' } })).total).toBe(2)
     expect((await listProducts({ filters: { query: 'zzzz' } })).total).toBe(0)
   })
 
@@ -35,7 +39,7 @@ describe('listProducts filtering', () => {
       filters: { category: 'bottoms', hasPassport: false },
     })
     expect(page.total).toBe(1)
-    expect(page.items[0]?.brand).toBe('Massimo Dutti')
+    expect(page.items[0]?.brand).toBe('Uniqlo')
   })
 })
 
@@ -104,7 +108,7 @@ describe('listFeaturedProducts', () => {
   it('returns a curated order, honouring the limit', async () => {
     const featured = await listFeaturedProducts(3)
     expect(featured).toHaveLength(3)
-    expect(featured[0]?.id).toBe('prd_rawmango_chanderi_kurta')
+    expect(featured[0]?.id).toBe('prd_bhaane_trucker_indigo')
   })
 })
 
@@ -134,17 +138,17 @@ describe('resolveCart', () => {
   it('keeps a sold line visible but out of the total', async () => {
     const cart = await resolveCart([
       { productId: 'prd_levis_501_indigo', addedAt: at },
-      { productId: 'prd_uniqlo_merino_crew_navy', addedAt: at },
+      { productId: 'prd_diesel_denim_shoulder_bag', addedAt: at },
     ])
     expect(cart.lines).toHaveLength(2)
-    const sold = cart.lines.find((line) => line.product.id === 'prd_uniqlo_merino_crew_navy')
+    const sold = cart.lines.find((line) => line.product.id === 'prd_diesel_denim_shoulder_bag')
     expect(sold?.status).toBe('sold_out')
     // Only the available garment counts. A sold line must not inflate the total.
     expect(cart.totals.subtotalInr).toBe(265_000)
   })
 
   it('marks a reserved line and excludes it from the total too', async () => {
-    const cart = await resolveCart([{ productId: 'prd_cos_wool_coat_stone', addedAt: at }])
+    const cart = await resolveCart([{ productId: 'prd_acne_denim_maxi_skirt', addedAt: at }])
     expect(cart.lines[0]?.status).toBe('reserved')
     expect(cart.totals.subtotalInr).toBe(0)
   })
@@ -160,9 +164,9 @@ describe('resolveCart', () => {
   it('orders newest first', async () => {
     const cart = await resolveCart([
       { productId: 'prd_levis_501_indigo', addedAt: '2026-08-01T00:00:00.000Z' },
-      { productId: 'prd_nicobar_poplin_shirtdress', addedAt: '2026-08-20T00:00:00.000Z' },
+      { productId: 'prd_nicobar_chambray_shirtdress', addedAt: '2026-08-20T00:00:00.000Z' },
     ])
-    expect(cart.lines[0]?.product.id).toBe('prd_nicobar_poplin_shirtdress')
+    expect(cart.lines[0]?.product.id).toBe('prd_nicobar_chambray_shirtdress')
   })
 
   it('never caches a price — the line price is resolved from the product', async () => {

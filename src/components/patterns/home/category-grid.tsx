@@ -34,9 +34,8 @@ const CELLS = [
   { desktop: 6 as const, tall: true },
   { desktop: 6 as const, tall: false },
   { desktop: 6 as const, tall: false },
-  { desktop: 4 as const, tall: false },
-  { desktop: 4 as const, tall: false },
-  { desktop: 4 as const, tall: false },
+  { desktop: 6 as const, tall: false },
+  { desktop: 6 as const, tall: false },
 ]
 
 export function CategoryGrid() {

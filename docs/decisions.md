@@ -278,3 +278,60 @@ Three specific layout changes, because padding alone was not the problem:
 
 What did _not_ change: type sizes, the grid, the gutters, or any of the
 information on the page. This is a spacing and layout pass, not a content cut.
+
+---
+
+## 19. The PDP is a full-bleed split, with drawers for reference material
+
+Modelled on the Prada product page the client referenced. Photographs own the
+left half of the viewport edge-to-edge with no gutter; the buying decision owns
+the right half and is sticky and vertically centred so it never moves. On
+desktop each frame fills the viewport and the dot rail tracks position via an
+IntersectionObserver; mobile keeps a horizontal swipe.
+
+**Two drawers — Product details and Delivery and returns.** Both slide in over
+the detail column from the shared `Overlay`, so the focus trap and Escape
+behaviour are identical to the nav drawer, the filter sheet and the bag.
+
+A drawer is the right container for reference material a shopper _consults_: nine
+measurements, a composition, four care codes, a product number. Stacked under the
+buy button, that pushed the passport below three screens of specification.
+
+### What is deliberately not in a drawer
+
+**Condition and flaws**, and the **passport**. Both stay on the page.
+
+This is the one place the implementation departs from the reference, and it is
+not an oversight. A luxury retailer selling new stock can put everything behind
+"Product details" because there is nothing to disclose. Here the flaw
+photographs are the reason the listing is believable, and the passport is the
+reason the site exists — adopting the _form_ of the reference while hiding both
+would discard the point of this business. There is a test
+(`product-drawer.test.tsx`) asserting no flaw description ever appears inside a
+drawer, so a future tidy-up cannot quietly move it.
+
+The detail column still carries the condition **grade and its one-line
+definition** inline, because a shopper should never scroll or click to find out
+what they are being promised. The full disclosure is below the split.
+
+---
+
+## 20. The authored image order wins
+
+`Product.images` is documented as ordered, and the fixtures carry a deliberate
+six-frame sequence: garment alone → worn front → worn close-up → construction
+crop → worn back → label macro, with flaw frames inserted after the construction
+crop where a shopper is already looking closely.
+
+`orderGalleryImages` used to re-sort by `kind`, which quietly destroyed that —
+sorting groups both full-length model shots together, so the back view landed
+immediately after the front and the construction details moved to the end. **The
+sequence a stylist composed is information; the front end should not
+second-guess it.** The only rule now enforced is that the `primary` frame leads,
+because it is also the card and Open Graph image.
+
+The alt text in the fixtures is written as a photography brief — it describes the
+frame we want, not the placeholder currently there — and `SHOT_LIST` in
+`fixtures/products.ts` exports the brief so it can be handed over without
+reading TypeScript. The placeholder pixels remain unrelated to denim; that is
+PRD open question #10.

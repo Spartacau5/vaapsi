@@ -10,8 +10,8 @@ import type { Provenance } from '@/lib/types'
 const ALL: Provenance[] = ['verified', 'supplier', 'self_declared', 'ai_extracted', 'ai_suggested']
 
 const levis = passports.find((p) => p.id === 'psp_levis_501_indigo')
-const nicobar = passports.find((p) => p.id === 'psp_nicobar_poplin_shirtdress')
-const cos = passports.find((p) => p.id === 'psp_cos_wool_coat_stone')
+const nicobar = passports.find((p) => p.id === 'psp_nicobar_chambray_shirtdress')
+const cos = passports.find((p) => p.id === 'psp_acne_denim_maxi_skirt')
 
 describe('ProvenanceDot', () => {
   it('gives every provenance a distinct mark', () => {

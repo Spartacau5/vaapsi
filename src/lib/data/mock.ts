@@ -37,12 +37,12 @@ import { sellers } from './fixtures/sellers'
  */
 
 const EDITORIAL_ORDER: readonly ProductId[] = [
-  'prd_rawmango_chanderi_kurta',
-  'prd_cos_wool_coat_stone',
-  'prd_anitadongre_anarkali_rose',
+  'prd_bhaane_trucker_indigo',
+  'prd_acne_denim_maxi_skirt',
+  'prd_cos_denim_jumpsuit',
   'prd_levis_501_indigo',
-  'prd_nicobar_poplin_shirtdress',
-  'prd_massimo_pleated_trousers_black',
+  'prd_nicobar_chambray_shirtdress',
+  'prd_uniqlo_wide_leg_jeans',
 ]
 
 function toSummary(product: Product): ProductSummary {

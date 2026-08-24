@@ -15,7 +15,7 @@ export const home = {
     eyebrow: 'One of one',
     /** Sits above the garment title. The thesis of the whole site. */
     thesis: 'This one has a past.',
-    lede: 'Every garment here has been somewhere before it reached you. We keep the record, and it stays with the garment.',
+    lede: 'Every piece here has been somewhere before it reached you. We keep the record, and it stays with the garment.',
     cta: 'See this piece',
     /** Labels for the provenance facts shown beside the garment. */
     facts: {
@@ -74,13 +74,17 @@ export const home = {
   categories: {
     eyebrow: 'Browse',
     title: 'By category',
+    /**
+     * Every href points at a category that actually has stock. A dead category
+     * link on the home page is worse than a shorter list — and because the
+     * category route validates against the live facets, an empty one 404s.
+     */
     items: [
-      { label: 'Ethnicwear', href: '/shop/ethnicwear', note: 'Kurtas, anarkalis, saris' },
-      { label: 'Outerwear', href: '/shop/outerwear', note: 'Coats and jackets' },
-      { label: 'Knitwear', href: '/shop/knitwear', note: 'Wool, cashmere, cotton' },
-      { label: 'Denim', href: '/shop/bottoms', note: 'Broken in already' },
-      { label: 'Dresses', href: '/shop/dresses' },
-      { label: 'Suiting', href: '/shop/suiting' },
+      { label: 'Jackets', href: '/shop/outerwear', note: 'Truckers and chore coats' },
+      { label: 'Jeans and skirts', href: '/shop/bottoms', note: 'Broken in already' },
+      { label: 'Dresses', href: '/shop/dresses', note: 'Shirt dresses and jumpsuits' },
+      { label: 'Shirts and waistcoats', href: '/shop/tops' },
+      { label: 'Bags', href: '/shop/accessories' },
     ],
   },
 
@@ -100,6 +104,6 @@ export const home = {
     /** The breathing room in the page. One image, one statement. */
     statement: 'The most sustainable garment is the one that already exists.',
     attribution: 'Vaapsi, New Delhi',
-    imageAlt: 'A rail of pre-loved garments in a studio, photographed in daylight',
+    imageAlt: 'A rail of pre-loved denim in a studio, photographed in daylight',
   },
 } as const

@@ -169,9 +169,9 @@ describe('passport integrity', () => {
 
 describe('adapter reads', () => {
   it('finds a product by id and by slug', async () => {
-    const bySlug = await getProduct('raw-mango-chanderi-silk-kurta-ivory')
-    const byId = await getProduct('prd_rawmango_chanderi_kurta')
-    expect(bySlug?.id).toBe('prd_rawmango_chanderi_kurta')
+    const bySlug = await getProduct('bhaane-oversized-trucker-jacket-raw-indigo')
+    const byId = await getProduct('prd_bhaane_trucker_indigo')
+    expect(bySlug?.id).toBe('prd_bhaane_trucker_indigo')
     expect(byId).toEqual(bySlug)
   })
 
@@ -180,14 +180,14 @@ describe('adapter reads', () => {
   })
 
   it('returns null for a garment with no passport', async () => {
-    const product = await getProduct('prd_zara_linen_blazer_sand')
+    const product = await getProduct('prd_zara_denim_waistcoat')
     expect(product?.passportId).toBeNull()
-    expect(await getPassportByProduct('prd_zara_linen_blazer_sand')).toBeNull()
+    expect(await getPassportByProduct('prd_zara_denim_waistcoat')).toBeNull()
   })
 
   it('reads a passport by id and by product', async () => {
-    const byId = await getPassport('psp_uniqlo_merino_crew_navy')
-    const byProduct = await getPassportByProduct('prd_uniqlo_merino_crew_navy')
+    const byId = await getPassport('psp_diesel_denim_shoulder_bag')
+    const byProduct = await getPassportByProduct('prd_diesel_denim_shoulder_bag')
     expect(byId).toEqual(byProduct)
     expect(byId?.ownersCount).toBe(2)
   })

@@ -6,74 +6,83 @@ import type { CareInstruction, Passport } from '@/lib/types'
  *
  * They vary along every axis the UI has to survive:
  *
- * - `isVoluntary` false on exactly one (the COS coat — a European brand with a
+ * - `isVoluntary` false on exactly one (the Acne skirt — a European brand with a
  *   real regulatory passport). Every other one is published by choice, and the
  *   UI must say so rather than implying regulatory backing it does not have.
  * - One passport (`nicobar`) carries **no** `impact` block, because there is no
  *   defensible basis for the numbers. The UI must render a passport without it.
- * - One passport (`levis`) carries a **correction**. The original declaration is
+ * - One passport (`levis`) carries **corrections**. The original declaration is
  *   still there, wrong, alongside the fix.
  * - One passport (`nicobar`) has `authentication.method === 'none'`.
  * - Provenance is mixed throughout, including `ai_extracted` and
  *   `self_declared`, so the source badges have something honest to show.
+ *
+ * Denim makes the chain more interesting than a general catalogue would, and
+ * that is a fair reflection of the category: denim is the garment type people
+ * keep longest, repair most and hand on most often. The lifecycle events are the
+ * point rather than a formality.
  */
 
 const REGISTRY = { name: 'EuFSI', url: 'https://registry.eufsi.example/lookup' }
 
-const CARE_COTTON: readonly CareInstruction[] = [
-  { code: 'wash_30', label: 'Machine wash at 30°C', icon: 'wash-30' },
+/** Washed denim. The common case. */
+const CARE_DENIM: readonly CareInstruction[] = [
+  { code: 'wash_30_inside', label: 'Machine wash cold, inside out', icon: 'wash-30' },
   { code: 'no_bleach', label: 'Do not bleach', icon: 'no-bleach' },
-  { code: 'iron_low', label: 'Iron on low heat', icon: 'iron-low' },
   { code: 'no_tumble', label: 'Do not tumble dry', icon: 'no-tumble' },
+  { code: 'iron_medium', label: 'Iron on medium heat', icon: 'iron-medium' },
 ]
 
-const CARE_SILK: readonly CareInstruction[] = [
-  { code: 'dryclean_only', label: 'Dry clean only', icon: 'dryclean' },
+/** Raw, unwashed denim. Different rules, and worth stating properly. */
+const CARE_RAW_DENIM: readonly CareInstruction[] = [
+  { code: 'wash_rarely', label: 'Wash rarely, cold, inside out', icon: 'wash-cold' },
   { code: 'no_bleach', label: 'Do not bleach', icon: 'no-bleach' },
-  { code: 'iron_low', label: 'Iron on low heat, reverse side', icon: 'iron-low' },
+  { code: 'dry_flat', label: 'Hang dry in shade', icon: 'dry-flat' },
+  { code: 'expect_fade', label: 'Indigo will crock and fade with wear', icon: 'fade' },
 ]
 
-const CARE_WOOL: readonly CareInstruction[] = [
-  { code: 'handwash', label: 'Hand wash cold', icon: 'handwash' },
-  { code: 'dry_flat', label: 'Dry flat in shade', icon: 'dry-flat' },
-  { code: 'no_tumble', label: 'Do not tumble dry', icon: 'no-tumble' },
-  { code: 'no_wring', label: 'Do not wring', icon: 'no-wring' },
+/** Denim with hardware — bags, heavily riveted pieces. */
+const CARE_DENIM_HARDWARE: readonly CareInstruction[] = [
+  { code: 'spot_clean', label: 'Spot clean only', icon: 'spot-clean' },
+  { code: 'no_bleach', label: 'Do not bleach', icon: 'no-bleach' },
+  { code: 'no_machine', label: 'Do not machine wash', icon: 'no-machine' },
+  { code: 'keep_dry', label: 'Keep the hardware dry', icon: 'keep-dry' },
 ]
 
 export const passports: readonly Passport[] = [
   // ------------------------------------------------------------------ 1
   {
-    id: 'psp_rawmango_chanderi_kurta',
-    productId: 'prd_rawmango_chanderi_kurta',
-    uniqueProductId: 'https://registry.eufsi.example/dpp/IN-RM-2024-0009812',
-    productNo: 'RM-CH-KRT-IVY-M',
+    id: 'psp_bhaane_trucker_indigo',
+    productId: 'prd_bhaane_trucker_indigo',
+    uniqueProductId: 'https://registry.eufsi.example/dpp/IN-BH-2024-0009812',
+    productNo: 'BH-TRK-OS-IND-M',
     dppVersion: '1.2',
     signedAt: '2026-08-14T06:12:00.000Z',
     issuer: 'Vaapsi',
     registry: REGISTRY,
     lastUpdated: '2026-08-14T06:12:00.000Z',
 
-    placeOfOrigin: sourced('Chanderi, Madhya Pradesh, India', 'supplier'),
+    placeOfOrigin: sourced('Kaithal, Haryana, India', 'supplier'),
     manufacturingCountry: sourced('India', 'supplier'),
-    manufacturer: sourced('Raw Mango — Chanderi weaver cluster', 'supplier'),
+    manufacturer: sourced('Arvind Mills, Ahmedabad', 'supplier'),
 
     materials: [
       {
-        name: sourced('Silk', 'supplier'),
-        percentage: sourced(70, 'supplier'),
+        name: sourced('Organic cotton', 'supplier'),
+        percentage: sourced(98, 'supplier'),
         isRecycled: sourced(false, 'supplier'),
-        provenance: sourced('Karnataka, India', 'supplier'),
+        provenance: sourced('Vidarbha, Maharashtra, India', 'supplier'),
       },
       {
-        name: sourced('Cotton', 'supplier'),
-        percentage: sourced(30, 'supplier'),
+        name: sourced('Elastane', 'supplier'),
+        percentage: sourced(2, 'supplier'),
         isRecycled: sourced(false, 'supplier'),
-        provenance: sourced('Madhya Pradesh, India', 'self_declared'),
+        provenance: sourced(null, 'self_declared'),
       },
     ],
-    careInstructions: CARE_SILK,
+    careInstructions: CARE_RAW_DENIM,
     endOfLife: {
-      recyclerLookupUrl: 'https://vaapsi.example/recycle/silk-cotton',
+      recyclerLookupUrl: 'https://vaapsi.example/recycle/denim',
       collectionPointUrl: 'https://vaapsi.example/collect',
     },
 
@@ -82,10 +91,10 @@ export const passports: readonly Passport[] = [
       declaredBy: 'Vaapsi Studio, New Delhi',
       snapshot: {
         materials: [
-          { name: 'Silk', percentage: 70 },
-          { name: 'Cotton', percentage: 30 },
+          { name: 'Organic cotton', percentage: 98 },
+          { name: 'Elastane', percentage: 2 },
         ],
-        placeOfOrigin: 'Chanderi, Madhya Pradesh, India',
+        placeOfOrigin: 'Kaithal, Haryana, India',
         condition: 'pristine',
       },
     },
@@ -94,18 +103,18 @@ export const passports: readonly Passport[] = [
 
     chain: [
       {
-        id: 'evt_rm_1',
+        id: 'evt_bh_1',
         type: 'made',
         date: '2024-09-02',
-        actor: 'Chanderi weaver cluster, Madhya Pradesh',
-        note: 'Hand-woven on a pit loom. Approximately 11 days on the loom.',
-        verification: sourced('Weaver cooperative production record', 'supplier'),
+        actor: 'Arvind Mills, Ahmedabad',
+        note: 'Woven as selvedge on a shuttle loom. Left raw and unwashed at manufacture.',
+        verification: sourced('Mill production record', 'supplier'),
       },
       {
-        id: 'evt_rm_2',
+        id: 'evt_bh_2',
         type: 'first_sold',
         date: '2024-11-18',
-        actor: 'Raw Mango flagship, New Delhi',
+        actor: 'Bhaane, Khan Market, New Delhi',
         note: null,
         verification: sourced(
           'Original retail invoice supplied by the seller',
@@ -114,19 +123,19 @@ export const passports: readonly Passport[] = [
         ),
       },
       {
-        id: 'evt_rm_3',
+        id: 'evt_bh_3',
         type: 'owned',
         date: '2024-11-18',
         actor: 'First owner, New Delhi',
-        note: 'Never worn. Bought for a wedding that was postponed.',
+        note: 'Never worn. Bought a size down and never got round to exchanging it.',
         verification: sourced('Stated by the owner at intake', 'self_declared'),
       },
       {
-        id: 'evt_rm_4',
+        id: 'evt_bh_4',
         type: 'inspected',
         date: '2026-08-13',
         actor: 'Vaapsi Studio, New Delhi',
-        note: 'Original tag intact at the side seam. No wear anywhere on the garment.',
+        note: 'Tags intact. No fade at the elbows or seat, no crocking on the interior — genuinely unworn.',
         verification: sourced(
           'In-house inspection, two-person sign-off',
           'verified',
@@ -134,7 +143,7 @@ export const passports: readonly Passport[] = [
         ),
       },
       {
-        id: 'evt_rm_5',
+        id: 'evt_bh_5',
         type: 'relisted',
         date: '2026-08-14',
         actor: 'Vaapsi',
@@ -149,10 +158,10 @@ export const passports: readonly Passport[] = [
       verifiedAt: '2026-08-13T11:20:00.000Z',
     },
     impact: {
-      waterLitresSaved: 2_700,
-      co2KgSaved: 6.4,
+      waterLitresSaved: 5_400,
+      co2KgSaved: 14.2,
       basis:
-        'Ellen MacArthur Foundation, A New Textiles Economy (2017) — silk-cotton blend garment baseline, adjusted for Indian production. Compared against manufacturing one new equivalent garment.',
+        'Ellen MacArthur Foundation, A New Textiles Economy (2017) — cotton outerwear baseline, adjusted for Indian production. Compared against manufacturing one new equivalent jacket.',
     },
   },
 
@@ -186,7 +195,7 @@ export const passports: readonly Passport[] = [
         provenance: sourced(null, 'ai_suggested'),
       },
     ],
-    careInstructions: CARE_COTTON,
+    careInstructions: CARE_DENIM,
     endOfLife: {
       recyclerLookupUrl: 'https://vaapsi.example/recycle/denim',
       collectionPointUrl: 'https://vaapsi.example/collect',
@@ -244,7 +253,7 @@ export const passports: readonly Passport[] = [
         type: 'first_sold',
         date: '2021-06-12',
         actor: 'Retailer, Bengaluru',
-        note: 'No invoice. Date is the owner recollection.',
+        note: 'No invoice. The date is the owner recollection.',
         verification: sourced('Stated by the owner at intake', 'self_declared'),
       },
       {
@@ -292,59 +301,52 @@ export const passports: readonly Passport[] = [
 
   // ------------------------------------------------------------------ 3
   {
-    id: 'psp_cos_wool_coat_stone',
-    productId: 'prd_cos_wool_coat_stone',
-    uniqueProductId: 'https://registry.eufsi.example/dpp/SE-COS-2024-0918334',
-    productNo: '1201948001-038',
+    id: 'psp_acne_denim_maxi_skirt',
+    productId: 'prd_acne_denim_maxi_skirt',
+    uniqueProductId: 'https://registry.eufsi.example/dpp/SE-ACN-2024-0918334',
+    productNo: 'AC-DNM-SKT-WSH-38',
     dppVersion: '1.4',
     signedAt: '2024-08-30T00:00:00.000Z',
     // Brand-issued rather than Vaapsi-issued. The storefront must be able to
     // show that the record predates Vaapsi and was not written by us.
-    issuer: 'COS (H&M Group)',
+    issuer: 'Acne Studios',
     registry: REGISTRY,
     lastUpdated: '2026-07-30T09:00:00.000Z',
 
-    placeOfOrigin: sourced('Biella, Piedmont, Italy', 'supplier'),
-    manufacturingCountry: sourced('Portugal', 'supplier'),
-    manufacturer: sourced('Confeccoes do Ave, Guimaraes', 'supplier'),
+    placeOfOrigin: sourced('Okayama, Japan', 'supplier'),
+    manufacturingCountry: sourced('Italy', 'supplier'),
+    manufacturer: sourced('Manifattura Rossi, Vicenza', 'supplier'),
 
     materials: [
       {
-        name: sourced('Virgin wool', 'supplier'),
-        percentage: sourced(62, 'supplier'),
+        name: sourced('Organic cotton', 'supplier'),
+        percentage: sourced(70, 'supplier'),
         isRecycled: sourced(false, 'supplier'),
-        provenance: sourced('Biella, Italy', 'supplier'),
+        provenance: sourced('Okayama, Japan', 'supplier'),
       },
       {
-        name: sourced('Recycled polyester', 'supplier'),
+        name: sourced('Recycled cotton', 'supplier'),
         percentage: sourced(30, 'supplier'),
         isRecycled: sourced(true, 'supplier'),
-        provenance: sourced('Post-consumer PET, Taiwan', 'supplier'),
-      },
-      {
-        name: sourced('Polyamide', 'supplier'),
-        percentage: sourced(8, 'supplier'),
-        isRecycled: sourced(false, 'supplier'),
-        provenance: sourced(null, 'supplier'),
+        provenance: sourced('Post-industrial denim offcuts, Italy', 'supplier'),
       },
     ],
-    careInstructions: CARE_WOOL,
+    careInstructions: CARE_DENIM,
     endOfLife: {
-      recyclerLookupUrl: 'https://registry.eufsi.example/recyclers?material=wool-blend',
+      recyclerLookupUrl: 'https://registry.eufsi.example/recyclers?material=cotton-denim',
       collectionPointUrl: 'https://vaapsi.example/collect',
     },
 
     originalDeclaration: {
       declaredAt: '2024-08-30T00:00:00.000Z',
-      declaredBy: 'COS (H&M Group)',
+      declaredBy: 'Acne Studios',
       snapshot: {
         materials: [
-          { name: 'Virgin wool', percentage: 62 },
-          { name: 'Recycled polyester', percentage: 30 },
-          { name: 'Polyamide', percentage: 8 },
+          { name: 'Organic cotton', percentage: 70 },
+          { name: 'Recycled cotton', percentage: 30 },
         ],
-        manufacturingCountry: 'Portugal',
-        placeOfOrigin: 'Biella, Piedmont, Italy',
+        manufacturingCountry: 'Italy',
+        placeOfOrigin: 'Okayama, Japan',
       },
     },
     corrections: [],
@@ -354,18 +356,18 @@ export const passports: readonly Passport[] = [
 
     chain: [
       {
-        id: 'evt_cos_1',
+        id: 'evt_ac_1',
         type: 'made',
         date: '2024-08-30',
-        actor: 'Confeccoes do Ave, Guimaraes, Portugal',
+        actor: 'Manifattura Rossi, Vicenza, Italy',
         note: null,
         verification: sourced('Brand-issued passport at manufacture', 'supplier'),
       },
       {
-        id: 'evt_cos_2',
+        id: 'evt_ac_2',
         type: 'first_sold',
         date: '2024-11-06',
-        actor: 'COS, Select Citywalk, New Delhi',
+        actor: 'Acne Studios, Palladium, Mumbai',
         note: null,
         verification: sourced(
           'Original retail invoice supplied by the seller',
@@ -374,31 +376,31 @@ export const passports: readonly Passport[] = [
         ),
       },
       {
-        id: 'evt_cos_3',
+        id: 'evt_ac_3',
         type: 'owned',
         date: '2024-11-06',
         actor: 'First owner, Mumbai',
-        note: 'Worn four or five times across one winter.',
+        note: 'Worn four or five times across one summer.',
         verification: sourced('Stated by the owner at intake', 'self_declared'),
       },
       {
-        id: 'evt_cos_4',
+        id: 'evt_ac_4',
         type: 'repaired',
         date: '2026-07-24',
         actor: 'Sunshine Dry Cleaners, Bandra, Mumbai',
-        note: 'Professionally dry-cleaned and pressed. No structural repair needed.',
+        note: 'Professionally cleaned and pressed. No structural repair needed.',
         verification: sourced(
-          'Dry cleaner receipt, photographed at intake',
+          'Cleaner receipt, photographed at intake',
           'verified',
           '2026-07-29T09:34:00.000Z',
         ),
       },
       {
-        id: 'evt_cos_5',
+        id: 'evt_ac_5',
         type: 'inspected',
         date: '2026-07-29',
         actor: 'Vaapsi Studio, New Delhi',
-        note: 'No pilling, no moth damage, belt and all buttons present. Graded excellent.',
+        note: 'Even wash, no rub-through at the seat, zip and button intact. Graded excellent.',
         verification: sourced(
           'In-house inspection, two-person sign-off',
           'verified',
@@ -406,7 +408,7 @@ export const passports: readonly Passport[] = [
         ),
       },
       {
-        id: 'evt_cos_6',
+        id: 'evt_ac_6',
         type: 'relisted',
         date: '2026-07-30',
         actor: 'Vaapsi',
@@ -417,23 +419,23 @@ export const passports: readonly Passport[] = [
     ownersCount: 1,
     authentication: {
       method: 'brand_partner',
-      verifiedBy: 'COS (H&M Group) — passport signature validated against registry',
+      verifiedBy: 'Acne Studios — passport signature validated against registry',
       verifiedAt: '2026-07-29T09:20:00.000Z',
     },
     impact: {
-      waterLitresSaved: 8_400,
-      co2KgSaved: 41.2,
+      waterLitresSaved: 6_800,
+      co2KgSaved: 22.5,
       basis:
-        'Textile Exchange Preferred Fiber & Materials Market Report (2023) — wool-blend outerwear baseline. Compared against manufacturing one new equivalent coat.',
+        'Textile Exchange Preferred Fiber & Materials Market Report (2023) — cotton denim baseline. Compared against manufacturing one new equivalent skirt.',
     },
   },
 
   // ------------------------------------------------------------------ 4
   {
-    id: 'psp_nicobar_poplin_shirtdress',
-    productId: 'prd_nicobar_poplin_shirtdress',
+    id: 'psp_nicobar_chambray_shirtdress',
+    productId: 'prd_nicobar_chambray_shirtdress',
     uniqueProductId: 'https://registry.eufsi.example/dpp/IN-NB-2025-0221765',
-    productNo: 'NB-SD-POP-IND-L',
+    productNo: 'NB-SD-CHM-IND-L',
     dppVersion: '1.2',
     signedAt: '2026-08-21T04:20:00.000Z',
     issuer: 'Vaapsi',
@@ -446,13 +448,13 @@ export const passports: readonly Passport[] = [
 
     materials: [
       {
-        name: sourced('Cotton', 'ai_extracted'),
+        name: sourced('Cotton chambray', 'ai_extracted'),
         percentage: sourced(100, 'ai_extracted'),
         isRecycled: sourced(false, 'ai_extracted'),
         provenance: sourced(null, 'ai_suggested'),
       },
     ],
-    careInstructions: CARE_COTTON,
+    careInstructions: CARE_DENIM,
     endOfLife: {
       recyclerLookupUrl: 'https://vaapsi.example/recycle/cotton',
       collectionPointUrl: null,
@@ -462,7 +464,7 @@ export const passports: readonly Passport[] = [
       declaredAt: '2026-08-21T04:20:00.000Z',
       declaredBy: 'Meher, Bengaluru',
       snapshot: {
-        materials: [{ name: 'Cotton', percentage: 100 }],
+        materials: [{ name: 'Cotton chambray', percentage: 100 }],
         manufacturingCountry: 'India',
         condition: 'very_good',
       },
@@ -476,7 +478,7 @@ export const passports: readonly Passport[] = [
         type: 'first_sold',
         date: '2025-04-19',
         actor: 'Nicobar online',
-        note: 'Order confirmation email supplied. Manufacture date not recorded anywhere on the garment.',
+        note: 'Order confirmation supplied. Manufacture date not recorded anywhere on the garment.',
         verification: sourced('Order confirmation supplied by the seller', 'self_declared'),
       },
       {
@@ -500,37 +502,43 @@ export const passports: readonly Passport[] = [
     // Nobody has authenticated this one. The passport still has value — it has a
     // chain and a composition — but the UI must not imply verification.
     authentication: { method: 'none', verifiedBy: null, verifiedAt: null },
-    // No `impact` block. There is no defensible basis for a cotton shirt dress
-    // of unknown origin, so no number is shown at all.
+    // No `impact` block. There is no defensible basis for a chambray dress of
+    // unknown origin, so no number is shown at all.
   },
 
   // ------------------------------------------------------------------ 5
   {
-    id: 'psp_uniqlo_merino_crew_navy',
-    productId: 'prd_uniqlo_merino_crew_navy',
-    uniqueProductId: 'https://registry.eufsi.example/dpp/JP-UQ-2020-0663201',
-    productNo: '429573-69-002',
+    id: 'psp_diesel_denim_shoulder_bag',
+    productId: 'prd_diesel_denim_shoulder_bag',
+    uniqueProductId: 'https://registry.eufsi.example/dpp/IT-DSL-2019-0663201',
+    productNo: 'X09821-P5473-T6067',
     dppVersion: '1.1',
     signedAt: '2026-05-11T06:50:00.000Z',
     issuer: 'Vaapsi',
     registry: REGISTRY,
     lastUpdated: '2026-05-11T06:50:00.000Z',
 
-    placeOfOrigin: sourced('Inner Mongolia, China', 'ai_suggested'),
+    placeOfOrigin: sourced('Guangdong, China', 'ai_suggested'),
     manufacturingCountry: sourced('China', 'ai_extracted'),
     manufacturer: sourced('Not recorded', 'self_declared'),
 
     materials: [
       {
-        name: sourced('Extra fine merino wool', 'ai_extracted'),
-        percentage: sourced(100, 'ai_extracted'),
+        name: sourced('Cotton denim', 'ai_extracted'),
+        percentage: sourced(88, 'ai_extracted'),
+        isRecycled: sourced(false, 'ai_extracted'),
+        provenance: sourced(null, 'ai_suggested'),
+      },
+      {
+        name: sourced('Cotton lining', 'ai_extracted'),
+        percentage: sourced(12, 'ai_extracted'),
         isRecycled: sourced(false, 'ai_extracted'),
         provenance: sourced(null, 'ai_suggested'),
       },
     ],
-    careInstructions: CARE_WOOL,
+    careInstructions: CARE_DENIM_HARDWARE,
     endOfLife: {
-      recyclerLookupUrl: 'https://vaapsi.example/recycle/wool',
+      recyclerLookupUrl: 'https://vaapsi.example/recycle/denim',
       collectionPointUrl: 'https://vaapsi.example/collect',
     },
 
@@ -538,7 +546,10 @@ export const passports: readonly Passport[] = [
       declaredAt: '2026-05-11T06:50:00.000Z',
       declaredBy: 'Vaapsi Studio, New Delhi',
       snapshot: {
-        materials: [{ name: 'Extra fine merino wool', percentage: 100 }],
+        materials: [
+          { name: 'Cotton denim', percentage: 88 },
+          { name: 'Cotton lining', percentage: 12 },
+        ],
         condition: 'well_loved',
         repairs: 1,
       },
@@ -546,27 +557,27 @@ export const passports: readonly Passport[] = [
     corrections: [],
     isVoluntary: true,
 
-    // The longest chain in the set: two owners, a return, a repair and a
-    // relist. This is the shape that makes a passport worth reading.
+    // The longest chain in the set: two owners, a return, a repair and a relist.
+    // This is the shape that makes a passport worth reading.
     chain: [
       {
-        id: 'evt_uq_1',
+        id: 'evt_dl_1',
         type: 'first_sold',
-        date: '2020-10-30',
-        actor: 'Uniqlo, Ambience Mall, Gurugram',
+        date: '2019-10-30',
+        actor: 'Diesel, DLF Promenade, New Delhi',
         note: null,
         verification: sourced('Stated by the first owner at intake', 'self_declared'),
       },
       {
-        id: 'evt_uq_2',
+        id: 'evt_dl_2',
         type: 'owned',
-        date: '2020-10-30',
+        date: '2019-10-30',
         actor: 'First owner, Gurugram',
-        note: 'Four winters.',
+        note: 'Daily carry for five years.',
         verification: sourced('Stated by the owner at intake', 'self_declared'),
       },
       {
-        id: 'evt_uq_3',
+        id: 'evt_dl_3',
         type: 'returned',
         date: '2025-02-08',
         actor: 'Vaapsi collection, Gurugram',
@@ -574,11 +585,11 @@ export const passports: readonly Passport[] = [
         verification: sourced('Collection record', 'verified', '2025-02-08T00:00:00.000Z'),
       },
       {
-        id: 'evt_uq_4',
+        id: 'evt_dl_4',
         type: 'repaired',
         date: '2025-02-21',
         actor: 'Vaapsi Studio, New Delhi',
-        note: 'Right elbow darned in a close navy wool. Deliberately visible rather than hidden.',
+        note: 'Left strap anchor re-stitched in a matching thread. Deliberately visible rather than hidden.',
         verification: sourced(
           'Repair log, photographed before and after',
           'verified',
@@ -586,15 +597,15 @@ export const passports: readonly Passport[] = [
         ),
       },
       {
-        id: 'evt_uq_5',
+        id: 'evt_dl_5',
         type: 'owned',
         date: '2025-03-14',
         actor: 'Second owner, Pune',
-        note: 'One winter.',
+        note: 'One year.',
         verification: sourced('Platform order record', 'verified', '2025-03-14T00:00:00.000Z'),
       },
       {
-        id: 'evt_uq_6',
+        id: 'evt_dl_6',
         type: 'returned',
         date: '2026-04-28',
         actor: 'Vaapsi collection, Pune',
@@ -602,11 +613,11 @@ export const passports: readonly Passport[] = [
         verification: sourced('Collection record', 'verified', '2026-04-28T00:00:00.000Z'),
       },
       {
-        id: 'evt_uq_7',
+        id: 'evt_dl_7',
         type: 'inspected',
         date: '2026-05-09',
         actor: 'Vaapsi Studio, New Delhi',
-        note: 'Mend sound. Light pilling under both arms. Graded well loved and priced for it.',
+        note: 'Repair sound. Denim rubbed pale along the base edge. Graded well loved and priced for it.',
         verification: sourced(
           'In-house inspection, two-person sign-off',
           'verified',
@@ -614,7 +625,7 @@ export const passports: readonly Passport[] = [
         ),
       },
       {
-        id: 'evt_uq_8',
+        id: 'evt_dl_8',
         type: 'relisted',
         date: '2026-05-11',
         actor: 'Vaapsi',
@@ -629,10 +640,10 @@ export const passports: readonly Passport[] = [
       verifiedAt: '2026-05-09T00:00:00.000Z',
     },
     impact: {
-      waterLitresSaved: 1_950,
-      co2KgSaved: 12.8,
+      waterLitresSaved: 2_400,
+      co2KgSaved: 9.6,
       basis:
-        'International Wool Textile Organisation LCA guidance (2022) — fine merino knitwear baseline, plus one repair avoided replacement. Compared against manufacturing one new equivalent sweater.',
+        'Textile Exchange Preferred Fiber & Materials Market Report (2023) — cotton denim accessory baseline, plus one repair avoiding replacement. Compared against manufacturing one new equivalent bag.',
     },
   },
 ]

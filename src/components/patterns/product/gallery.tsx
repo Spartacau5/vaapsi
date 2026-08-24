@@ -1,38 +1,49 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Row } from '@/components/primitives/layout'
+import { Heart } from 'lucide-react'
 import { Type } from '@/components/primitives/type'
+import { useWishlistStore } from '@/lib/store/wishlist'
 import type { ProductImage } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 /**
- * Product gallery.
+ * The product gallery, as a full-bleed column beside the detail panel.
  *
- * Desktop: a two-up grid with the primary image spanning both columns. No
- * lightbox, no thumbnail strip, no zoom-on-hover — on resale the photographs
- * *are* the product description, and making a shopper click through them one at
- * a time to check for flaws is hostile. But a single stacked column of five 3:4
- * images put the condition block five screens down, and that block is what
- * decides the purchase.
+ * Modelled on the reference the client sent, and the structure is the whole
+ * idea: the photograph occupies its own half of the viewport edge-to-edge with
+ * no gutter and no container, and the buying decision sits in the other half
+ * where it does not move.
  *
- * Mobile: a swipeable, snapping track with a position indicator. Native scroll
- * again rather than a carousel library, so momentum, rubber-banding and the
- * scrollbar all behave the way the platform does.
+ * **One frame per viewport, scrolled.** That is more scrolling through images
+ * than a grid, and it is the right trade here — the specification that used to
+ * sit under the buy button has moved into drawers, so the page below the fold is
+ * now short. A shopper who wants the pictures scrolls the pictures; a shopper who
+ * wants to buy never leaves the first screen.
  *
- * Image order is set by the caller and is deliberate: primary → worn → detail →
- * flaw → label. Worn comes second because "what does it look like on a person"
- * is the first question; flaws come before the label because someone scrolling
- * to the end should hit the honest part, not the paperwork.
+ * Mobile keeps a horizontal swipe, because a full-height vertical stack on a
+ * phone means eight screens to get past the images.
+ *
+ * The dot rail and the wishlist heart sit on the photograph, both from the
+ * reference. The dots are the house mark again — filled for the current frame.
  */
-export function Gallery({ images, sold }: { images: readonly ProductImage[]; sold: boolean }) {
+export function Gallery({
+  images,
+  sold,
+  productId,
+}: {
+  images: readonly ProductImage[]
+  sold: boolean
+  productId: string
+}) {
   const [index, setIndex] = useState(0)
   const trackRef = useRef<HTMLUListElement>(null)
 
   if (images.length === 0) return null
 
-  const onScroll = () => {
+  /** Mobile: which frame is snapped. */
+  const onTrackScroll = () => {
     const track = trackRef.current
     if (track === null) return
     const width = track.clientWidth
@@ -41,18 +52,20 @@ export function Gallery({ images, sold }: { images: readonly ProductImage[]; sol
   }
 
   return (
-    <>
-      {/* ---- Mobile and tablet: swipeable */}
+    <div className="relative bg-surface">
+      <WishlistButton productId={productId} />
+
+      {/* ---- Mobile and tablet: horizontal swipe */}
       <div className="desktop:hidden">
         <ul
           ref={trackRef}
-          onScroll={onScroll}
+          onScroll={onTrackScroll}
           className="flex snap-x snap-mandatory overflow-x-auto"
           aria-label="Product photographs"
         >
           {images.map((image, position) => (
             <li key={image.id} className="w-full shrink-0 snap-start">
-              <div className="relative aspect-[3/4] bg-surface">
+              <div className="relative aspect-[4/5] bg-surface">
                 <Image
                   src={image.url}
                   alt={image.alt}
@@ -65,79 +78,144 @@ export function Gallery({ images, sold }: { images: readonly ProductImage[]; sol
             </li>
           ))}
         </ul>
-
-        {/* Position indicator. Dots, in the house mark. */}
-        <Row gap={2} justify="center" className="pt-3">
-          {images.map((image, position) => (
-            <span
-              key={image.id}
-              aria-hidden
-              className={cn(
-                'ease size-1.5 rounded-full transition-colors duration-fast',
-                position === index ? 'bg-accent' : 'bg-line-strong',
-              )}
-            />
-          ))}
-          <Type as="span" size="xs" tone="subtle" numeric className="sr-only">
-            {index + 1} of {images.length}
-          </Type>
-        </Row>
+        <DotRail count={images.length} active={index} orientation="horizontal" className="py-3" />
       </div>
 
-      {/* ---- Desktop: two-up grid */}
-      {/*
-        Two across, not one. A single column of five 3:4 images is roughly five
-        viewport heights before a shopper reaches the condition block — and the
-        condition block is the thing that decides the purchase. Pairing them
-        halves that without losing any detail: at half-column width on a 1440
-        screen each image is still ~430px wide, which is more than enough to
-        read a fabric or spot a mark, and clicking through to a lightbox for more
-        is a choice the shopper can make.
+      {/* ---- Desktop: one frame per viewport, scrolled */}
+      <DesktopFrames images={images} sold={sold} onActiveChange={setIndex} />
+      <DotRail
+        count={images.length}
+        active={index}
+        orientation="vertical"
+        className="pointer-events-none absolute bottom-8 left-6 hidden desktop:flex"
+      />
+    </div>
+  )
+}
 
-        The primary image spans both columns. It is the establishing shot and it
-        earns the width; everything after it is supporting detail and does not.
-      */}
-      <ul className="hidden gap-2 desktop:grid desktop:grid-cols-2">
-        {images.map((image, position) => (
-          <li key={image.id} className={position === 0 ? 'desktop:col-span-2' : undefined}>
-            <figure>
-              <div
-                className={cn(
-                  'relative bg-surface',
-                  // The lead image is wider, so a 4:5 crop keeps it from being
-                  // absurdly tall at full column width.
-                  position === 0 ? 'aspect-[4/5]' : 'aspect-[3/4]',
-                )}
-              >
-                <Image
-                  src={image.url}
-                  alt={image.alt}
-                  fill
-                  sizes={
-                    position === 0
-                      ? '(min-width: 1024px) 55vw, 100vw'
-                      : '(min-width: 1024px) 28vw, 50vw'
-                  }
-                  priority={position === 0}
-                  className={cn('object-cover', sold && 'saturate-0')}
-                />
-              </div>
-              {/*
-                Flaw photographs are captioned. Every other kind is not — a
-                caption on a styling shot is noise, but an unlabelled close-up of
-                a mark leaves a shopper guessing whether it is damage or texture.
-              */}
-              {image.kind === 'flaw' && (
-                <figcaption className="pt-2">
-                  <Type size="xs" tone="subtle">
-                    {image.alt}
-                  </Type>
-                </figcaption>
-              )}
-            </figure>
-          </li>
-        ))}
-      </ul>
-    </>
+/**
+ * The desktop stack. Each frame fills the viewport height, and an
+ * IntersectionObserver reports which one is centred so the dot rail can track
+ * it — cheaper and smoother than a scroll handler doing arithmetic every frame.
+ */
+function DesktopFrames({
+  images,
+  sold,
+  onActiveChange,
+}: {
+  images: readonly ProductImage[]
+  sold: boolean
+  onActiveChange: (index: number) => void
+}) {
+  const listRef = useRef<HTMLUListElement>(null)
+
+  useEffect(() => {
+    const list = listRef.current
+    if (list === null) return
+    // Absent in jsdom and in older webviews. Without it the dots simply stay on
+    // the first frame, which is a degraded indicator rather than a broken page.
+    if (typeof IntersectionObserver !== 'function') return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          const position = Number((entry.target as HTMLElement).dataset.position)
+          if (Number.isFinite(position)) onActiveChange(position)
+        }
+      },
+      // A band through the middle of the viewport, so the active frame is the
+      // one being looked at rather than whichever is topmost.
+      { rootMargin: '-45% 0px -45% 0px', threshold: 0 },
+    )
+
+    for (const item of Array.from(list.children)) observer.observe(item)
+    return () => observer.disconnect()
+  }, [images, onActiveChange])
+
+  return (
+    <ul ref={listRef} className="hidden desktop:block">
+      {images.map((image, position) => (
+        <li key={image.id} data-position={position} className="relative h-svh min-h-[40rem]">
+          <figure className="h-full">
+            <Image
+              src={image.url}
+              alt={image.alt}
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              priority={position === 0}
+              className={cn('object-cover', sold && 'saturate-0')}
+            />
+            {/*
+              Flaw frames are captioned, and only flaw frames. A caption on a
+              styling shot is noise; an unlabelled close-up of a mark leaves a
+              shopper guessing whether it is damage or texture.
+            */}
+            {image.kind === 'flaw' && (
+              <figcaption className="absolute inset-x-0 bottom-0 bg-background/85 px-6 py-3">
+                <Type size="xs" tone="muted">
+                  {image.alt}
+                </Type>
+              </figcaption>
+            )}
+          </figure>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function DotRail({
+  count,
+  active,
+  orientation,
+  className,
+}: {
+  count: number
+  active: number
+  orientation: 'horizontal' | 'vertical'
+  className?: string
+}) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        'flex items-center justify-center gap-1.5',
+        orientation === 'vertical' && 'flex-col',
+        className,
+      )}
+    >
+      {Array.from({ length: count }, (_, position) => (
+        <span
+          key={position}
+          className={cn(
+            'ease size-1.5 rounded-full transition-colors duration-fast',
+            position === active ? 'bg-ink' : 'bg-ink/25',
+          )}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** Wishlist heart, top-right of the photograph. */
+function WishlistButton({ productId }: { productId: string }) {
+  const saved = useWishlistStore((state) => state.items.includes(productId))
+  const toggle = useWishlistStore((state) => state.toggle)
+
+  return (
+    <button
+      type="button"
+      onClick={() => toggle(productId)}
+      aria-pressed={saved}
+      className="absolute right-4 top-4 z-10 p-2 text-ink transition-colors hover:text-accent desktop:right-6 desktop:top-6"
+    >
+      <span className="sr-only">{saved ? 'Remove from wishlist' : 'Save to wishlist'}</span>
+      <Heart
+        className={cn('size-5', saved && 'fill-accent text-accent')}
+        strokeWidth={1.5}
+        aria-hidden
+      />
+    </button>
   )
 }

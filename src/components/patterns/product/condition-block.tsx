@@ -26,69 +26,84 @@ import type { Product } from '@/lib/types'
  * When there are no flaws, that is stated explicitly rather than by omission.
  * An empty section reads as "not filled in".
  */
-export function ConditionBlock({ product }: { product: Product }) {
+export function ConditionBlock({
+  product,
+  headless = false,
+}: {
+  product: Product
+  /**
+   * Skip the eyebrow and heading, for a caller that already renders them —
+   * the PDP wraps this in a `Section` which owns the heading and its landmark.
+   * Two headings for one block would break the level sequence.
+   */
+  headless?: boolean
+}) {
   const condition = conditionCopy[product.condition]
 
-  return (
-    <section aria-labelledby="condition-heading">
-      <Stack gap={6}>
-        <Stack gap={2}>
-          <Eyebrow>{productPage.sections.condition}</Eyebrow>
-          <Type as="h2" id="condition-heading" family="display" size="2xl" weight="heading">
-            {condition.label}
-          </Type>
-          <Type size="base" tone="muted" measure="default">
-            {condition.definition}
-          </Type>
-        </Stack>
-
-        {product.conditionNotes !== '' && (
-          <Type size="base" measure="default" className="border-l border-line-strong pl-4">
-            {product.conditionNotes}
-          </Type>
-        )}
-
-        <div className="border-t border-line pt-6">
-          <Eyebrow as="h3">{productPage.sections.flaws}</Eyebrow>
-
-          {product.flaws.length === 0 ? (
-            <Type size="sm" tone="muted" className="pt-3">
-              No flaws found at inspection. Nothing to disclose.
+  const body = (
+    <Stack gap={6}>
+      <Stack gap={2}>
+        {!headless && (
+          <>
+            <Eyebrow>{productPage.sections.condition}</Eyebrow>
+            <Type as="h2" id="condition-heading" family="display" size="2xl" weight="heading">
+              {condition.label}
             </Type>
-          ) : (
-            <ul className="divide-y divide-line pt-3">
-              {product.flaws.map((flaw, index) => {
-                const image = product.images.find((candidate) => candidate.id === flaw.imageId)
-                return (
-                  <li key={`${flaw.location}-${index}`} className="py-5 first:pt-0">
-                    <Row gap={4} align="start" wrap={false}>
-                      {image !== undefined && (
-                        <div className="relative size-20 shrink-0 overflow-hidden bg-surface tablet:size-24">
-                          <Image
-                            src={image.url}
-                            alt={image.alt}
-                            fill
-                            sizes="96px"
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
-                      <Stack gap={1} className="min-w-0">
-                        <Type as="p" size="sm" weight="emphasis">
-                          {flaw.location}
-                        </Type>
-                        <Type size="sm" tone="muted" measure="narrow">
-                          {flaw.description}
-                        </Type>
-                      </Stack>
-                    </Row>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </div>
+          </>
+        )}
+        <Type size="base" tone="muted" measure="default">
+          {condition.definition}
+        </Type>
       </Stack>
-    </section>
+
+      {product.conditionNotes !== '' && (
+        <Type size="base" measure="default" className="border-l border-line-strong pl-4">
+          {product.conditionNotes}
+        </Type>
+      )}
+
+      <div className="border-t border-line pt-6">
+        <Eyebrow as="h3">{productPage.sections.flaws}</Eyebrow>
+
+        {product.flaws.length === 0 ? (
+          <Type size="sm" tone="muted" className="pt-3">
+            No flaws found at inspection. Nothing to disclose.
+          </Type>
+        ) : (
+          <ul className="divide-y divide-line pt-3">
+            {product.flaws.map((flaw, index) => {
+              const image = product.images.find((candidate) => candidate.id === flaw.imageId)
+              return (
+                <li key={`${flaw.location}-${index}`} className="py-5 first:pt-0">
+                  <Row gap={4} align="start" wrap={false}>
+                    {image !== undefined && (
+                      <div className="relative size-20 shrink-0 overflow-hidden bg-surface tablet:size-24">
+                        <Image
+                          src={image.url}
+                          alt={image.alt}
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <Stack gap={1} className="min-w-0">
+                      <Type as="p" size="sm" weight="emphasis">
+                        {flaw.location}
+                      </Type>
+                      <Type size="sm" tone="muted" measure="narrow">
+                        {flaw.description}
+                      </Type>
+                    </Stack>
+                  </Row>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+    </Stack>
   )
+
+  return headless ? body : <section aria-labelledby="condition-heading">{body}</section>
 }

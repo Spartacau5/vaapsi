@@ -1,25 +1,31 @@
 import type { ProductImage } from '@/lib/types'
 
 /**
- * Gallery order: primary → worn → detail → flaw → label.
+ * Gallery order.
  *
- * `worn` comes second because "what does it look like on a person" is the first
- * question a shopper has. `flaw` comes before `label` because someone scrolling
- * to the end of the gallery should reach the honest part, not the paperwork.
+ * **The authored order wins.** `Product.images` is documented as ordered in the
+ * data contract, and the fixtures now carry a deliberate six-frame sequence —
+ * garment alone, worn front, worn close-up, construction crop, worn back, label
+ * macro, with flaw frames inserted where a shopper is already looking closely.
  *
- * Lives here rather than beside the Gallery component on purpose: Gallery is a
+ * This used to re-sort by `kind`, which quietly destroyed that: sorting groups
+ * both full-length model shots together, so the back view landed immediately
+ * after the front and the construction details moved to the end. The sequence a
+ * stylist composed is information, and the front end should not second-guess it.
+ *
+ * The one thing enforced here is that the `primary` frame leads. It is the card
+ * image and the Open Graph image, and a gallery opening on a hardware macro
+ * because someone added an image at the top of the array is a bug worth
+ * preventing cheaply.
+ *
+ * Lives here rather than beside the Gallery component because Gallery is a
  * client component, and a plain function exported from a `'use client'` module
  * arrives in a server component as a client *reference*, not as the function.
- * Calling it then fails at runtime with nothing useful in the message.
  */
-const ORDER: Record<ProductImage['kind'], number> = {
-  primary: 0,
-  worn: 1,
-  detail: 2,
-  flaw: 3,
-  label: 4,
-}
-
 export function orderGalleryImages(images: readonly ProductImage[]): readonly ProductImage[] {
-  return [...images].sort((a, b) => ORDER[a.kind] - ORDER[b.kind])
+  const primaryIndex = images.findIndex((image) => image.kind === 'primary')
+  if (primaryIndex <= 0) return images
+  const primary = images[primaryIndex]
+  if (primary === undefined) return images
+  return [primary, ...images.filter((_, index) => index !== primaryIndex)]
 }
