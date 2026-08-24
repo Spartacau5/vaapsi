@@ -3,19 +3,40 @@ import { cn } from '@/lib/utils'
 /**
  * The wordmark.
  *
- * Drawn as inline SVG rather than set in a webfont, for two reasons: it must not
- * shift or reflow while a font loads, and it must not change shape when the
- * client switches font preset in the Phase 8 panel. A logo that re-renders in
- * Bodoni is not a logo.
+ * Set as live text in Playfair Display, with the accent dot placed as the
+ * tittle of the final letter.
  *
- * The letterforms use `currentColor` so the mark inverts with the theme for
- * free. The dot over the "i" is pinned to `var(--accent)` and is the only part
- * that does not invert — it is the same red on white and on near-black, because
- * it is the one fixed point in the whole colour system.
+ * ## How the dot works
  *
- * Paths are geometric-sans letterforms hand-placed on a 24px baseline grid, in
- * the register of the Modernist preset. **Replace with the real vector when
- * brand assets arrive from Kanu** — this is a faithful stand-in, not the asset.
+ * The final letter is a **dotless i** (U+0131), not a normal one, and our dot
+ * sits above it. That is the typographically correct way to do this: the
+ * alternative is drawing a red circle on top of the tittle the font already
+ * draws, which means matching its exact position and hoping the two never
+ * disagree. With a dotless letter there is nothing underneath to cover.
+ *
+ * Verified against the built CSS: Playfair's `latin` font-face declares
+ * `unicode-range: u+00??, u+0131, …`, so the glyph is present. `theme/fonts.ts`
+ * also requests `latin-ext` as insurance. If a future typeface lacks U+0131 this
+ * renders a missing-glyph box, so check that before swapping the face.
+ *
+ * Size and rise of the dot are tokens (`--wordmark-dot-size`,
+ * `--wordmark-dot-rise`) in `em`, so it scales with the wordmark at any size and
+ * can be retuned for a different typeface without touching this file.
+ *
+ * ## Why it is locked to one face
+ *
+ * The wordmark reads `--font-wordmark`, never `--font-display`. A logo that
+ * changes typeface when someone tries a font preset in the studio panel is not a
+ * logo — and it also means the hand-tuned dot position stays valid, because the
+ * letterforms underneath never change.
+ *
+ * ## The trade against the previous version
+ *
+ * This was inline SVG until now, which could not shift while a font loaded.
+ * Live text can, briefly. That is the cost of setting the mark in a real
+ * typeface rather than in traced outlines; `display: swap` and the fallback
+ * serif keep it to a reflow rather than a blank. **Replace with the real vector
+ * when brand assets arrive** — at which point the flash goes away too.
  */
 
 export type LogoProps = {
@@ -26,50 +47,61 @@ export type LogoProps = {
   decorative?: boolean
 }
 
+/** Dotless i, U+0131. The dot above it is ours. */
+const DOTLESS_I = 'ı'
+
 export function Logo({ variant = 'word', className, decorative = false }: LogoProps) {
   const a11y = decorative
     ? ({ 'aria-hidden': true } as const)
     : ({ role: 'img', 'aria-label': 'Vaapsi' } as const)
 
-  if (variant === 'mark') {
-    return (
-      <svg viewBox="0 0 12 24" className={cn('h-6 w-auto', className)} fill="none" {...a11y}>
-        {/* The stem of the i. */}
-        <rect x="4.4" y="9" width="3.2" height="11" fill="currentColor" />
-        {/* The dot. The entire colour story. */}
-        <circle cx="6" cy="5.4" r="2.6" fill="var(--dot-fill, hsl(var(--accent)))" />
-      </svg>
-    )
-  }
-
   return (
-    <svg viewBox="0 0 108 24" className={cn('h-5 w-auto', className)} fill="none" {...a11y}>
-      <g fill="currentColor">
-        {/* v */}
-        <path d="M0 9h3.5l3.4 8.1L10.3 9h3.5L8.6 20H5.2z" />
-        {/* a */}
-        <path d="M20.4 8.7c3.3 0 5.3 1.7 5.3 4.7V20h-3.2v-1.4c-.8 1.1-2.1 1.6-3.7 1.6-2.4 0-4-1.3-4-3.4 0-2.2 1.7-3.4 4.7-3.4h2.9v-.5c0-1.3-.8-2-2.3-2-1.2 0-2.2.5-2.9 1.3l-1.9-1.9c1.2-1.1 2.9-1.6 5.1-1.6zm-.9 8.9c1.5 0 2.5-.8 2.9-1.9v-.9h-2.6c-1.4 0-2.1.5-2.1 1.4 0 .9.7 1.4 1.8 1.4z" />
-        {/* a */}
-        <path d="M35.2 8.7c3.3 0 5.3 1.7 5.3 4.7V20h-3.2v-1.4c-.8 1.1-2.1 1.6-3.7 1.6-2.4 0-4-1.3-4-3.4 0-2.2 1.7-3.4 4.7-3.4h2.9v-.5c0-1.3-.8-2-2.3-2-1.2 0-2.2.5-2.9 1.3l-1.9-1.9c1.2-1.1 2.9-1.6 5.1-1.6zm-.9 8.9c1.5 0 2.5-.8 2.9-1.9v-.9h-2.6c-1.4 0-2.1.5-2.1 1.4 0 .9.7 1.4 1.8 1.4z" />
-        {/* p — descender breaks the baseline, which is the wordmark's one gesture */}
-        <path d="M45 9h3.3v1.5c.9-1.2 2.2-1.8 3.9-1.8 3.2 0 5.4 2.4 5.4 5.8s-2.2 5.8-5.4 5.8c-1.6 0-2.9-.6-3.8-1.7V24H45zm3.3 5.5c0 1.9 1.2 3.1 2.9 3.1s2.9-1.2 2.9-3.1-1.2-3.1-2.9-3.1-2.9 1.2-2.9 3.1z" />
-        {/* s */}
-        <path d="M66.4 8.7c2.1 0 3.8.7 4.9 1.9l-1.9 2c-.8-.8-1.8-1.3-3-1.3-1 0-1.7.4-1.7 1 0 .6.5.9 1.9 1.2l1.3.3c2.6.6 3.8 1.6 3.8 3.4 0 2.2-2 3.6-5.1 3.6-2.4 0-4.3-.8-5.5-2.2l2-1.9c.9 1 2.1 1.5 3.5 1.5 1.2 0 1.9-.4 1.9-1.1 0-.6-.5-.9-2-1.2l-1.2-.3c-2.5-.6-3.7-1.6-3.7-3.4 0-2.1 1.9-3.5 4.8-3.5z" />
-        {/* i — stem */}
-        <rect x="78.6" y="9" width="3.3" height="11" />
-      </g>
-      {/* The dot over the i. Pinned to the accent — the one fixed point. */}
-      <circle cx="80.25" cy="5.4" r="2.6" fill="var(--dot-fill, hsl(var(--accent)))" />
-    </svg>
+    <span
+      {...a11y}
+      className={cn(
+        'inline-block select-none font-wordmark leading-none text-ink',
+        variant === 'word' ? 'text-xl' : 'text-lg',
+        className,
+      )}
+    >
+      {/*
+        The letters before the i carry no colour of their own — they inherit,
+        so the mark inverts with the theme for free.
+      */}
+      {variant === 'word' && <span aria-hidden>Vaaps</span>}
+      <DottedI />
+    </span>
+  )
+}
+
+/**
+ * The dotless letter plus the accent dot. The one fixed point in the whole
+ * colour system: this red does not change with the theme, because it is the
+ * verification mark everywhere else on the site.
+ */
+function DottedI() {
+  return (
+    <span aria-hidden className="relative inline-block">
+      {DOTLESS_I}
+      <span
+        className="absolute left-1/2 -translate-x-1/2 rounded-full bg-accent"
+        style={{
+          width: 'var(--wordmark-dot-size)',
+          height: 'var(--wordmark-dot-size)',
+          bottom: 'var(--wordmark-dot-rise)',
+        }}
+      />
+    </span>
   )
 }
 
 /**
  * The accent dot on its own, at text scale.
  *
- * Reused as the active-nav marker, the passport indicator on a product card,
- * and the loading indicator. Same shape, same colour, three jobs — which is the
- * brand logic showing up in the interface rather than being described in a deck.
+ * Reused as the active-nav marker, the passport indicator on a product card, the
+ * cart badge and the loading indicator. Same shape, same colour, five jobs —
+ * which is the brand logic showing up in the interface rather than being
+ * described in a deck.
  */
 export function Dot({
   size = 'default',

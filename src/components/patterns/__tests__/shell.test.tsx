@@ -78,23 +78,46 @@ describe('Logo', () => {
     unmount()
 
     const { container } = render(<Logo decorative />)
-    expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.queryByRole('img')).toBeNull()
   })
 
-  it('draws letterforms in currentColor so the mark inverts with the theme', () => {
+  it('reads Vaapsi, with a dotless final letter', () => {
     const { container } = render(<Logo />)
-    expect(container.querySelector('g')).toHaveAttribute('fill', 'currentColor')
+    // The final letter is U+0131 so our dot can be its tittle rather than
+    // covering the one the typeface already draws.
+    expect(container.textContent).toBe('Vaapsı')
+    expect(container.textContent).not.toContain('i')
   })
 
-  it('pins the dot to the accent token, not to currentColor', () => {
+  it('is locked to the wordmark face, not the theme display slot', () => {
+    // A logo that changes typeface when someone tries a font preset in the
+    // studio panel is not a logo.
     const { container } = render(<Logo />)
-    const dot = container.querySelector('circle')
-    expect(dot?.getAttribute('fill')).toContain('--accent')
+    const className = container.firstElementChild?.className ?? ''
+    expect(className).toContain('font-wordmark')
+    expect(className).not.toContain('font-display')
+  })
+
+  it('inherits ink for the letterforms, so the mark inverts with the theme', () => {
+    const { container } = render(<Logo />)
+    expect(container.firstElementChild?.className).toContain('text-ink')
+  })
+
+  it('pins the dot to the accent, and sizes it from tokens', () => {
+    const { container } = render(<Logo />)
+    const dot = container.querySelector('.bg-accent') as HTMLElement | null
+    expect(dot).not.toBeNull()
+    // Geometry in em from tokens, so the dot scales with the wordmark and can be
+    // retuned for a different typeface without editing the component.
+    expect(dot?.style.width).toContain('--wordmark-dot-size')
+    expect(dot?.style.bottom).toContain('--wordmark-dot-rise')
   })
 
   it('has a mark-only variant carrying the same dot', () => {
     const { container } = render(<Logo variant="mark" />)
-    expect(container.querySelector('circle')?.getAttribute('fill')).toContain('--accent')
+    expect(container.textContent).toBe('ı')
+    expect(container.querySelector('.bg-accent')).not.toBeNull()
   })
 })
 
