@@ -183,7 +183,7 @@
 :root {
   --font-wordmark: var(--font-playfair), ui-serif, Georgia, serif;
   --wordmark-dot-size: 0.15em;
-  --wordmark-dot-rise: 0.72em;
+  --wordmark-dot-rise: 0.8em;
 }
 
 /* ---- font pairing presets ------------------------------------------------ */
