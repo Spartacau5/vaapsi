@@ -335,3 +335,90 @@ frame we want, not the placeholder currently there — and `SHOT_LIST` in
 `fixtures/products.ts` exports the brief so it can be handed over without
 reading TypeScript. The placeholder pixels remain unrelated to denim; that is
 PRD open question #10.
+
+---
+
+## 21. The density pass on the passport and condition block
+
+The page below the photographs ran to roughly four screens. The cause was not
+verbosity so much as **duplication**: `conditionNotes`, `materials` and
+`careInstructions` were each rendered in two places, so three facts were printed
+twice.
+
+### One home each
+
+| Fact              | Was                              | Now                |
+| ----------------- | -------------------------------- | ------------------ |
+| Inspector's prose | Condition block _and_ the drawer | Condition block    |
+| Composition       | Passport story _and_ the drawer  | Drawer, as a ring  |
+| Care              | Passport story _and_ the drawer  | Drawer, as symbols |
+| Origin            | Passport story                   | Drawer             |
+
+The dividing line is **decide versus consult**. Condition and the journey are
+what a shopper decides on, so they stay on the page. Specification is reference
+material, so it lives behind a click. A test asserts the drawer no longer repeats
+the inspector's prose.
+
+### The visual pieces, and why each one
+
+- **Composition as a ring** (`data/material-ring.tsx`). A donut is right for
+  parts-of-a-whole, but it lies badly on this data: compositions are often 100%
+  one fibre (a ring saying nothing) or 99/1 (a 3.6° slice, invisible). So a
+  single fibre puts its figure in the centre, and shares under 4% are widened to
+  stay visible **with the chart saying so** — the legend carries the exact
+  number. A chart that silently renders 1% as 4% is worse than a table. Recycled
+  content is a **hatch pattern**, not a colour, for the same reason the
+  provenance marks are encoded by fill.
+- **Care as symbols** (`data/care-symbol.tsx`). This was five _empty bordered
+  boxes_ beside five lines of text — a placeholder where an icon should be,
+  reading as a broken image. Now GINETEX-style glyphs, matched by code prefix so
+  unseen variants degrade to a neutral mark rather than a blank. **The labels
+  stay**: an unlabelled care symbol is unreadable to most people, which is a
+  large part of why garments get ruined. The glyph buys the scan, the text keeps
+  the meaning, and the saving is the vertical stack.
+- **Condition as a meter** (`data/condition-meter.tsx`). Five discrete segments,
+  not a progress bar and not a score out of five — a continuous bar implies a
+  measurement, and this is a judgement made by a person holding the garment. The
+  ends are labelled so the direction cannot be misread.
+- **Chips** (`primitives/chip.tsx`). Owners, repairs, returns, authentication
+  method, voluntary status, brand, size, product code. Each is a single
+  attribute. A sentence costs a line, a chip costs a corner, and a row of chips
+  can be scanned in one pass.
+- **Impact keeps its source, loses its paragraph** (`data/stat.tsx`). The study
+  and year stay on the face of it; the full methodology is one click away. The
+  rule holds — no number without a stated source — and the proportion is fixed.
+
+### The journey line
+
+Each event rendered five stacked lines, the fifth an italic sentence saying how
+we knew. On an eight-event chain that is forty lines, and the repetition was
+worst on exactly the field carrying the honesty: _Stated by the owner at intake_
+appeared three times on one passport, which trains the eye to skip it.
+
+Now: label, date, actor, plus the note when there is one. Confidence is carried
+by the **provenance mark on the rail**, already labelled for assistive tech. The
+verification sentences are collected once beneath the line, in a disclosure —
+said properly in one place instead of badly in eight.
+
+### The two-sided flip is gone
+
+The passport was a document that turned over, story and record as two equal
+sides. They are not equal. The story is narrative and gets read; the record is
+clerical and gets _checked_, occasionally. Equal billing meant half the passport
+was always the wrong half, and the control asked every reader to make a choice
+they had no basis for.
+
+Story on the page, record behind a drawer — the same decide/consult distinction
+the Product details drawer makes. **The standalone `/passport/[id]` route renders
+both inline**, because that is what a printed QR resolves to and a record with
+half of it behind a button would be a broken artefact. It also means print no
+longer needs the `print:block` overrides the flip required.
+
+### Two regressions the tests caught during this pass
+
+1. **The composition-shortfall notice was lost** when materials moved to the
+   drawer. It matters more in a ring than it did in a list, because a ring
+   _always closes_ and would hide a 97% total perfectly. Restored in
+   `MaterialRing`.
+2. **"Came back" was doing double duty** — a count chip and a timeline event
+   label, on the same page, meaning different things. The chip is now "Returns".

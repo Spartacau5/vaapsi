@@ -84,10 +84,85 @@ describe('ProductDrawers', () => {
     const panel = screen.getByRole('dialog', { name: drawers.details.heading })
 
     expect(within(panel).getByText(drawers.details.sections.measurements)).toBeInTheDocument()
-    expect(within(panel).getByText('78 cm')).toBeInTheDocument()
+    // The unit moved to the section header, so nine measurements are nine
+    // numbers in two columns rather than nine "n cm" strings in one.
+    expect(within(panel).getByText('centimetres, taken flat')).toBeInTheDocument()
+    expect(within(panel).getByText('78')).toBeInTheDocument()
     expect(within(panel).getByText(withPassport.sku)).toBeInTheDocument()
     expect(within(panel).getByText('Cotton')).toBeInTheDocument()
     expect(within(panel).getByText('99%')).toBeInTheDocument()
+  })
+
+  it('draws the composition as a ring, and keeps the exact percentages readable', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <ProductDrawers product={withPassport} passport={passport} seller={seller} />,
+    )
+    await user.click(screen.getByRole('button', { name: drawers.details.trigger }))
+    const panel = screen.getByRole('dialog', { name: drawers.details.heading })
+
+    expect(panel.querySelector('svg circle')).not.toBeNull()
+    // A 1% slice is 3.6 degrees and invisible, so it is widened to stay visible
+    // and the chart says so. The legend carries the real number.
+    expect(within(panel).getByText('1%')).toBeInTheDocument()
+    expect(within(panel).getByText(/Smallest shares widened/)).toBeInTheDocument()
+    void container
+  })
+
+  it('states a composition that does not add up to 100', async () => {
+    const user = userEvent.setup()
+    const short = {
+      ...passport,
+      materials: [
+        {
+          ...passport.materials[0]!,
+          percentage: { value: 97, provenance: 'self_declared' as const },
+        },
+      ],
+    }
+    render(<ProductDrawers product={withPassport} passport={short} seller={seller} />)
+    await user.click(screen.getByRole('button', { name: drawers.details.trigger }))
+    const panel = screen.getByRole('dialog', { name: drawers.details.heading })
+
+    // The ring always closes, so it would hide a short total perfectly. Saying
+    // so is the whole reason this check exists.
+    expect(within(panel).getByText(/totals 97%/)).toBeInTheDocument()
+  })
+
+  it('draws care as symbols but keeps the words', async () => {
+    const user = userEvent.setup()
+    render(<ProductDrawers product={withPassport} passport={passport} seller={seller} />)
+    await user.click(screen.getByRole('button', { name: drawers.details.trigger }))
+    const panel = screen.getByRole('dialog', { name: drawers.details.heading })
+
+    // An unlabelled care symbol is unreadable to most people, which is a large
+    // part of why garments get ruined. The glyph buys the scan; the text keeps
+    // the meaning. What it saves is the vertical stack.
+    for (const instruction of passport.careInstructions) {
+      expect(within(panel).getByText(instruction.label)).toBeInTheDocument()
+    }
+    expect(panel.querySelectorAll('svg').length).toBeGreaterThanOrEqual(
+      passport.careInstructions.length,
+    )
+  })
+
+  it('holds the origin fields, moved here from the passport story', async () => {
+    const user = userEvent.setup()
+    render(<ProductDrawers product={withPassport} passport={passport} seller={seller} />)
+    await user.click(screen.getByRole('button', { name: drawers.details.trigger }))
+    const panel = screen.getByRole('dialog', { name: drawers.details.heading })
+
+    expect(within(panel).getByText(drawers.details.sections.origin)).toBeInTheDocument()
+    expect(within(panel).getByText(passport.manufacturingCountry.value)).toBeInTheDocument()
+  })
+
+  it('no longer repeats the inspector prose the condition block already shows', async () => {
+    const user = userEvent.setup()
+    render(<ProductDrawers product={withPassport} passport={passport} seller={seller} />)
+    await user.click(screen.getByRole('button', { name: drawers.details.trigger }))
+    const panel = screen.getByRole('dialog', { name: drawers.details.heading })
+
+    expect(within(panel).queryByText(withPassport.conditionNotes)).toBeNull()
   })
 
   it('says composition is unknown rather than showing a blank section', async () => {

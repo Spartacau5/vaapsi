@@ -2,37 +2,34 @@
 
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { CareSymbols } from '../data/care-symbol'
+import { MaterialRing } from '../data/material-ring'
+import { SourcedValue } from '../passport/provenance-dot'
 import { Overlay } from '@/components/primitives/overlay'
+import { ChipPair, ChipRow } from '@/components/primitives/chip'
 import { Row, Stack } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { drawers } from '@/content/drawers'
 import { formatDate } from '@/lib/format/date'
 import { MEASUREMENT_KEYS } from '@/lib/types'
 import type { MeasurementKey, Passport, Product, Seller } from '@/lib/types'
-import { cn } from '@/lib/utils'
 
 /**
  * The product-page drawers.
  *
- * Two triggers — **Product details** and **Delivery and returns** — each opening
- * a panel that slides in over the right-hand detail column and dims the
- * photograph behind it. This is the pattern from the reference the client sent,
- * and it earns its place for a specific reason: a resale PDP has a lot of
- * genuine reference material (nine measurements, a composition, care codes, a
- * product number) and stacking all of it under the buy button pushes the
- * passport — the thing that actually differentiates this site — below three
- * screens of specification.
+ * **Product details** is now the single home for specification: measurements,
+ * composition, care, origin, product code. Composition and care used to render
+ * both here *and* on the passport story, and the inspector's prose rendered both
+ * here and in the condition block — three facts printed twice each, which was
+ * most of why the page below the photographs ran to four screens.
  *
- * A drawer is the right container for reference material a shopper *consults*.
+ * One home each. Specification is reference material a shopper *consults*, so it
+ * lives behind a click. Condition and the journey are what a shopper *decides
+ * on*, so they stay on the page.
  *
- * **Condition and flaws are not in here.** That was a real decision, not an
- * omission: on resale, condition is not reference material, it is the purchase
- * decision. It stays on the page where it cannot be missed. Putting it behind a
- * link would undo the reason the rest of the page is believable.
- *
- * Behaviour comes from the shared `Overlay`, so the trap, the Escape handler and
- * the unfocusable-while-closed behaviour are identical to the nav drawer, the
- * filter sheet and the bag.
+ * Density comes from three visual pieces rather than from cutting information:
+ * the composition is a ring, care is a row of symbols instead of five labelled
+ * empty boxes, and the header facts are chips.
  */
 
 type Which = 'details' | 'delivery' | null
@@ -50,12 +47,6 @@ export function ProductDrawers({
 
   return (
     <>
-      {/*
-        The triggers. Set as a quiet list of underlined links rather than
-        buttons-that-look-like-buttons — they open reference material, they are
-        not actions, and the one filled control in this column should stay the
-        one that adds to the bag.
-      */}
       <Stack gap={3} as="ul">
         <li>
           <DrawerTrigger onClick={() => setOpen('details')}>
@@ -74,7 +65,7 @@ export function ProductDrawers({
         onClose={() => setOpen(null)}
         label={drawers.details.heading}
         side="right"
-        className="desktop:max-w-[46rem]"
+        className="desktop:max-w-[40rem]"
       >
         <DrawerShell heading={drawers.details.heading} onClose={() => setOpen(null)}>
           <DetailsBody product={product} passport={passport} seller={seller} />
@@ -86,7 +77,7 @@ export function ProductDrawers({
         onClose={() => setOpen(null)}
         label={drawers.delivery.heading}
         side="right"
-        className="desktop:max-w-[46rem]"
+        className="desktop:max-w-[40rem]"
       >
         <DrawerShell heading={drawers.delivery.heading} onClose={() => setOpen(null)}>
           <DeliveryBody />
@@ -96,7 +87,13 @@ export function ProductDrawers({
   )
 }
 
-function DrawerTrigger({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+export function DrawerTrigger({
+  onClick,
+  children,
+}: {
+  onClick: () => void
+  children: React.ReactNode
+}) {
   return (
     <button
       type="button"
@@ -108,11 +105,8 @@ function DrawerTrigger({ onClick, children }: { onClick: () => void; children: R
   )
 }
 
-/**
- * The panel chrome. The close control is top-right, matching the reference and
- * matching where a reader's hand already is after opening it.
- */
-function DrawerShell({
+/** The panel chrome. Close control top-right, where a reader's hand already is. */
+export function DrawerShell({
   heading,
   onClose,
   children,
@@ -176,38 +170,65 @@ function DetailsBody({
   const present = MEASUREMENT_KEYS.filter((key) => product.measurements[key] !== undefined)
 
   return (
-    <Stack gap={10}>
-      <section>
-        <Eyebrow as="h3">{drawers.details.sections.about}</Eyebrow>
-        <Type size="base" measure="default" className="mt-3">
-          {product.conditionNotes}
-        </Type>
-      </section>
+    <Stack gap={8}>
+      {/*
+        The facts that were a six-row key-value table. Brand, type, size, code
+        and date are all single attributes, which is what a chip is for.
+      */}
+      <ChipRow>
+        <ChipPair label="Brand" value={product.brand} tone="emphasis" />
+        <ChipPair label="Type" value={product.subcategory} />
+        <ChipPair label="Size" value={`${product.size.label} · ${product.size.system}`} />
+        <ChipPair label="Code" value={product.sku} />
+        <ChipPair label={drawers.details.listed} value={formatDate(product.listedAt)} />
+        {seller !== null && <ChipPair label="Seller" value={seller.displayName} />}
+      </ChipRow>
 
-      <section>
-        <Eyebrow as="h3">{drawers.details.sections.specification}</Eyebrow>
-        <Spec label="Brand" value={product.brand} className="mt-3" />
-        <Spec label="Type" value={product.subcategory} />
-        <Spec label="Size as labelled" value={`${product.size.label} (${product.size.system})`} />
-        <Spec label={drawers.details.productCode} value={product.sku} />
-        <Spec label={drawers.details.listed} value={formatDate(product.listedAt)} />
-        {seller !== null && <Spec label={drawers.details.seller} value={seller.displayName} />}
-      </section>
-
-      {present.length > 0 && (
-        <section>
-          <Eyebrow as="h3">{drawers.details.sections.measurements}</Eyebrow>
-          <Type size="xs" tone="subtle" className="mt-2">
-            {drawers.details.measurementsNote}
+      {/* ---- Composition, as a ring */}
+      <section className="border-t border-line pt-6">
+        <Eyebrow as="h3">{drawers.details.sections.materials}</Eyebrow>
+        {passport === null ? (
+          <Type size="sm" tone="muted" measure="default" className="pt-3">
+            {drawers.details.materialsUnknown}
           </Type>
-          <dl className="mt-3">
+        ) : (
+          <MaterialRing materials={passport.materials} className="pt-4" />
+        )}
+      </section>
+
+      {/* ---- Care, as symbols */}
+      <section className="border-t border-line pt-6">
+        <Eyebrow as="h3">{drawers.details.sections.care}</Eyebrow>
+        {passport === null ? (
+          <Type size="sm" tone="muted" className="pt-3">
+            {drawers.details.careUnknown}
+          </Type>
+        ) : (
+          <CareSymbols instructions={passport.careInstructions} className="pt-4" />
+        )}
+      </section>
+
+      {/* ---- Measurements, two columns. */}
+      {present.length > 0 && (
+        <section className="border-t border-line pt-6">
+          <Row gap={4} justify="between" align="baseline">
+            <Eyebrow as="h3">{drawers.details.sections.measurements}</Eyebrow>
+            <Type as="span" size="xs" tone="subtle">
+              centimetres, taken flat
+            </Type>
+          </Row>
+          {/*
+            Two columns, so nine measurements are five rows rather than nine. The
+            note above replaces the sentence that used to sit here.
+          */}
+          <dl className="grid grid-cols-2 gap-x-8 pt-3">
             {present.map((key) => (
-              <div key={key} className="flex justify-between gap-4 border-b border-line py-2.5">
+              <div key={key} className="flex justify-between gap-4 border-b border-line py-2">
                 <Type as="dt" size="sm" tone="muted">
                   {MEASUREMENT_LABEL[key]}
                 </Type>
                 <Type as="dd" size="sm" numeric>
-                  {product.measurements[key]} cm
+                  {product.measurements[key]}
                 </Type>
               </div>
             ))}
@@ -215,99 +236,56 @@ function DetailsBody({
         </section>
       )}
 
-      <section>
-        <Eyebrow as="h3">{drawers.details.sections.materials}</Eyebrow>
-        {passport === null ? (
-          // No passport, no composition. Stated rather than left as an empty
-          // heading, because a blank section reads as "not filled in".
-          <Type size="sm" tone="muted" measure="default" className="mt-3">
-            {drawers.details.materialsUnknown}
-          </Type>
-        ) : (
-          <dl className="mt-3">
-            {passport.materials.map((material) => (
-              <div
-                key={material.name.value}
-                className="flex justify-between gap-4 border-b border-line py-2.5"
-              >
-                <Type as="dt" size="sm" tone="muted">
-                  {material.name.value}
-                  {material.isRecycled.value && (
-                    <Type as="span" size="xs" tone="subtle" className="pl-2">
-                      recycled
-                    </Type>
-                  )}
-                </Type>
-                <Type as="dd" size="sm" numeric>
-                  {material.percentage.value}%
-                </Type>
-              </div>
-            ))}
+      {/* ---- Origin. Moved here from the passport story, where it was one of
+              three duplicated blocks. */}
+      {passport !== null && (
+        <section className="border-t border-line pt-6">
+          <Eyebrow as="h3">{drawers.details.sections.origin}</Eyebrow>
+          <dl className="grid grid-cols-1 gap-3 pt-3 tablet:grid-cols-3">
+            <OriginField label="Place of origin" sourced={passport.placeOfOrigin} />
+            <OriginField label="Made in" sourced={passport.manufacturingCountry} />
+            <OriginField label="Manufacturer" sourced={passport.manufacturer} />
           </dl>
-        )}
-      </section>
-
-      <section>
-        <Eyebrow as="h3">{drawers.details.sections.care}</Eyebrow>
-        {passport === null ? (
-          <Type size="sm" tone="muted" className="mt-3">
-            {drawers.details.careUnknown}
-          </Type>
-        ) : (
-          <Stack gap={2} as="ul" className="mt-3">
-            {passport.careInstructions.map((instruction) => (
-              <Row key={instruction.code} gap={3} align="center" as="li" wrap={false}>
-                <span
-                  aria-hidden
-                  className="size-6 shrink-0 border border-line"
-                  data-icon={instruction.icon}
-                />
-                <Type as="span" size="sm" tone="muted">
-                  {instruction.label}
-                </Type>
-              </Row>
-            ))}
-          </Stack>
-        )}
-      </section>
+        </section>
+      )}
     </Stack>
+  )
+}
+
+function OriginField({ label, sourced }: { label: string; sourced: Passport['placeOfOrigin'] }) {
+  return (
+    <div>
+      <Type as="dt" size="xs" tone="subtle" tracking="caps">
+        {label}
+      </Type>
+      <dd className="pt-1">
+        <SourcedValue value={sourced.value} provenance={sourced.provenance} />
+      </dd>
+    </div>
   )
 }
 
 function DeliveryBody() {
   return (
-    <Stack gap={10}>
+    <Stack gap={6}>
       <section>
         <Eyebrow as="h3">{drawers.delivery.sections.delivery}</Eyebrow>
-        <Type size="base" measure="default" className="mt-3">
+        <Type size="base" measure="default" className="pt-3">
           {drawers.delivery.deliveryBody}
         </Type>
       </section>
-      <section>
+      <section className="border-t border-line pt-6">
         <Eyebrow as="h3">{drawers.delivery.sections.returns}</Eyebrow>
-        <Type size="base" measure="default" className="mt-3">
+        <Type size="base" measure="default" className="pt-3">
           {drawers.delivery.returnsBody}
         </Type>
       </section>
-      <section>
+      <section className="border-t border-line pt-6">
         <Eyebrow as="h3">{drawers.delivery.sections.oneOfOne}</Eyebrow>
-        <Type size="base" measure="default" className="mt-3">
+        <Type size="base" measure="default" className="pt-3">
           {drawers.delivery.oneOfOneBody}
         </Type>
       </section>
     </Stack>
-  )
-}
-
-function Spec({ label, value, className }: { label: string; value: string; className?: string }) {
-  return (
-    <div className={cn('flex justify-between gap-4 border-b border-line py-2.5', className)}>
-      <Type as="span" size="sm" tone="muted">
-        {label}
-      </Type>
-      <Type as="span" size="sm" className="text-right">
-        {value}
-      </Type>
-    </div>
   )
 }

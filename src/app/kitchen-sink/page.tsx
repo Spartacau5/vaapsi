@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { PassportBack } from '@/components/patterns/passport/back'
-import { PassportFront } from '@/components/patterns/passport/front'
+import { PassportRecord } from '@/components/patterns/passport/record'
+import { PassportStory } from '@/components/patterns/passport/story'
 import { ProvenanceDot, ProvenanceLegend } from '@/components/patterns/passport/provenance-dot'
 import { Seal } from '@/components/patterns/passport/seal'
 import { PassportMark } from '@/components/patterns/passport-mark'
@@ -10,6 +10,10 @@ import { ConditionBlock } from '@/components/patterns/product/condition-block'
 import { SizeAndMeasurements } from '@/components/patterns/product/measurements'
 import { PincodeCheck } from '@/components/patterns/product/pincode-check'
 import { ProductDrawers } from '@/components/patterns/product/product-drawer'
+import { CareSymbols } from '@/components/patterns/data/care-symbol'
+import { ConditionMeter } from '@/components/patterns/data/condition-meter'
+import { MaterialRing } from '@/components/patterns/data/material-ring'
+import { Chip, ChipPair, ChipRow } from '@/components/primitives/chip'
 import { AddToBag } from '@/components/patterns/product/add-to-bag'
 import { ProductGridSkeleton } from '@/components/patterns/shop/product-grid'
 import { Col, Container, Grid, Row, Rule, Stack } from '@/components/primitives/layout'
@@ -53,6 +57,7 @@ export default async function KitchenSinkPage() {
   const fullPassport = await getPassport('psp_diesel_denim_shoulder_bag')
   const correctedPassport = await getPassport('psp_levis_501_indigo')
   const partialPassport = await getPassport('psp_nicobar_chambray_shirtdress')
+  const acnePassport = await getPassport('psp_acne_denim_maxi_skirt')
 
   const card = (availability: Availability, hasPassport: boolean): ProductSummary | null => {
     const base = summaries.find((item) => (item.passportId !== null) === hasPassport)
@@ -193,6 +198,75 @@ export default async function KitchenSinkPage() {
       </Section>
 
       {/* ---------------------------------------------------------------- */}
+      <Section title="Composition ring — every shape the data actually takes">
+        <Grid gap="loose" rowGap="loose">
+          <Col mobile={4} tablet={4} desktop={6}>
+            <Type size="xs" tone="subtle" className="pb-3">
+              One fibre — a full ring says nothing, so the figure goes in the centre
+            </Type>
+            {partialPassport !== null && <MaterialRing materials={partialPassport.materials} />}
+          </Col>
+          <Col mobile={4} tablet={4} desktop={6}>
+            <Type size="xs" tone="subtle" className="pb-3">
+              99 / 1 — a 3.6° slice is invisible, so it is widened and the chart says so
+            </Type>
+            {correctedPassport !== null && <MaterialRing materials={correctedPassport.materials} />}
+          </Col>
+          <Col mobile={4} tablet={4} desktop={6}>
+            <Type size="xs" tone="subtle" className="pb-3">
+              70 / 30 with recycled content — hatched, not coloured
+            </Type>
+            {acnePassport !== null && <MaterialRing materials={acnePassport.materials} />}
+          </Col>
+          <Col mobile={4} tablet={4} desktop={6}>
+            <Type size="xs" tone="subtle" className="pb-3">
+              A short total — the ring always closes, so it would hide this perfectly
+            </Type>
+            {partialPassport !== null && (
+              <MaterialRing
+                materials={[
+                  {
+                    ...partialPassport.materials[0]!,
+                    percentage: { value: 97, provenance: 'self_declared' },
+                  },
+                ]}
+              />
+            )}
+          </Col>
+        </Grid>
+      </Section>
+
+      <Section title="Care symbols — replacing five labelled empty boxes">
+        <Stack gap={6}>
+          {[fullPassport, correctedPassport, acnePassport].map((passport, index) =>
+            passport === null ? null : (
+              <CareSymbols key={index} instructions={passport.careInstructions} />
+            ),
+          )}
+        </Stack>
+      </Section>
+
+      {/* ---------------------------------------------------------------- */}
+      <Section title="Condition meter — position on the scale, not a score">
+        <Stack gap={8}>
+          {CONDITIONS.map((condition) => (
+            <ConditionMeter key={condition} condition={condition} />
+          ))}
+        </Stack>
+      </Section>
+
+      <Section title="Chips — one fact each, replacing sentences">
+        <ChipRow>
+          <ChipPair label="Owners" value="2" tone="emphasis" />
+          <ChipPair label="Repairs" value="1" />
+          <ChipPair label="Returns" value="2" />
+          <Chip>Inspected in house</Chip>
+          <Chip tone="quiet">Published by choice</Chip>
+          <Chip tone="quiet">Not authenticated</Chip>
+        </ChipRow>
+      </Section>
+
+      {/* ---------------------------------------------------------------- */}
       <Section title="Condition scale — all five grades">
         <Stack gap={4}>
           {CONDITIONS.map((condition) => (
@@ -275,19 +349,19 @@ export default async function KitchenSinkPage() {
       {/* ---------------------------------------------------------------- */}
       {fullPassport !== null && (
         <Section title="Passport — full data, longest chain, a repair, two owners">
-          <PassportFront passport={fullPassport} />
+          <PassportStory passport={fullPassport} />
         </Section>
       )}
 
       {partialPassport !== null && (
         <Section title="Passport — partial: no impact block, nothing authenticated">
-          <PassportFront passport={partialPassport} />
+          <PassportStory passport={partialPassport} />
         </Section>
       )}
 
       {correctedPassport !== null && (
         <Section title="Passport record — corrections beside the original declaration">
-          <PassportBack
+          <PassportRecord
             passport={correctedPassport}
             shareUrl="https://vaapsi.example/passport/psp_levis_501_indigo"
           />

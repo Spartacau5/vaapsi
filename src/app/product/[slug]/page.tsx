@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { PassportBack } from '@/components/patterns/passport/back'
-import { PassportFront } from '@/components/patterns/passport/front'
-import { PassportDocument } from '@/components/patterns/passport/passport-document'
+import { PassportRecord } from '@/components/patterns/passport/record'
+import { PassportRecordDrawer } from '@/components/patterns/passport/record-drawer'
+import { PassportStory } from '@/components/patterns/passport/story'
 import { PassportMark } from '@/components/patterns/passport-mark'
 import { Price } from '@/components/patterns/price'
 import { AddToBag } from '@/components/patterns/product/add-to-bag'
@@ -225,18 +225,26 @@ export default async function ProductPage({ params }: { params: Params }) {
           heading={passportCopy.oneLiner}
           headingSize="3xl"
           action={
-            <Link
-              href={`/passport/${passport.id}`}
-              className="shrink-0 border-b border-line pb-0.5 text-sm text-ink-muted transition-colors hover:border-ink hover:text-ink"
-            >
-              Open on its own
-            </Link>
+            <Row gap={5} wrap={false} className="shrink-0">
+              {/*
+                The record, behind a click. Clerical material — signatures,
+                identifiers, the frozen declaration, the QR — that a shopper
+                checks rather than reads. Same distinction the Product details
+                drawer makes.
+              */}
+              <PassportRecordDrawer>
+                <PassportRecord passport={passport} shareUrl={passportUrl} />
+              </PassportRecordDrawer>
+              <Link
+                href={`/passport/${passport.id}`}
+                className="border-b border-line pb-0.5 text-sm text-ink-muted transition-colors hover:border-ink hover:text-ink"
+              >
+                Open on its own
+              </Link>
+            </Row>
           }
         >
-          <PassportDocument
-            front={<PassportFront passport={passport} />}
-            back={<PassportBack passport={passport} shareUrl={passportUrl} />}
-          />
+          <PassportStory passport={passport} />
         </Section>
       )}
 

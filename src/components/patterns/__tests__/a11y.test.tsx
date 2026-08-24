@@ -7,7 +7,7 @@ import { ConditionScale } from '../home/condition-scale'
 import { Hero } from '../home/hero'
 import { HowItWorks } from '../home/how-it-works'
 import { MobileNav } from '../mobile-nav'
-import { PassportFront } from '../passport/front'
+import { PassportStory } from '../passport/story'
 import { ProvenanceLegend } from '../passport/provenance-dot'
 import { ProductCard } from '../product-card'
 import { ConditionBlock } from '../product/condition-block'
@@ -170,11 +170,11 @@ describe('axe — product', () => {
 
 describe('axe — passport', () => {
   it('front, with full data', async () => {
-    await auditInMain(<PassportFront passport={passport} />)
+    await auditInMain(<PassportStory passport={passport} />)
   })
 
   it('front, with partial data and no impact block', async () => {
-    await auditInMain(<PassportFront passport={nicobar} />)
+    await auditInMain(<PassportStory passport={nicobar} />)
   })
 
   it('provenance legend', async () => {

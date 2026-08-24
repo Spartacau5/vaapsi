@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
-import { PassportFront } from '../passport/front'
+import { PassportStory } from '../passport/story'
 import { JourneyLine } from '../passport/journey-line'
 import { ProvenanceDot, ProvenanceLegend, SourcedValue } from '../passport/provenance-dot'
 import { Seal } from '../passport/seal'
@@ -89,11 +89,25 @@ describe('JourneyLine', () => {
     }
   })
 
-  it('shows how each event is known, never leaving it unattributed', () => {
+  it('still attributes every event, collected once instead of repeated inline', () => {
     render(<JourneyLine chain={levis!.chain} />)
+    // The verification sentences moved out of each event and into one
+    // disclosure. Every event is still accounted for — the honesty is intact,
+    // the repetition is not. "Stated by the owner at intake" appeared three
+    // times on one passport before this.
     for (const event of levis!.chain) {
       expect(screen.getAllByText(event.verification.value).length).toBeGreaterThan(0)
     }
+    expect(screen.getByText('How each step was verified')).toBeInTheDocument()
+  })
+
+  it('carries the confidence on the rail, not as a sentence per event', () => {
+    const { container } = render(<JourneyLine chain={levis!.chain} />)
+    // One provenance mark per event per layout, plus one per row in the
+    // disclosure. What matters is that the marks are there and the inline
+    // italic sentences are gone.
+    expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(levis!.chain.length)
+    expect(container.querySelectorAll('.italic')).toHaveLength(0)
   })
 
   it('renders nothing for an empty chain', () => {
@@ -102,57 +116,63 @@ describe('JourneyLine', () => {
   })
 })
 
-describe('PassportFront', () => {
-  it('leads with the journey', () => {
-    render(<PassportFront passport={levis!} />)
-    expect(screen.getByRole('heading', { name: /owner/i })).toBeInTheDocument()
+describe('PassportStory', () => {
+  it('leads with a summary strip a reader can take instead of the timeline', () => {
+    render(<PassportStory passport={levis!} />)
+    // Owners, authentication and the voluntary status were sentences scattered
+    // across three sections. They are now one scannable line.
+    expect(screen.getByText('Owners')).toBeInTheDocument()
+    expect(screen.getByText('Inspected in house')).toBeInTheDocument()
+    expect(screen.getByText('Published by choice')).toBeInTheDocument()
+  })
+
+  it('states the owner count in words as well as in a chip', () => {
+    render(<PassportStory passport={levis!} />)
+    expect(screen.getByText('One owner before you')).toBeInTheDocument()
+  })
+
+  it('counts repairs and returns as chips when there are any', () => {
+    const bag = passports.find((p) => p.id === 'psp_diesel_denim_shoulder_bag')!
+    render(<PassportStory passport={bag} />)
+    expect(screen.getByText('Repairs')).toBeInTheDocument()
+    // "Returns", not "Came back" — the timeline uses that phrase for the event.
+    expect(screen.getByText('Returns')).toBeInTheDocument()
+  })
+
+  it('marks a passport nobody has authenticated', () => {
+    render(<PassportStory passport={nicobar!} />)
+    expect(screen.getByText('Not authenticated')).toBeInTheDocument()
   })
 
   it('never shows an impact number without its basis', () => {
-    render(<PassportFront passport={levis!} />)
+    render(<PassportStory passport={levis!} />)
     expect(screen.getByText(levis!.impact!.basis)).toBeInTheDocument()
   })
 
   it('renders a passport with no impact block at all, without a gap', () => {
     expect(nicobar?.impact).toBeUndefined()
-    render(<PassportFront passport={nicobar!} />)
+    render(<PassportStory passport={nicobar!} />)
     expect(screen.queryByText(/litres of water/)).toBeNull()
     expect(screen.queryByText(/kg of CO/)).toBeNull()
   })
 
   it('omits the seal when nothing has been authenticated', () => {
     expect(nicobar?.authentication.method).toBe('none')
-    render(<PassportFront passport={nicobar!} />)
+    render(<PassportStory passport={nicobar!} />)
     expect(screen.queryByText(/Verified by/)).toBeNull()
   })
 
-  it('shows the seal when a named party authenticated it', () => {
-    render(<PassportFront passport={cos!} />)
-    expect(screen.getByText(/Verified by/)).toBeInTheDocument()
+  it('shows the seal, naming who verified it', () => {
+    render(<PassportStory passport={cos!} />)
+    expect(screen.getByText(cos!.authentication.verifiedBy as string)).toBeInTheDocument()
   })
 
-  it('marks recycled content', () => {
-    render(<PassportFront passport={cos!} />)
-    expect(screen.getByText('recycled')).toBeInTheDocument()
-  })
-
-  it('states the shortfall when a declared composition does not sum to 100', () => {
-    const short = {
-      ...nicobar!,
-      materials: [
-        {
-          ...nicobar!.materials[0]!,
-          percentage: { value: 97, provenance: 'self_declared' as const },
-        },
-      ],
-    }
-    render(<PassportFront passport={short} />)
-    expect(screen.getByText(/totals 97%/)).toBeInTheDocument()
-  })
-
-  it('labels care instructions in words, not just symbols', () => {
-    render(<PassportFront passport={cos!} />)
-    const care = cos!.careInstructions[0]
-    expect(within(document.body).getByText(care!.label)).toBeInTheDocument()
+  it('no longer renders composition or care, which live once in the drawer', () => {
+    // These were rendered here AND in the Product details drawer. Duplicated
+    // facts were most of why the page below the photographs ran to four
+    // screens. See material-ring and care-symbol tests for their behaviour.
+    render(<PassportStory passport={cos!} />)
+    expect(screen.queryByText('recycled')).toBeNull()
+    expect(screen.queryByText(cos!.careInstructions[0]!.label)).toBeNull()
   })
 })

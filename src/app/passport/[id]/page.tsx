@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { PassportBack } from '@/components/patterns/passport/back'
-import { PassportFront } from '@/components/patterns/passport/front'
-import { PassportDocument } from '@/components/patterns/passport/passport-document'
+import { PassportRecord } from '@/components/patterns/passport/record'
+import { PassportStory } from '@/components/patterns/passport/story'
 import { Container, Row, Stack } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { PASSPORT_NAME, passportCopy } from '@/content/passport'
@@ -119,11 +118,22 @@ export default async function PassportPage({ params }: { params: Params }) {
           </Stack>
         </header>
 
+        {/*
+          Both halves inline, no drawer. This route is what a QR printed on a
+          garment resolves to, so it has to print complete — a printed record
+          with half of it behind a button would be a broken artefact. It also
+          means print no longer needs the overrides the old two-sided flip
+          required.
+        */}
         <div className="pt-8">
-          <PassportDocument
-            front={<PassportFront passport={passport} />}
-            back={<PassportBack passport={passport} shareUrl={shareUrl} />}
-          />
+          <PassportStory passport={passport} />
+        </div>
+
+        <div className="mt-section-tight border-t border-line pt-8">
+          <Eyebrow as="h2">{passportCopy.sections.back}</Eyebrow>
+          <div className="pt-6">
+            <PassportRecord passport={passport} shareUrl={shareUrl} />
+          </div>
         </div>
 
         {/* Only visible in print: the URL, so a printed page is traceable back. */}

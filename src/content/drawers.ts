@@ -20,11 +20,15 @@ export const drawers = {
     heading: 'Product details',
     /** Section headings inside the drawer. */
     sections: {
-      about: 'About this piece',
+      /**
+       * `about` is gone: it rendered `conditionNotes`, which the condition block
+       * on the page already shows. One fact, one home.
+       */
       specification: 'Specification',
       measurements: 'Measurements',
-      materials: 'Materials',
+      materials: 'Made of',
       care: 'Care',
+      origin: 'Origin',
       identifiers: 'Identifiers',
     },
     measurementsNote: 'Taken flat, in centimetres. Sizing varies by brand — go by these.',
