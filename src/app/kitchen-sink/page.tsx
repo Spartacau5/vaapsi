@@ -10,6 +10,9 @@ import { ConditionBlock } from '@/components/patterns/product/condition-block'
 import { SizeAndMeasurements } from '@/components/patterns/product/measurements'
 import { PincodeCheck } from '@/components/patterns/product/pincode-check'
 import { ProductDrawers } from '@/components/patterns/product/product-drawer'
+import { ProductSpecification } from '@/components/patterns/product/specification'
+import { PassportImpact } from '@/components/patterns/passport/impact'
+import { CompleteTheLook } from '@/components/patterns/product/complete-the-look'
 import { CareSymbols } from '@/components/patterns/data/care-symbol'
 import { ConditionMeter } from '@/components/patterns/data/condition-meter'
 import { MaterialRing } from '@/components/patterns/data/material-ring'
@@ -332,14 +335,66 @@ export default async function KitchenSinkPage() {
               <Type size="xs" tone="subtle" className="pb-3">
                 With a passport — materials and care are populated
               </Type>
-              <ProductDrawers product={withPassport} passport={fullPassport} seller={null} />
+              <ProductDrawers
+                tabs={[
+                  {
+                    id: 'specification',
+                    label: 'Details',
+                    panel: (
+                      <ProductSpecification
+                        product={withPassport}
+                        passport={fullPassport}
+                        seller={null}
+                      />
+                    ),
+                  },
+                  {
+                    id: 'condition',
+                    label: 'Condition',
+                    panel: <ConditionBlock product={withPassport} headless />,
+                  },
+                  ...(fullPassport === null
+                    ? []
+                    : [
+                        {
+                          id: 'passport',
+                          label: 'History',
+                          panel: <PassportStory passport={fullPassport} showImpact={false} />,
+                        },
+                        {
+                          id: 'impact',
+                          label: 'What this saves',
+                          panel: <PassportImpact passport={fullPassport} />,
+                        },
+                      ]),
+                ]}
+              />
             </Col>
             <Col mobile={4} tablet={4} desktop={4}>
               <Type size="xs" tone="subtle" className="pb-3">
                 Without a passport — both say so rather than showing blanks
               </Type>
               {withoutPassport !== null && (
-                <ProductDrawers product={withoutPassport} passport={null} seller={null} />
+                <ProductDrawers
+                  tabs={[
+                    {
+                      id: 'specification',
+                      label: 'Details',
+                      panel: (
+                        <ProductSpecification
+                          product={withoutPassport}
+                          passport={null}
+                          seller={null}
+                        />
+                      ),
+                    },
+                    {
+                      id: 'condition',
+                      label: 'Condition',
+                      panel: <ConditionBlock product={withoutPassport} headless />,
+                    },
+                  ]}
+                />
               )}
             </Col>
           </Grid>
@@ -378,6 +433,13 @@ export default async function KitchenSinkPage() {
           <Rule className="mt-4" />
         </Section>
       )}
+
+      {/* ---------------------------------------------------------------- */}
+      <Section title="Goes with this — a heuristic, labelled as one">
+        <div className="max-w-[30rem]">
+          <CompleteTheLook products={summaries.slice(0, 6)} heading="Goes with this" />
+        </div>
+      </Section>
 
       {/* ---------------------------------------------------------------- */}
       <Section title="Empty and error states">

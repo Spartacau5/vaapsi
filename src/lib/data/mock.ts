@@ -228,6 +228,27 @@ export const mockAdapter: DataAdapter = {
       .map(toSummary)
   },
 
+  async listRelatedProducts(productId: ProductId, limit = 6): Promise<readonly ProductSummary[]> {
+    const subject = products.find((product) => product.id === productId)
+    if (subject === undefined) return []
+
+    const candidates = products.filter(
+      (product) => product.id !== productId && product.availability === 'available',
+    )
+
+    // Different category first, so the row reads as an outfit rather than as
+    // five more of the thing the shopper is already looking at. Within each
+    // group, newest first — the same recency logic the rest of the site uses.
+    const ordered = [...candidates].sort((a, b) => {
+      const differs = (product: Product) => (product.category === subject.category ? 1 : 0)
+      const byCategory = differs(a) - differs(b)
+      if (byCategory !== 0) return byCategory
+      return Date.parse(b.listedAt) - Date.parse(a.listedAt)
+    })
+
+    return ordered.slice(0, limit).map(toSummary)
+  },
+
   async getPassport(id: PassportId): Promise<Passport | null> {
     return passports.find((passport) => passport.id === id) ?? null
   },

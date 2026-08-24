@@ -42,6 +42,32 @@ import type { Product, ProductImage } from '@/lib/types'
 const PORTRAIT = 4 / 5
 
 /**
+ * Garments that have real photography in `public/products/<slug>/`.
+ *
+ * Add a slug here and its frames resolve to local files instead of placeholders.
+ * That is the entire switch — one line per garment. The file naming convention
+ * is in `public/products/README.md`.
+ *
+ * Empty for now: every image on the site is still an unrelated `picsum`
+ * placeholder. Replacing them is PRD open question #10, and it is the single
+ * biggest thing between this build and a client review that shows the design
+ * rather than the scaffolding.
+ */
+const LOCAL_PHOTOGRAPHY = new Set<string>([
+  // 'levis-501-original-straight-jeans-mid-indigo',
+])
+
+/**
+ * Frame filenames, matched to `SHOT_LIST` order. Flaw frames are named
+ * `flaw-1`, `flaw-2`, … because their position in the sequence varies with how
+ * many a garment has.
+ */
+function localPath(slug: string, id: string, kind: ProductImage['kind'], index: number): string {
+  const name = kind === 'flaw' ? `flaw-${id.split('_').pop() ?? '1'}` : `${index + 1}-${kind}`
+  return `/products/${slug}/${name}.jpg`
+}
+
+/**
  * The brief, in order. Exported so a photographer or a stylist can be handed the
  * list without reading a TypeScript file, and so the fixture set cannot drift
  * out of shape one product at a time.
@@ -55,10 +81,25 @@ export const SHOT_LIST = [
   { kind: 'label', frame: 'Macro on collar, waistband or brand mark' },
 ] as const
 
-function image(id: string, seed: string, alt: string, kind: ProductImage['kind']): ProductImage {
+/**
+ * One frame.
+ *
+ * `slug` and `index` are only used to build a local path when the garment has
+ * real photography; otherwise the seeded placeholder is stable so the same
+ * garment always shows the same (unrelated) picture, which matters for review.
+ */
+function image(
+  id: string,
+  seed: string,
+  alt: string,
+  kind: ProductImage['kind'],
+  slug?: string,
+  index = 0,
+): ProductImage {
+  const local = slug !== undefined && LOCAL_PHOTOGRAPHY.has(slug)
   return {
     id,
-    url: `https://picsum.photos/seed/${seed}/1200/1500`,
+    url: local ? localPath(slug, id, kind, index) : `https://picsum.photos/seed/${seed}/1200/1500`,
     alt,
     kind,
     aspectRatio: PORTRAIT,

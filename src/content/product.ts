@@ -66,6 +66,14 @@ export const productPage = {
     sold: 'Sold',
   },
   oneOfOne: 'One of one. There is no second size, and no restock.',
+
+  /**
+   * Deliberately not "Recommended for you". There is no personalisation behind
+   * it — it is a stated heuristic, and labelling a heuristic as a recommendation
+   * is the kind of small overclaim this brand cannot afford when the rest of the
+   * page is built on saying exactly how much we know.
+   */
+  goesWith: 'Goes with this',
   noPassport:
     'This garment has no passport yet. What we know about it is what the seller told us and what we could see.',
   originalRetail: 'Originally',

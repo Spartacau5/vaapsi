@@ -42,7 +42,19 @@ const AUTH_LABEL: Record<AuthenticationMethod, string> = {
   none: 'Not authenticated',
 }
 
-export function PassportStory({ passport }: { passport: Passport }) {
+export function PassportStory({
+  passport,
+  showImpact = true,
+}: {
+  passport: Passport
+  /**
+   * Render the impact figures inline. The product drawer gives them their own
+   * tab, because they answer a different question from the journey and a shopper
+   * who wants the number should not have to read a timeline to reach it. The
+   * standalone passport route keeps them inline so it prints complete.
+   */
+  showImpact?: boolean
+}) {
   const repairs = repairCount(passport)
   const returns = returnCount(passport)
   const authenticated = passport.authentication.method !== 'none'
@@ -101,11 +113,11 @@ export function PassportStory({ passport }: { passport: Passport }) {
       </section>
 
       {/* ---- Impact. Never a floating number, but no longer a paragraph either. */}
-      {passport.impact !== undefined && (
+      {showImpact && passport.impact !== undefined && (
         <section aria-labelledby="passport-impact" className="border-t border-line pt-6">
-          <Type as="h3" id="passport-impact" size="xs" tone="subtle" tracking="caps">
+          <Eyebrow as="h3" id="passport-impact">
             {passportCopy.sections.impact}
-          </Type>
+          </Eyebrow>
           <StatGroup
             className="pt-4"
             basis={passport.impact.basis}

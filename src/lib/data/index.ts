@@ -30,6 +30,8 @@ export const getProduct: DataAdapter['getProduct'] = (...args) => data.getProduc
 export const getProductFacets: DataAdapter['getProductFacets'] = () => data.getProductFacets()
 export const listFeaturedProducts: DataAdapter['listFeaturedProducts'] = (...args) =>
   data.listFeaturedProducts(...args)
+export const listRelatedProducts: DataAdapter['listRelatedProducts'] = (...args) =>
+  data.listRelatedProducts(...args)
 export const getPassport: DataAdapter['getPassport'] = (...args) => data.getPassport(...args)
 export const getPassportByProduct: DataAdapter['getPassportByProduct'] = (...args) =>
   data.getPassportByProduct(...args)

@@ -166,10 +166,15 @@ export function Eyebrow({
   as = 'p',
   tone = 'subtle',
   className,
+  id,
   children,
-}: Pick<TypeProps, 'as' | 'tone' | 'className' | 'children'>) {
+}: Pick<TypeProps, 'as' | 'tone' | 'className' | 'children' | 'id'>) {
+  // `id` is here because an eyebrow is frequently the accessible name of the
+  // section it sits in, via aria-labelledby. Without it every such call site
+  // has to drop down to a raw `Type`, which is exactly the drift this component
+  // exists to prevent.
   return (
-    <Type as={as} size="xs" tone={tone} tracking="caps" className={className}>
+    <Type as={as} size="xs" tone={tone} tracking="caps" className={className} id={id}>
       {children}
     </Type>
   )

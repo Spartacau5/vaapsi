@@ -80,6 +80,22 @@ export interface DataAdapter {
    */
   listFeaturedProducts(limit?: number): Promise<readonly ProductSummary[]>
 
+  /**
+   * Pieces that go with this one.
+   *
+   * **Not personalisation, and not machine learning.** Phase 1 excludes AI
+   * recommendations, and a storefront that implies personalisation it does not
+   * have is making a promise the backend cannot keep. What this is: a stated
+   * heuristic — other available pieces, favouring different categories so the
+   * set reads as an outfit rather than as near-duplicates of what the shopper is
+   * already looking at.
+   *
+   * When a real recommender exists it replaces the body of this method and
+   * nothing above it changes. Until then the honest framing is in the copy:
+   * "goes with", not "recommended for you".
+   */
+  listRelatedProducts(productId: ProductId, limit?: number): Promise<readonly ProductSummary[]>
+
   // ---- passport
   getPassport(id: PassportId): Promise<Passport | null>
   getPassportByProduct(productId: ProductId): Promise<Passport | null>

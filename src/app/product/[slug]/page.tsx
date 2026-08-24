@@ -1,22 +1,31 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PassportImpact } from '@/components/patterns/passport/impact'
 import { PassportRecord } from '@/components/patterns/passport/record'
-import { PassportRecordDrawer } from '@/components/patterns/passport/record-drawer'
 import { PassportStory } from '@/components/patterns/passport/story'
 import { PassportMark } from '@/components/patterns/passport-mark'
 import { Price } from '@/components/patterns/price'
 import { AddToBag } from '@/components/patterns/product/add-to-bag'
+import { CompleteTheLook } from '@/components/patterns/product/complete-the-look'
 import { ConditionBlock } from '@/components/patterns/product/condition-block'
 import { Gallery } from '@/components/patterns/product/gallery'
 import { PincodeCheck } from '@/components/patterns/product/pincode-check'
 import { ProductDrawers } from '@/components/patterns/product/product-drawer'
-import { Col, Container, Grid, Row, Stack } from '@/components/primitives/layout'
-import { Section } from '@/components/primitives/section'
+import { ProductSpecification } from '@/components/patterns/product/specification'
+import { Row, Stack } from '@/components/primitives/layout'
+import type { TabItem } from '@/components/primitives/tabs'
 import { Eyebrow, Type } from '@/components/primitives/type'
-import { conditionCopy, productPage } from '@/content/product'
+import { drawers } from '@/content/drawers'
 import { PASSPORT_NAME, passportCopy } from '@/content/passport'
-import { getPassportByProduct, getProduct, getSeller, listProducts } from '@/lib/data'
+import { conditionCopy, productPage } from '@/content/product'
+import {
+  getPassportByProduct,
+  getProduct,
+  getSeller,
+  listProducts,
+  listRelatedProducts,
+} from '@/lib/data'
 import { formatMonthYear } from '@/lib/format/date'
 import { orderGalleryImages } from '@/lib/format/images'
 import { productJsonLd, productMetadata } from '@/lib/seo'
@@ -29,9 +38,10 @@ type Params = { slug: string }
  * Known limitation, documented so nobody files it twice: for a slug that does
  * not exist, `notFound()` renders the 404 page but the HTTP status is 200,
  * because Next has already streamed the shell by the time the lookup fails. Next
- * injects `noindex` on that response so it is not indexed, but it is a soft 404.
- * Fixing it needs `dynamicParams = false` (which would 404 every new listing
- * until the next deploy) or a non-streaming render. Neither trade is worth it.
+ * injects `noindex` on that response, so it is not indexed, but it is a soft
+ * 404. Fixing it needs `dynamicParams = false` (which would 404 every new
+ * listing until the next deploy) or a non-streaming render. Neither trade is
+ * worth it.
  */
 export async function generateStaticParams(): Promise<Params[]> {
   const page = await listProducts({ limit: 500 })
@@ -47,41 +57,34 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 /**
  * Product detail.
  *
- * ## The layout
+ * ## The page is the split, and nothing else
  *
- * A **full-bleed split**: photographs own the left half of the viewport
- * edge-to-edge, the buying decision owns the right half and does not move. Both
- * escape the site container, because a gutter around a product photograph makes
- * it a picture of a garment rather than the garment.
+ * Photographs own the left half of the viewport edge-to-edge; the buying
+ * decision owns the right half and does not move. Below it: nothing. Every
+ * section that used to stack under the fold — specification, condition, the
+ * passport, the impact figures — is now a tab inside one drawer.
  *
- * The right panel is deliberately sparse — brand, title, price, condition, size,
- * one filled button, and three quiet links. Everything a shopper *consults*
- * rather than *decides on* (measurements, composition, care, delivery) lives in
- * a drawer behind those links.
+ * That content is not less important for being behind a control. It is *more*
+ * reachable: one click from the buy button rather than three screens of scroll,
+ * and the shopper picks which question to answer instead of being walked past
+ * all four.
  *
- * ## What is not in a drawer
+ * ## The trade, stated
  *
- * **Condition and flaws**, and the **passport**. Both stay on the page below the
- * split.
- *
- * That is the one place this deviates from the reference, and it is deliberate.
- * A luxury retailer selling new stock can put everything behind "Product
- * details" because there is nothing to disclose. Here, the flaw photographs are
- * the reason the listing is believable and the passport is the reason the site
- * exists — hiding either behind a link would be copying the form of the
- * reference while discarding the point of this business.
- *
- * The result is still a much shorter page than before: the split is one screen,
- * then condition, then the passport. The specification that used to stack
- * underneath is now a click away instead of three screens down.
+ * Moving the passport into a drawer takes it out of this page's own markup, and
+ * the passport is the genuinely novel content on this site. That is why
+ * **`/passport/[id]` still renders it inline, stays in the sitemap, and remains
+ * what a printed QR resolves to.** The drawer is the convenient home; that route
+ * is the canonical one. Structured data on this page still links to it.
  */
 export default async function ProductPage({ params }: { params: Params }) {
   const product = await getProduct(params.slug)
   if (product === null) notFound()
 
-  const [passport, seller] = await Promise.all([
+  const [passport, seller, related] = await Promise.all([
     getPassportByProduct(product.id),
     getSeller(product.sellerId),
+    listRelatedProducts(product.id, 8),
   ])
 
   const images = orderGalleryImages(product.images)
@@ -91,6 +94,57 @@ export default async function ProductPage({ params }: { params: Params }) {
     passport === null
       ? null
       : `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vaapsi.example'}/passport/${passport.id}`
+
+  /*
+   * The drawer's panels, rendered here on the server. `PassportRecord` awaits a
+   * QR encode and the charts are static, so none of this needs to ship to the
+   * browser — the drawer itself is the only client component involved.
+   */
+  const tabs: TabItem[] = [
+    {
+      id: 'specification',
+      label: drawers.tabs.specification,
+      panel: <ProductSpecification product={product} passport={passport} seller={seller} />,
+    },
+    {
+      id: 'condition',
+      label: drawers.tabs.condition,
+      hint: condition.label,
+      panel: <ConditionBlock product={product} headless />,
+    },
+  ]
+
+  if (passport !== null && passportUrl !== null) {
+    tabs.push({
+      id: 'passport',
+      label: drawers.tabs.passport,
+      hint: passport.ownersCount === 1 ? '1 owner' : `${passport.ownersCount} owners`,
+      panel: (
+        <Stack gap={10}>
+          <PassportStory passport={passport} showImpact={false} />
+
+          <div className="border-t border-line pt-8">
+            <Row gap={4} justify="between" align="baseline" className="pb-6">
+              <Eyebrow as="h3">{passportCopy.sections.back}</Eyebrow>
+              <Link
+                href={`/passport/${passport.id}`}
+                className="border-b border-line pb-0.5 text-xs text-ink-muted transition-colors hover:border-ink hover:text-ink"
+              >
+                Open on its own
+              </Link>
+            </Row>
+            <PassportRecord passport={passport} shareUrl={passportUrl} />
+          </div>
+        </Stack>
+      ),
+    })
+
+    tabs.push({
+      id: 'impact',
+      label: drawers.tabs.impact,
+      panel: <PassportImpact passport={passport} />,
+    })
+  }
 
   return (
     <>
@@ -106,16 +160,17 @@ export default async function ProductPage({ params }: { params: Params }) {
         }}
       />
 
-      {/* ---------------------------------------------------------- the split */}
       <div className="desktop:grid desktop:grid-cols-2 desktop:items-start">
         <Gallery images={images} sold={sold} productId={product.id} />
 
         {/*
           Sticky and vertically centred, so the decision sits at eye level and
-          stays there while the photographs scroll past it.
+          stays there while the photographs scroll past it. `overflow-y-auto`
+          because the column now carries the look rail as well and must not
+          overflow a short viewport.
         */}
-        <div className="desktop:sticky desktop:top-0 desktop:flex desktop:h-svh desktop:min-h-[40rem] desktop:items-center">
-          <div className="w-full px-gutter py-10 desktop:max-w-[30rem] desktop:py-0">
+        <div className="desktop:sticky desktop:top-0 desktop:flex desktop:h-svh desktop:min-h-[40rem] desktop:items-center desktop:overflow-y-auto">
+          <div className="w-full px-gutter py-10 desktop:max-w-[30rem] desktop:py-12">
             <Stack gap={5}>
               <Stack gap={2}>
                 <Row gap={3} justify="between" align="start">
@@ -141,9 +196,9 @@ export default async function ProductPage({ params }: { params: Params }) {
 
               {/*
                 Condition, in the buying column. Not the full disclosure — that
-                is below with the photographs — but the grade and its one-line
-                definition, because a shopper should never have to scroll or
-                click to find out what they are being promised.
+                is a tab — but the grade and its one-line summary, because a
+                shopper should never have to click to find out what they are
+                being promised.
               */}
               <Stack gap={1} className="border-t border-line pt-4">
                 <Row gap={2} align="baseline">
@@ -178,9 +233,14 @@ export default async function ProductPage({ params }: { params: Params }) {
 
               <AddToBag productId={product.id} availability={product.availability} />
 
-              {/* The drawers. Reference material, a click away. */}
+              {/* The drawers. Everything that used to stack below the fold. */}
               <div className="border-t border-line pt-5">
-                <ProductDrawers product={product} passport={passport} seller={seller} />
+                <ProductDrawers tabs={tabs} />
+              </div>
+
+              {/* Goes with this — under the drawer triggers, as asked. */}
+              <div className="border-t border-line pt-5">
+                <CompleteTheLook products={related} heading={productPage.goesWith} />
               </div>
 
               <div className="border-t border-line pt-5">
@@ -197,60 +257,29 @@ export default async function ProductPage({ params }: { params: Params }) {
                   </Type>
                 </Row>
               )}
+
+              {passport === null && (
+                <Type size="xs" tone="subtle" measure="narrow">
+                  {productPage.noPassport}
+                </Type>
+              )}
             </Stack>
           </div>
         </div>
       </div>
 
-      {/* ------------------------------------------------- condition, in full */}
-      <Section divider heading={condition.label} eyebrow={productPage.sections.condition}>
-        <Grid>
-          <Col mobile={4} tablet={8} desktop={7}>
-            <ConditionBlock product={product} headless />
-          </Col>
-        </Grid>
-      </Section>
-
       {/*
-        ---- The passport, inline.
-
-        A garment without one renders **nothing here at all** — no placeholder, no
-        "passport pending". Drawing an absence is still a claim, and it tells a
-        shopper something is missing on a garment where nothing was promised.
+        Nothing below the split. The passport keeps a crawlable home at
+        /passport/[id], which is also what the QR resolves to and what the
+        sitemap points at — see PASSPORT_NAME usage there.
       */}
-      {passport !== null && passportUrl !== null && (
-        <Section
-          divider
-          eyebrow={PASSPORT_NAME.title}
-          heading={passportCopy.oneLiner}
-          headingSize="3xl"
-          action={
-            <Row gap={5} wrap={false} className="shrink-0">
-              {/*
-                The record, behind a click. Clerical material — signatures,
-                identifiers, the frozen declaration, the QR — that a shopper
-                checks rather than reads. Same distinction the Product details
-                drawer makes.
-              */}
-              <PassportRecordDrawer>
-                <PassportRecord passport={passport} shareUrl={passportUrl} />
-              </PassportRecordDrawer>
-              <Link
-                href={`/passport/${passport.id}`}
-                className="border-b border-line pb-0.5 text-sm text-ink-muted transition-colors hover:border-ink hover:text-ink"
-              >
-                Open on its own
-              </Link>
-            </Row>
-          }
-        >
-          <PassportStory passport={passport} />
-        </Section>
+      {passport !== null && (
+        <div className="sr-only">
+          <Link href={`/passport/${passport.id}`}>
+            {PASSPORT_NAME.title} for {product.brand} {product.title}
+          </Link>
+        </div>
       )}
-
-      <Container>
-        <div className="pb-section" />
-      </Container>
     </>
   )
 }

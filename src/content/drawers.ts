@@ -14,6 +14,17 @@
 export const drawers = {
   close: 'Close',
 
+  /**
+   * Tab labels inside the Product details drawer. Four questions a shopper might
+   * have, each answered in its own panel rather than stacked down the page.
+   */
+  tabs: {
+    specification: 'Details',
+    condition: 'Condition',
+    passport: 'History',
+    impact: 'What this saves',
+  },
+
   details: {
     /** The trigger text in the detail column. */
     trigger: 'Product details',
