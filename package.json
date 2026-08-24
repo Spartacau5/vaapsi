@@ -12,7 +12,9 @@
     "format:check": "prettier --check .",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepare": "husky"
+    "prepare": "husky",
+    "deploy:preview": "vercel deploy",
+    "deploy:prod": "vercel deploy --prod"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.0",

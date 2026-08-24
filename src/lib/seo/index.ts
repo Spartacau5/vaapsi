@@ -22,6 +22,18 @@ import { conditionCopy } from '@/content/product'
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vaapsi.example'
 
+/**
+ * Whether search engines may index this deployment. **Opt-in.**
+ *
+ * Blocked unless `NEXT_PUBLIC_INDEXABLE` is exactly `1`, so every preview and
+ * every branch deployment is closed by default and only a deliberate production
+ * setting opens it. Defaulting the other way would mean one forgotten
+ * environment variable is the difference between a private client link and a
+ * crawlable one — and this build carries real brand names, placeholder
+ * photography and unverified figures.
+ */
+export const IS_INDEXABLE = process.env.NEXT_PUBLIC_INDEXABLE === '1'
+
 export function absoluteUrl(path: string): string {
   return `${SITE_URL.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`
 }

@@ -8,6 +8,7 @@ import { StudioMount } from '@/components/theme/studio/studio-mount'
 import { fontVariables } from '@/components/theme/fonts'
 import { DEFAULT_THEME } from '@/components/theme/presets'
 import { common } from '@/content'
+import { IS_INDEXABLE } from '@/lib/seo'
 import { Providers } from './providers'
 import './globals.css'
 
@@ -17,6 +18,12 @@ export const metadata: Metadata = {
     template: `%s — ${common.meta.title}`,
   },
   description: common.meta.description,
+  /*
+   * Belt and braces with robots.txt. A crawler that ignores robots.txt still
+   * honours a meta tag, and the two disagreeing is a worse outcome than either
+   * alone — so both come from the same flag.
+   */
+  ...(IS_INDEXABLE ? {} : { robots: { index: false, follow: false } }),
 }
 
 export const viewport: Viewport = {
