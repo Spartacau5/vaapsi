@@ -3,7 +3,7 @@ import { getProductFacets, listFeaturedProducts, listProducts, resolveCart } fro
 describe('listProducts filtering', () => {
   it('filters by category', async () => {
     // Three of the eight denim pieces are bottoms: the 501s, the maxi skirt and
-    // the wide-leg jeans.
+    // the straight-leg jeans.
     const page = await listProducts({ filters: { category: 'bottoms' } })
     expect(page.total).toBe(3)
     expect(page.items.every((item) => item.category === 'bottoms')).toBe(true)

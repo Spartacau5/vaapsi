@@ -26,9 +26,11 @@ is shooting without them reading TypeScript.
 
 ## Switching a product over
 
-Add its slug to `LOCAL_PHOTOGRAPHY` in `fixtures/products.ts`. One line per
-garment. Nothing else changes — the `image()` helper picks the local path up from
-there.
+Add its slug to `LOCAL_PHOTOGRAPHY` in `fixtures/products.ts`, mapped to the file
+extension its frames were saved as. One line per garment, and the extension is
+per-garment so a set shot as JPEG and a set shot as PNG can sit side by side.
+Then pass the slug and the frame index to each `image()` call for that product —
+the index is what turns into the `1-`, `2-`, `3-` prefix.
 
 ## Format
 

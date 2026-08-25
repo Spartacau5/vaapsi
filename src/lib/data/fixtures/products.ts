@@ -53,9 +53,7 @@ const PORTRAIT = 4 / 5
  * biggest thing between this build and a client review that shows the design
  * rather than the scaffolding.
  */
-const LOCAL_PHOTOGRAPHY = new Set<string>([
-  // 'levis-501-original-straight-jeans-mid-indigo',
-])
+const LOCAL_PHOTOGRAPHY = new Map<string, string>([['uniqlo-straight-leg-jeans-mid-wash', 'png']])
 
 /**
  * Frame filenames, matched to `SHOT_LIST` order. Flaw frames are named
@@ -64,7 +62,7 @@ const LOCAL_PHOTOGRAPHY = new Set<string>([
  */
 function localPath(slug: string, id: string, kind: ProductImage['kind'], index: number): string {
   const name = kind === 'flaw' ? `flaw-${id.split('_').pop() ?? '1'}` : `${index + 1}-${kind}`
-  return `/products/${slug}/${name}.jpg`
+  return `/products/${slug}/${name}.${LOCAL_PHOTOGRAPHY.get(slug) ?? 'jpg'}`
 }
 
 /**
@@ -605,20 +603,22 @@ export const products: readonly Product[] = [
     listedAt: '2026-08-22T08:10:00.000Z',
   },
 
-  // 8 — NO passport, very_good, wide-leg jeans
+  // 8 — NO passport, very_good, straight-leg jeans. The one garment shot for real.
   {
     id: 'prd_uniqlo_wide_leg_jeans',
-    slug: 'uniqlo-wide-leg-jeans-rinse-blue',
+    slug: 'uniqlo-straight-leg-jeans-mid-wash',
     sku: 'VP-2608-1633',
-    title: 'Wide-leg jeans in rinse blue',
+    title: 'Straight-leg jeans in mid wash',
     brand: 'Uniqlo',
     category: 'bottoms',
-    subcategory: 'Wide-leg jeans',
+    subcategory: 'Straight-leg jeans',
     condition: 'very_good',
     conditionNotes:
-      'Rinse-wash, barely faded. Hem taken up once by a tailor and finished with the original chain stitch, so it reads as factory.',
+      'Worn in properly and evenly. The fade runs where a person puts it — soft whiskering at the front hip, a lighter panel down the thigh, the seat and knees a shade paler than the outseam. Copper rivets and the ecru topstitch are all present. Hem taken up once by a tailor and finished with the original chain stitch, so it reads as factory.',
     flaws: [],
-    measurements: { waist: 84, hip: 106, inseam: 76, rise: 31, thigh: 34, hem: 26 },
+    // Cropped straight, not wide: the hem sits above the ankle bone and the leg
+    // opening is close to the knee measurement rather than flaring past it.
+    measurements: { waist: 76, hip: 98, inseam: 68, rise: 29, thigh: 30, hem: 19 },
     size: { label: '32', system: 'IN', normalized: 'w32' },
     priceInr: rupees(1_900),
     originalRetailInr: rupees(3_990),
@@ -628,33 +628,34 @@ export const products: readonly Product[] = [
       image(
         'img_uq_1',
         'vaapsi-denim-uq-1',
-        'Rinse blue wide-leg jeans laid flat on a light grey ground, front',
+        'The jeans laid flat on a pale grey ground, front, showing the full leg and the five-pocket front',
         'primary',
+        'uniqlo-straight-leg-jeans-mid-wash',
+        0,
       ),
       image(
         'img_uq_2',
         'vaapsi-denim-uq-2',
-        'Model wearing the wide-leg jeans with a tucked shirt, full length, front',
+        'Model wearing the jeans with a printed shirt and a tan suede jacket, full length, front',
         'worn',
+        'uniqlo-straight-leg-jeans-mid-wash',
+        1,
       ),
       image(
         'img_uq_3',
         'vaapsi-denim-uq-3',
-        'Worn close-up of the waistband and front pleat of the leg',
+        'Worn from the side, showing the straight leg, the outseam and the cropped hem above the ankle',
         'detail',
+        'uniqlo-straight-leg-jeans-mid-wash',
+        2,
       ),
-      image('img_uq_4', 'vaapsi-denim-uq-4', 'Close crop of the chain-stitched hem', 'detail'),
       image(
-        'img_uq_5',
-        'vaapsi-denim-uq-5',
-        'Model wearing the wide-leg jeans, full length, back',
+        'img_uq_4',
+        'vaapsi-denim-uq-4',
+        'Model wearing the jeans, full length, back',
         'worn',
-      ),
-      image(
-        'img_uq_6',
-        'vaapsi-denim-uq-6',
-        'Macro of the interior composition label at the waistband',
-        'label',
+        'uniqlo-straight-leg-jeans-mid-wash',
+        3,
       ),
     ],
     passportId: null,
