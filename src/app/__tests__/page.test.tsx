@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HeroCarousel } from '@/components/patterns/home/hero-carousel'
+import { NewInRail } from '@/components/patterns/home/new-in-rail'
 import { home } from '@/content/home'
+import { listProducts } from '@/lib/data'
 
 /**
  * The hero is editorial: it carries the page's thesis over rotating photography
@@ -40,18 +42,19 @@ describe('HeroCarousel', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(home.hero.thesis)
   })
 
-  it('offers one way in, and it goes to the stock', () => {
-    // The pictures are not listings, so the hero cannot link to a garment. Its
-    // single call to action has to reach the shop instead.
+  it('keeps the thesis as the heading even though nothing renders it', () => {
+    // The picture carries the hero, but the document still needs an h1 and
+    // search still needs to know what this page is about.
     render(<HeroCarousel />)
-    const cta = screen.getByRole('link', { name: new RegExp(home.hero.cta, 'i') })
-    expect(cta).toHaveAttribute('href', home.hero.ctaHref)
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading.className).toContain('sr-only')
   })
 
-  it('names no garment and no price', () => {
-    // A caption naming a piece the photograph does not show would be a claim we
-    // cannot back, and it is the failure mode this hero is shaped to avoid.
+  it('shows no caption over the photograph', () => {
+    // A white card floating mid-image was the one piece of chrome here that
+    // could not be justified. Nothing visible should carry the lede or a price.
     const { container } = render(<HeroCarousel />)
+    expect(container.textContent).not.toContain(home.hero.lede)
     expect(container.textContent).not.toMatch(/₹/)
   })
 
@@ -61,34 +64,41 @@ describe('HeroCarousel', () => {
       const slide = home.hero.slides[i]!
       expect(screen.getByAltText(slide.alt)).toBeInTheDocument()
       if (i < TOTAL - 1) {
-        await userEvent.click(screen.getByRole('button', { name: home.hero.carousel.next }))
+        await userEvent.click(
+          screen.getByRole('button', { name: home.hero.carousel.position(i + 2, TOTAL) }),
+        )
       }
     }
   })
 
-  it('wraps backwards from the first frame rather than dead-ending', async () => {
+  it('is steered by the position rail alone', async () => {
+    // The rail is the whole control surface. It says how many frames there are,
+    // which one you are on, and clicking one goes straight there — arrows and a
+    // pause button beside it were three controls doing one control's work.
+    withMotion()
     render(<HeroCarousel />)
-    await userEvent.click(screen.getByRole('button', { name: home.hero.carousel.previous }))
+    const controls = screen.getAllByRole('button')
+    expect(controls).toHaveLength(TOTAL)
+    await userEvent.click(controls.at(-1)!)
     expect(screen.getByAltText(home.hero.slides.at(-1)!.alt)).toBeInTheDocument()
   })
 
-  it('does not rotate, or offer a stop, when motion is off', () => {
-    // jsdom has no matchMedia, so this is the reduced-motion path. Nothing
-    // advances by itself, so there is nothing to pause - a stop control here
-    // would be a button that does nothing.
+  it('marks the frame on screen as current', async () => {
     render(<HeroCarousel />)
-    expect(screen.queryByRole('button', { name: home.hero.carousel.pause })).toBeNull()
-    expect(screen.getByRole('button', { name: home.hero.carousel.next })).toBeInTheDocument()
+    expect(screen.getAllByRole('button')[0]).toHaveAttribute('aria-current', 'true')
+    await userEvent.click(screen.getAllByRole('button')[1]!)
+    expect(screen.getAllByRole('button')[1]).toHaveAttribute('aria-current', 'true')
+    expect(screen.getAllByRole('button')[0]).not.toHaveAttribute('aria-current')
   })
 
-  it('offers a pause control once it actually rotates', async () => {
-    // WCAG 2.2.2 - anything moving past five seconds needs a stop, and hover is
-    // not a control a keyboard or touch user has.
+  it('stops rotating for good once the rail is touched', async () => {
+    // Once somebody is steering, taking the wheel back is hostile.
     withMotion()
     render(<HeroCarousel />)
-    const pause = await screen.findByRole('button', { name: home.hero.carousel.pause })
-    await userEvent.click(pause)
-    expect(screen.getByRole('button', { name: home.hero.carousel.play })).toBeInTheDocument()
+    const region = screen.getByRole('region', { name: home.hero.carousel.label })
+    await userEvent.click(screen.getAllByRole('button')[2]!)
+    // The live region turns polite once it is no longer advancing unattended.
+    expect(region.querySelector('[aria-live="polite"]')).not.toBeNull()
   })
 
   it('is announced as a carousel, with a labelled position for every frame', () => {
@@ -100,5 +110,55 @@ describe('HeroCarousel', () => {
         screen.getAllByLabelText(home.hero.carousel.position(i + 1, TOTAL)).length,
       ).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('NewInRail', () => {
+  async function recent() {
+    return (await listProducts({ sort: 'newest', limit: 6 })).items
+  }
+
+  it('gives the rail arrows as well as a scrollbar', async () => {
+    // Shift-scroll is not something most people know, and a scrollbar under a
+    // row of images is not an inviting control.
+    render(<NewInRail products={await recent()} />)
+    expect(screen.getByRole('button', { name: home.newIn.previous })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: home.newIn.next })).toBeInTheDocument()
+  })
+
+  it('puts the way out to the right of the way through', async () => {
+    render(<NewInRail products={await recent()} />)
+    const next = screen.getByRole('button', { name: home.newIn.next })
+    const cta = screen.getByRole('link', { name: new RegExp(home.newIn.cta, 'i') })
+    // Node.compareDocumentPosition: 4 means the argument follows in the DOM.
+    expect(next.compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('disables back at the start rather than wrapping', async () => {
+    // This is a scroll position, not a carousel. A rail that silently jumps to
+    // the start loses the reader's place.
+    render(<NewInRail products={await recent()} />)
+    expect(screen.getByRole('button', { name: home.newIn.previous })).toBeDisabled()
+  })
+
+  it('scrolls the rail rather than reimplementing it', async () => {
+    const products = await recent()
+    render(<NewInRail products={products} />)
+    const rail = screen.getByRole('list', { name: home.newIn.railLabel })
+    const scrollBy = jest.fn()
+    rail.scrollBy = scrollBy
+    // jsdom lays nothing out, so clientWidth is 0 and the rail reports itself
+    // fully scrolled — forcing a width is what makes the button live.
+    Object.defineProperty(rail, 'clientWidth', { configurable: true, value: 800 })
+    Object.defineProperty(rail, 'scrollWidth', { configurable: true, value: 3000 })
+    rail.dispatchEvent(new Event('scroll', { bubbles: true }))
+    await userEvent.click(screen.getByRole('button', { name: home.newIn.next }))
+    expect(scrollBy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }))
+    expect(scrollBy.mock.calls[0]![0].left).toBeGreaterThan(0)
+  })
+
+  it('renders nothing rather than an empty rail', () => {
+    const { container } = render(<NewInRail products={[]} />)
+    expect(container).toBeEmptyDOMElement()
   })
 })

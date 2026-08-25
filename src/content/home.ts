@@ -73,6 +73,9 @@ export const home = {
     cta: 'See everything',
     /** Screen-reader instruction for the horizontal rail. */
     railLabel: 'Recent arrivals',
+    /** The rail's scroll controls. Named for what they do, not which way they point. */
+    previous: 'Scroll back through recent arrivals',
+    next: 'Scroll forward through recent arrivals',
   },
 
   /**
