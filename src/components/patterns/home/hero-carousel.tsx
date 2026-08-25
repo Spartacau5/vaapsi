@@ -46,15 +46,19 @@ import { useReducedMotion } from '@/lib/hooks/use-reduced-motion'
  *
  * A crossfade, not a slide. A horizontal slide draws the eye across the page and
  * competes with everything below it; a fade changes the subject without
- * announcing itself. Autoplay stops on hover, on keyboard focus, when the tab is
- * hidden, and permanently the first time anyone touches the rail — once someone
- * is steering, taking the wheel back is hostile.
+ * announcing itself. Four seconds a frame, looping indefinitely. Picking a frame
+ * from the rail jumps there and lets the rotation carry on — it restarts the
+ * clock rather than stopping it, so a click halfway through a beat does not get
+ * two seconds and then a move nobody asked for.
+ *
+ * It pauses while the pointer is over it, while anything inside has keyboard
+ * focus, and while the tab is hidden.
  *
  * **Known gap.** WCAG 2.2.2 wants a labelled stop for anything that moves past
- * five seconds, and the explicit pause button that provided it was removed by
- * design decision. Touching the rail does stop the rotation for good, so the
- * mechanism exists, but nothing announces it as one. Restoring a pause control,
- * or stopping automatically after one full pass, would both close this.
+ * five seconds. There is no longer any mechanism that halts the loop for good —
+ * this is a deliberate product decision, recorded here rather than hidden.
+ * Restoring a pause control, or stopping automatically after one full pass,
+ * would both close it.
  *
  * With reduced motion on, there is no autoplay and no crossfade at all. The
  * first frame is shown and the rail still works — a carousel that advances
@@ -62,34 +66,55 @@ import { useReducedMotion } from '@/lib/hooks/use-reduced-motion'
  */
 
 /** Long enough to look at a picture, short enough to see a second one. */
-const INTERVAL_MS = 6000
+const INTERVAL_MS = 4000
+
+/**
+ * Whether focus landed here from the keyboard rather than a pointer.
+ *
+ * Wrapped because `:focus-visible` is not universally supported by
+ * `matches()` — jsdom among others. Where it is not, the safe answer is yes:
+ * pausing a carousel we did not need to pause costs a reader nothing, and
+ * failing to pause one a keyboard user is working through costs them the page.
+ */
+function isKeyboardFocus(target: EventTarget): boolean {
+  if (!(target instanceof Element)) return true
+  try {
+    return target.matches(':focus-visible')
+  } catch {
+    return true
+  }
+}
 
 export function HeroCarousel() {
   const slides = home.hero.slides
   const reduced = useReducedMotion()
   const [index, setIndex] = useState(0)
-  // Autoplay is opt-out, but a single interaction ends it for the session.
-  const [playing, setPlaying] = useState(true)
   const [suspended, setSuspended] = useState(false)
   const regionId = useId()
   const total = slides.length
 
-  /** Any deliberate navigation ends autoplay for good. */
+  /**
+   * Jump to a frame and let the rotation carry on from there. Deliberately not
+   * a full stop: the loop is meant to keep running, so the timer restarts from
+   * the frame you picked rather than the one it was heading for.
+   */
   const steer = useCallback(
     (next: number) => {
-      setPlaying(false)
       setIndex(((next % total) + total) % total)
     },
     [total],
   )
 
-  const active = playing && !reduced && !suspended && total > 1
+  const active = !reduced && !suspended && total > 1
 
   useEffect(() => {
     if (!active) return
+    // `index` in the dependencies is what restarts the clock after a manual
+    // jump. Without it, picking a frame halfway through a beat gives you two
+    // seconds on it and then a move you did not ask for.
     const timer = window.setInterval(() => setIndex((i) => (i + 1) % total), INTERVAL_MS)
     return () => window.clearInterval(timer)
-  }, [active, total])
+  }, [active, total, index])
 
   // A carousel advancing in a tab nobody is looking at is wasted bandwidth, and
   // on return it has skipped past everything.
@@ -109,7 +134,14 @@ export function HeroCarousel() {
       className="relative"
       onMouseEnter={() => setSuspended(true)}
       onMouseLeave={() => setSuspended(false)}
-      onFocusCapture={() => setSuspended(true)}
+      onFocusCapture={(event) => {
+        // Keyboard focus only. A mouse click on a rail rule also focuses the
+        // button, and pausing there would mean picking a frame quietly stops
+        // the rotation until you click somewhere else — the opposite of what
+        // the rail is for. `:focus-visible` is exactly the distinction the
+        // browser already draws.
+        if (isKeyboardFocus(event.target)) setSuspended(true)
+      }}
       onBlurCapture={() => setSuspended(false)}
       onKeyDown={(event) => {
         if (event.key === 'ArrowRight') {
@@ -129,8 +161,10 @@ export function HeroCarousel() {
       <div
         id={regionId}
         // Off while it is advancing on its own — a live region narrating an
-        // unattended carousel talks over everything else on the page.
-        aria-live={playing && !reduced ? 'off' : 'polite'}
+        // unattended carousel talks over everything else on the page. It only
+        // announces when motion is off, where the rail is the only thing moving
+        // it and every change is something the reader asked for.
+        aria-live={reduced ? 'polite' : 'off'}
         className="relative h-[78vh] max-h-[860px] min-h-[520px] w-full overflow-hidden bg-surface"
       >
         <AnimatePresence initial={false} mode="sync">
@@ -189,6 +223,10 @@ export function HeroCarousel() {
  * without adding a scrim. The rules are painted in the background token and the
  * blend inverts them against whatever is behind — light on the dark frames, dark
  * on the white-wall one.
+ *
+ * Two pixels, not one. A hairline is right for a rule between blocks of text on
+ * a flat ground; over a photograph, at the bottom of a full-bleed image, it
+ * disappears into the grain.
  */
 function Counter({
   index,
@@ -213,7 +251,7 @@ function Counter({
           className="group/dot flex h-6 w-10 items-center focus-visible:outline-offset-2"
         >
           <span
-            className={`ease h-px w-full bg-background transition-opacity duration-base ${
+            className={`ease h-0.5 w-full bg-background transition-opacity duration-base ${
               i === index ? 'opacity-100' : 'opacity-40 group-hover/dot:opacity-70'
             }`}
           />

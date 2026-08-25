@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HeroCarousel } from '@/components/patterns/home/hero-carousel'
 import { NewInRail } from '@/components/patterns/home/new-in-rail'
@@ -91,14 +91,29 @@ describe('HeroCarousel', () => {
     expect(screen.getAllByRole('button')[0]).not.toHaveAttribute('aria-current')
   })
 
-  it('stops rotating for good once the rail is touched', async () => {
-    // Once somebody is steering, taking the wheel back is hostile.
+  it('keeps looping after the rail is used', async () => {
+    // The rotation is meant to run indefinitely, so picking a frame jumps there
+    // and lets it carry on rather than handing control over permanently.
     withMotion()
-    render(<HeroCarousel />)
-    const region = screen.getByRole('region', { name: home.hero.carousel.label })
-    await userEvent.click(screen.getAllByRole('button')[2]!)
-    // The live region turns polite once it is no longer advancing unattended.
-    expect(region.querySelector('[aria-live="polite"]')).not.toBeNull()
+    jest.useFakeTimers({ advanceTimers: true })
+    try {
+      render(<HeroCarousel />)
+      const rule = screen.getAllByRole('button')[1]!
+      await userEvent.click(rule)
+      expect(screen.getByAltText(home.hero.slides[1]!.alt)).toBeInTheDocument()
+      // jsdom cannot answer `:focus-visible`, so the component takes the safe
+      // branch and treats this as keyboard focus. In a browser a pointer click
+      // never pauses; here we blur to reach the same state.
+      await act(async () => {
+        rule.blur()
+      })
+      await act(async () => {
+        jest.advanceTimersByTime(4100)
+      })
+      expect(screen.getByAltText(home.hero.slides[2]!.alt)).toBeInTheDocument()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 
   it('is announced as a carousel, with a labelled position for every frame', () => {

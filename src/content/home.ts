@@ -52,16 +52,8 @@ export const home = {
      */
     carousel: {
       label: 'Featured images',
-      previous: 'Previous image',
-      next: 'Next image',
       /** Announced as a frame arrives, and used as each control's label. */
       position: (index: number, total: number) => `Image ${index} of ${total}`,
-      /**
-       * Autoplay has to be stoppable to meet WCAG 2.2.2 - anything that moves
-       * for more than five seconds needs a pause control that is not a hover.
-       */
-      pause: 'Pause',
-      play: 'Play',
     },
   },
 
