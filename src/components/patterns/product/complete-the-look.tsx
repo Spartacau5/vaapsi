@@ -78,7 +78,7 @@ export function CompleteTheLook({
           'flex gap-3 overflow-x-auto',
           scrollable && 'snap-x snap-mandatory',
           // Hide the scrollbar on the rail only. The page keeps its own.
-          '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          'scrollbar-none',
         )}
       >
         {products.map((product) => (

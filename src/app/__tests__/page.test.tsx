@@ -141,12 +141,12 @@ describe('NewInRail', () => {
     expect(screen.getByRole('button', { name: home.newIn.next })).toBeInTheDocument()
   })
 
-  it('puts the way out to the right of the way through', async () => {
+  it('leaves the rail to the arrows alone', async () => {
+    // No "See everything" beside them. The footer and the header both reach the
+    // shop, and a third route out sitting next to the two controls that move
+    // the rail made it ambiguous which one advanced it.
     render(<NewInRail products={await recent()} />)
-    const next = screen.getByRole('button', { name: home.newIn.next })
-    const cta = screen.getByRole('link', { name: new RegExp(home.newIn.cta, 'i') })
-    // Node.compareDocumentPosition: 4 means the argument follows in the DOM.
-    expect(next.compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByRole('link', { name: new RegExp(home.newIn.cta, 'i') })).toBeNull()
   })
 
   it('disables back at the start rather than wrapping', async () => {

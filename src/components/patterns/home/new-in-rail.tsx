@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { ProductCard } from '../product-card'
 import { Reveal } from '../reveal'
@@ -27,6 +26,10 @@ import type { ProductSummary } from '@/lib/types'
  * The overflow bleeds to the viewport edge so a partially visible card signals
  * that there is more — a rail that ends flush at the gutter looks like a grid
  * that ran out.
+ *
+ * The scrollbar is hidden. That is only safe because the arrows are there: a
+ * scrolling region with no visible control and no scrollbar strands anyone who
+ * cannot swipe. Native scrolling itself is untouched.
  *
  * The note under the heading does real work: it says out loud that these are
  * one-of-one, which is what makes a rail of resale stock feel like rotating
@@ -77,24 +80,13 @@ export function NewInRail({ products }: { products: readonly ProductSummary[] })
         heading={home.newIn.title}
         lede={home.newIn.note}
         action={
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-end gap-1">
             <RailButton label={home.newIn.previous} disabled={atStart} onClick={() => step(-1)}>
               <ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden />
             </RailButton>
             <RailButton label={home.newIn.next} disabled={atEnd} onClick={() => step(1)}>
               <ArrowRight className="size-4" strokeWidth={1.5} aria-hidden />
             </RailButton>
-            <Link
-              href="/shop?sort=newest"
-              className="group/cta ease ml-3 inline-flex shrink-0 items-center gap-2 text-sm text-ink-muted transition-colors duration-base hover:text-ink"
-            >
-              {home.newIn.cta}
-              <ArrowRight
-                className="ease size-4 transition-transform duration-base group-hover/cta:translate-x-1"
-                strokeWidth={1.5}
-                aria-hidden
-              />
-            </Link>
           </div>
         }
       >
@@ -107,7 +99,7 @@ export function NewInRail({ products }: { products: readonly ProductSummary[] })
           ref={railRef}
           onScroll={sync}
           aria-label={home.newIn.railLabel}
-          className="-mx-gutter flex snap-x snap-mandatory scroll-px-gutter gap-4 overflow-x-auto px-gutter pb-2 desktop:gap-6"
+          className="-mx-gutter flex snap-x snap-mandatory scroll-px-gutter gap-4 overflow-x-auto px-gutter pb-2 scrollbar-none desktop:gap-6"
         >
           {products.map((product) => (
             <ProductCard

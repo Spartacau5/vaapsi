@@ -1,3 +1,4 @@
+import plugin from 'tailwindcss/plugin'
 import type { Config } from 'tailwindcss'
 
 /**
@@ -209,7 +210,27 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+
+    /**
+     * Hide a scrollbar without disabling the scrolling.
+     *
+     * Only for a rail that carries its own visible controls. Taking the
+     * scrollbar off a region with no other way through it strands anyone who
+     * cannot swipe. Three spellings because the property is still unstandardised
+     * across engines.
+     */
+    plugin(({ addUtilities }) => {
+      addUtilities({
+        '.scrollbar-none': {
+          'scrollbar-width': 'none',
+          '-ms-overflow-style': 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        },
+      })
+    }),
+  ],
 }
 
 export default config
