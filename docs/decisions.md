@@ -422,3 +422,47 @@ longer needs the `print:block` overrides the flip required.
    `MaterialRing`.
 2. **"Came back" was doing double duty** — a count chip and a timeline event
    label, on the same page, meaning different things. The chip is now "Returns".
+
+## Flags beside places
+
+### Colour, deliberately, in the one place the rule cannot hold
+
+The direction is "spend colour only on the accent dot". Flags break that, and
+there is no version of a flag that does not: a national flag recoloured to fit a
+palette is a wrong flag, not a restrained one. So the rule bends here rather than
+the flags bending.
+
+The break is kept narrow on purpose. Five marks, roughly 12px tall, in one block
+of one drawer, on a page that is otherwise monochrome. They are not on the
+listing card, not in the rail, not on the passport story.
+
+### They are files, not components
+
+`public/flags/*.svg`, loaded as images. Three reasons, in order of weight:
+
+1. **They must not follow the theme.** Every other colour on the site is a token
+   and inverts with the preset. These cannot, and keeping them outside the token
+   system is the clearest way to say so.
+2. **The hygiene test stays honest.** It forbids colour literals in `.ts`, `.tsx`
+   and `.css`. Flags as components would have needed an exemption in that test,
+   which is exactly how an exemption list starts. As assets they are simply not
+   in scope, for the right reason.
+3. **Adding a country is a file and one line** in the `FLAGS` map, which is what
+   the dev team will want when real inventory arrives with more origins than
+   these five.
+
+### Unmatched places get nothing
+
+The country is read off the end of the free-text place — `Okayama, Japan`,
+`Kaithal, Haryana, India`. Anything not in the map renders no flag at all.
+`Unknown — label removed before intake` is a real value in this data, and so is
+`Manifattura Rossi, Vicenza`; a flag beside either would be an invented fact,
+which is the one thing this product cannot afford to do.
+
+The manufacturer field is excluded outright. A factory is not a country.
+
+### Every flag carries a hairline
+
+Japan and Italy are mostly white. On a white page a white field has no edge, and
+Japan reads as a red dot floating next to a word. The border is on all five so
+the set looks like a set rather than two of them looking like a fix.

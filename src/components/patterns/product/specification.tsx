@@ -1,4 +1,5 @@
 import { CareSymbols } from '../data/care-symbol'
+import { Flag } from '../data/flag'
 import { MaterialRing } from '../data/material-ring'
 import { SourcedValue } from '../passport/provenance-dot'
 import { ChipPair, ChipRow } from '@/components/primitives/chip'
@@ -109,8 +110,10 @@ export function ProductSpecification({
         <section className="border-t border-line pt-6">
           <Eyebrow as="h3">{drawers.details.sections.origin}</Eyebrow>
           <dl className="grid grid-cols-1 gap-3 pt-3 tablet:grid-cols-3">
-            <OriginField label="Place of origin" sourced={passport.placeOfOrigin} />
-            <OriginField label="Made in" sourced={passport.manufacturingCountry} />
+            <OriginField label="Place of origin" sourced={passport.placeOfOrigin} flag />
+            <OriginField label="Made in" sourced={passport.manufacturingCountry} flag />
+            {/* No flag. A factory is not a country, and "Manifattura Rossi,
+                Vicenza" would otherwise be read for one. */}
             <OriginField label="Manufacturer" sourced={passport.manufacturer} />
           </dl>
         </section>
@@ -119,13 +122,26 @@ export function ProductSpecification({
   )
 }
 
-function OriginField({ label, sourced }: { label: string; sourced: Passport['placeOfOrigin'] }) {
+function OriginField({
+  label,
+  sourced,
+  flag = false,
+}: {
+  label: string
+  sourced: Passport['placeOfOrigin']
+  /** Only for fields that name a place. `Flag` ignores anything it cannot match. */
+  flag?: boolean
+}) {
   return (
     <div>
       <Type as="dt" size="xs" tone="subtle" tracking="caps">
         {label}
       </Type>
-      <dd className="pt-1">
+      {/* `items-start`, not centre: "Okayama, Japan" wraps to two lines in this
+          column, and a centred flag then floats in the gap between them
+          instead of sitting against the word it belongs to. */}
+      <dd className="flex items-start gap-2 pt-1">
+        {flag && <Flag place={sourced.value} />}
         <SourcedValue value={sourced.value} provenance={sourced.provenance} />
       </dd>
     </div>
