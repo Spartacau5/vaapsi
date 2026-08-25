@@ -158,6 +158,17 @@ describe('NewInRail', () => {
     expect(controls.parentElement?.className).toContain('ml-auto')
   })
 
+  it('ends the arrows on the rail edge, not the container edge', async () => {
+    // The rail bleeds a gutter past the container, so controls sitting inside
+    // the container stop short of the images they steer. Both edges have to
+    // come off the same token or they drift apart at some breakpoint.
+    render(<NewInRail products={await recent()} />)
+    const controls = screen.getByRole('button', { name: home.newIn.next }).parentElement!
+    const rail = screen.getByRole('list', { name: home.newIn.railLabel })
+    expect(controls.className).toContain('-mr-gutter')
+    expect(rail.className).toContain('-mx-gutter')
+  })
+
   it('disables back at the start rather than wrapping', async () => {
     // This is a scroll position, not a carousel. A rail that silently jumps to
     // the start loses the reader's place.

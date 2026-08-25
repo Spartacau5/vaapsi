@@ -31,6 +31,10 @@ import type { ProductSummary } from '@/lib/types'
  * scrolling region with no visible control and no scrollbar strands anyone who
  * cannot swipe. Native scrolling itself is untouched.
  *
+ * The arrows hang a gutter outside the container so their right edge is the
+ * rail's right edge and not the heading's. Controls that stop short of the
+ * thing they move read as belonging to something else.
+ *
  * The note under the heading does real work: it says out loud that these are
  * one-of-one, which is what makes a rail of resale stock feel like rotating
  * inventory rather than a catalogue.
@@ -80,7 +84,12 @@ export function NewInRail({ products }: { products: readonly ProductSummary[] })
         heading={home.newIn.title}
         lede={home.newIn.note}
         action={
-          <div className="flex items-center justify-end gap-1">
+          // `-mr-gutter` pulls the arrows out to the rail's edge rather than the
+          // container's. The rail below is `-mx-gutter`, so its cards run one
+          // gutter past the container on each side; without this the controls
+          // stop a gutter short of the images they steer. Same token both
+          // places, so they stay aligned at every breakpoint.
+          <div className="-mr-gutter flex items-center justify-end gap-1">
             <RailButton label={home.newIn.previous} disabled={atStart} onClick={() => step(-1)}>
               <ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden />
             </RailButton>
