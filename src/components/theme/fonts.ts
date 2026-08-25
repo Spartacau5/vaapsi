@@ -6,7 +6,6 @@ import {
   Instrument_Serif,
   Inter,
   Jost,
-  Playfair_Display,
 } from 'next/font/google'
 
 /**
@@ -78,27 +77,6 @@ export const dmSans = DM_Sans({
   variable: '--font-dm-sans',
 })
 
-/**
- * The wordmark face. **Not a preset — the logo is locked to this.**
- *
- * A logo that changes typeface when the client tries a font pairing is not a
- * logo, so this deliberately sits outside the `--font-display` / `--font-body`
- * slots and is referenced only by the Logo component.
- *
- * The wordmark is set with a **dotless i** (U+0131) so the accent dot can be
- * placed as its tittle rather than fighting the one the font already draws.
- * Google's `latin` subset already covers that codepoint, so `latin-ext` is not
- * strictly required — it is loaded as insurance in case the subset boundaries
- * are reshuffled, and it costs nothing at runtime because `unicode-range` means
- * the browser only fetches a subset it actually needs.
- */
-export const playfairDisplay = Playfair_Display({
-  subsets: ['latin', 'latin-ext'],
-  display: 'swap',
-  weight: ['400', '500'],
-  variable: '--font-playfair',
-})
-
 export const ebGaramond = EB_Garamond({
   subsets: ['latin'],
   display: 'swap',
@@ -115,5 +93,4 @@ export const fontVariables = [
   instrumentSerif.variable,
   dmSans.variable,
   ebGaramond.variable,
-  playfairDisplay.variable,
 ].join(' ')

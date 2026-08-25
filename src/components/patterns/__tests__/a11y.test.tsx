@@ -4,7 +4,7 @@ import { renderWithProviders as render } from '@/test-utils'
 import { CartDrawer } from '../cart/cart-drawer'
 import { CartView } from '../cart/cart-view'
 import { ConditionScale } from '../home/condition-scale'
-import { Hero } from '../home/hero'
+import { HeroCarousel } from '../home/hero-carousel'
 import { HowItWorks } from '../home/how-it-works'
 import { MobileNav } from '../mobile-nav'
 import { PassportStory } from '../passport/story'
@@ -16,6 +16,7 @@ import { PincodeCheck } from '../product/pincode-check'
 import { ProductGrid, ProductGridSkeleton } from '../shop/product-grid'
 import { SiteFooter } from '../site-footer'
 import { SiteHeader } from '../site-header'
+import { listFeaturedProducts } from '@/lib/data'
 import { passports } from '@/lib/data/fixtures/passports'
 import { products } from '@/lib/data/fixtures/products'
 import { useCartStore } from '@/lib/store/cart'
@@ -115,12 +116,12 @@ describe('axe — shell', () => {
 })
 
 describe('axe — home', () => {
-  it('hero with a passport', async () => {
-    await auditInMain(<Hero product={product} passport={passport} />)
+  it('hero carousel', async () => {
+    await auditInMain(<HeroCarousel products={await listFeaturedProducts(4)} />)
   })
 
-  it('hero without a passport', async () => {
-    await auditInMain(<Hero product={withoutPassport} passport={null} />)
+  it('hero carousel with a single garment, controls suppressed', async () => {
+    await auditInMain(<HeroCarousel products={await listFeaturedProducts(1)} />)
   })
 
   it('how it works', async () => {

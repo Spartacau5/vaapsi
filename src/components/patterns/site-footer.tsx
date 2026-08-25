@@ -9,9 +9,9 @@ import { passportCopy } from '@/content/passport'
  * Quiet and dense.
  *
  * Typographic throughout: no social icon soup, no newsletter box competing with
- * the navigation, no logo wall. Payment methods are set as text rather than as
- * a row of brand marks — the marks are visual noise at the bottom of a page and
- * half of them would need licensing anyway.
+ * the navigation, no logo wall, and no payment-mark row — those belong at
+ * checkout, where they answer a question somebody is actually asking. The tax
+ * line lives in the cart summary for the same reason.
  *
  * A server component. Nothing here is interactive beyond links, and the year in
  * the copyright is computed at build time rather than being a client-side
@@ -60,45 +60,6 @@ export function SiteFooter() {
               </nav>
             </Col>
           </Grid>
-        </div>
-
-        {/* India block. Currency, country, tax and payment, stated plainly. */}
-        <div className="border-t border-line py-6">
-          <Row gap={6} justify="between" align="start">
-            <Stack gap={2}>
-              <Row gap={3}>
-                <Type size="sm" numeric>
-                  {footerMeta.currency}
-                </Type>
-                <Type size="sm" tone="subtle">
-                  {footerMeta.country}
-                </Type>
-              </Row>
-              <Type size="xs" tone="subtle">
-                {footerMeta.currencyNote}
-              </Type>
-              {/*
-                Placeholder. What the price includes depends on who the merchant
-                of record is, which is unresolved (PRD open question #6). The
-                line is here so the gap is visible rather than discovered at
-                checkout.
-              */}
-              <Type size="xs" tone="subtle" measure="narrow">
-                {footerMeta.gstNote}
-              </Type>
-            </Stack>
-
-            <Stack gap={2} className="tablet:items-end">
-              <Eyebrow as="h2">Payment</Eyebrow>
-              <Row gap={3}>
-                {footerMeta.paymentMarks.map((mark) => (
-                  <Type key={mark} as="span" size="xs" tone="muted">
-                    {mark}
-                  </Type>
-                ))}
-              </Row>
-            </Stack>
-          </Row>
         </div>
 
         <div className="border-t border-line py-6">

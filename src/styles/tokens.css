@@ -171,21 +171,6 @@
   --leading-relaxed: 1.7;
 }
 
-/* ---- the wordmark --------------------------------------------------------- *
- * Locked to one face, outside the preset slots, because a logo that changes
- * typeface when someone tries a font pairing is not a logo.
- *
- * The dot geometry is here rather than in the component because it is brand,
- * not layout: retuning it against a different typeface should be two numbers in
- * this file, not an edit to a React component. Both are in `em`, so the dot
- * scales with the wordmark at any size.
- */
-:root {
-  --font-wordmark: var(--font-playfair), ui-serif, Georgia, serif;
-  --wordmark-dot-size: 0.15em;
-  --wordmark-dot-rise: 0.8em;
-}
-
 /* ---- font pairing presets ------------------------------------------------ */
 
 [data-font='modernist'] {

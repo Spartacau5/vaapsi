@@ -82,42 +82,48 @@ describe('Logo', () => {
     expect(screen.queryByRole('img')).toBeNull()
   })
 
-  it('reads Vaapsi, with a dotless final letter', () => {
+  it('renders the brand asset, not a typographic stand-in', () => {
+    // The dot floats well above where a tittle sits. No font substitution
+    // reproduces that, which is why the mark is an image and not live text.
     const { container } = render(<Logo />)
-    // The final letter is U+0131 so our dot can be its tittle rather than
-    // covering the one the typeface already draws.
-    expect(container.textContent).toBe('Vaapsı')
-    expect(container.textContent).not.toContain('i')
+    expect(container.textContent).toBe('')
+    const sources = [...container.querySelectorAll('img')].map((img) => img.getAttribute('src'))
+    expect(sources.some((src) => src?.includes('wordmark'))).toBe(true)
   })
 
-  it('is locked to the wordmark face, not the theme display slot', () => {
-    // A logo that changes typeface when someone tries a font preset in the
-    // studio panel is not a logo.
+  it('ships a light-on-dark copy so the mark survives the inverse preset', () => {
+    // Black letterforms on a black page is an invisible logo, and an invert()
+    // filter would take the red dot with it and turn it cyan.
     const { container } = render(<Logo />)
-    const className = container.firstElementChild?.className ?? ''
-    expect(className).toContain('font-wordmark')
-    expect(className).not.toContain('font-display')
+    const images = [...container.querySelectorAll('img')]
+    expect(images).toHaveLength(2)
+    // Exactly one is painted at a time, chosen off the theme attribute.
+    expect(images[0]?.className).toContain("[data-theme='inverse']_&]:hidden")
+    expect(images[1]?.className).toContain('hidden')
+    expect(images[1]?.getAttribute('src')).toContain('inverse')
   })
 
-  it('inherits ink for the letterforms, so the mark inverts with the theme', () => {
+  it('carries the alt text on the wrapper, not on either copy', () => {
+    // Two <img> for one logo would otherwise announce the brand twice.
     const { container } = render(<Logo />)
-    expect(container.firstElementChild?.className).toContain('text-ink')
+    for (const img of container.querySelectorAll('img')) {
+      expect(img.getAttribute('alt')).toBe('')
+    }
   })
 
-  it('pins the dot to the accent, and sizes it from tokens', () => {
-    const { container } = render(<Logo />)
-    const dot = container.querySelector('.bg-accent') as HTMLElement | null
-    expect(dot).not.toBeNull()
-    // Geometry in em from tokens, so the dot scales with the wordmark and can be
-    // retuned for a different typeface without editing the component.
-    expect(dot?.style.width).toContain('--wordmark-dot-size')
-    expect(dot?.style.bottom).toContain('--wordmark-dot-rise')
+  it('is sized by height, so both variants set from the same visual weight', () => {
+    // The wordmark is 2.7:1 and the mark is roughly 1:3.5 — a shared width
+    // would make one of them the wrong size.
+    const wordmark = render(<Logo />).container.firstElementChild?.className ?? ''
+    expect(wordmark).toContain('h-5')
+    expect(wordmark).not.toMatch(/w-\d/)
   })
 
-  it('has a mark-only variant carrying the same dot', () => {
+  it('has a mark-only variant pointing at the cropped asset', () => {
     const { container } = render(<Logo variant="mark" />)
-    expect(container.textContent).toBe('ı')
-    expect(container.querySelector('.bg-accent')).not.toBeNull()
+    const sources = [...container.querySelectorAll('img')].map((img) => img.getAttribute('src'))
+    expect(sources.every((src) => src?.includes('mark'))).toBe(true)
+    expect(sources.some((src) => src?.includes('wordmark'))).toBe(false)
   })
 })
 
@@ -304,17 +310,13 @@ describe('SiteFooter', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
   })
 
-  it('states currency, country and the tax position', () => {
+  it('leaves currency, tax and payment to the cart, where they are asked about', () => {
+    // These were a full-width band at the bottom of every page answering a
+    // question nobody has while browsing. The tax line is in the cart summary.
     render(<SiteFooter />)
-    expect(screen.getByText(footerMeta.currency)).toBeInTheDocument()
-    expect(screen.getByText(footerMeta.country)).toBeInTheDocument()
-    expect(screen.getByText(footerMeta.gstNote)).toBeInTheDocument()
-  })
-
-  it('sets payment methods as text, not as icons', () => {
-    render(<SiteFooter />)
+    expect(screen.queryByText(footerMeta.gstNote)).toBeNull()
     for (const mark of footerMeta.paymentMarks) {
-      expect(screen.getByText(mark)).toBeInTheDocument()
+      expect(screen.queryByText(mark)).toBeNull()
     }
   })
 

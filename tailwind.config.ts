@@ -82,9 +82,6 @@ const config: Config = {
       fontFamily: {
         display: 'var(--font-display)',
         body: 'var(--font-body)',
-        // The wordmark only. Locked to one face, never a preset slot — a logo
-        // that changes typeface with the theme is not a logo.
-        wordmark: 'var(--font-wordmark)',
       },
 
       // Named to avoid colliding with the fontFamily keys above — Tailwind

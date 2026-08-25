@@ -26,6 +26,23 @@ export const home = {
     },
     /** Used when the featured garment has no passport. Should not happen. */
     fallbackNote: 'Featured piece',
+    /**
+     * Carousel controls. Every one of these is read aloud, so they say what the
+     * control does rather than which direction it points.
+     */
+    carousel: {
+      label: 'Featured pieces',
+      previous: 'Previous piece',
+      next: 'Next piece',
+      /** Announced as a slide arrives, and used as each dot's label. */
+      position: (index: number, total: number) => `Piece ${index} of ${total}`,
+      /**
+       * Autoplay has to be stoppable to meet WCAG 2.2.2 — anything that moves
+       * for more than five seconds needs a pause control that is not a hover.
+       */
+      pause: 'Pause',
+      play: 'Play',
+    },
   },
 
   newIn: {

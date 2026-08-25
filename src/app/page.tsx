@@ -1,10 +1,8 @@
 import { CategoryGrid } from '@/components/patterns/home/category-grid'
-import { ConditionScale } from '@/components/patterns/home/condition-scale'
 import { EditorialBand } from '@/components/patterns/home/editorial-band'
-import { Hero } from '@/components/patterns/home/hero'
-import { HowItWorks } from '@/components/patterns/home/how-it-works'
+import { HeroCarousel } from '@/components/patterns/home/hero-carousel'
 import { NewInRail } from '@/components/patterns/home/new-in-rail'
-import { getPassportByProduct, getProduct, listFeaturedProducts } from '@/lib/data'
+import { listFeaturedProducts } from '@/lib/data'
 
 /**
  * Home.
@@ -12,31 +10,27 @@ import { getPassportByProduct, getProduct, listFeaturedProducts } from '@/lib/da
  * A server component reading through the data adapter, so every fetch here is a
  * single-file change away from a real endpoint.
  *
- * Section order is the argument the page makes: this garment has a past (hero) →
- * here is what just arrived (rail) → here is how we know its past (passport) →
- * here is how to find things (categories) → here is what the grades mean
- * (condition) → and here is why any of this matters (editorial).
+ * Section order is the argument the page makes: here is the work (hero) → here
+ * is what just arrived (rail) → here is how to find things (categories) → and
+ * here is why any of this matters (editorial).
  *
- * The condition section sits deliberately late. A shopper who has already seen
- * a garment they want is far more receptive to "here is exactly what 'good'
- * means" than someone who has not yet found anything.
+ * The explanatory sections that used to sit here — how a passport is made, what
+ * the five condition grades mean — are gone from the home page deliberately.
+ * They are good copy in the wrong place: nobody arriving cold wants a process
+ * diagram, and both arguments land far harder on a garment page, next to the
+ * actual grade and the actual record. The components still exist for the pages
+ * that explain them.
  */
 export default async function HomePage() {
-  const featured = await listFeaturedProducts(8)
-  const heroSummary = featured[0]
-
-  // The hero needs the full product for its image set, and the passport for the
-  // facts beside it. Both may legitimately be absent, and the page still works.
-  const heroProduct = heroSummary === undefined ? null : await getProduct(heroSummary.id)
-  const heroPassport = heroProduct === null ? null : await getPassportByProduct(heroProduct.id)
+  // Five is the useful ceiling for a hero rotation. Past that nobody reaches the
+  // end, and the rail below is a better way to show breadth.
+  const featured = await listFeaturedProducts(10)
 
   return (
     <>
-      {heroProduct !== null && <Hero product={heroProduct} passport={heroPassport} />}
-      <NewInRail products={featured.slice(1, 7)} />
-      <HowItWorks />
+      <HeroCarousel products={featured.slice(0, 5)} />
+      <NewInRail products={featured.slice(5, 10)} />
       <CategoryGrid />
-      <ConditionScale />
       <EditorialBand />
     </>
   )
