@@ -5,23 +5,28 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react'
-import { PassportMark } from '../passport-mark'
-import { Price } from '../price'
 import { Container } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { home } from '@/content/home'
 import { useReducedMotion } from '@/lib/hooks/use-reduced-motion'
-import type { ProductSummary } from '@/lib/types'
 
 /**
  * The hero: full-bleed photography, rotating.
  *
- * ## What it does and does not claim
+ * ## Editorial, not catalogue
  *
- * Every frame is a real listing and links to it. That matters on a one-of-one
- * marketplace — a carousel of styled images that go nowhere would imply depth of
- * stock this business does not have and is not trying to have. Rotating through
- * actual garments says "here is what is in today", which is true.
+ * The frames are pictures of denim being worn, hung, dried and remade — not
+ * listings. That is a deliberate split from the rail below, which is the newest
+ * stock and links garment by garment. A hero that showed four specific garments
+ * on a one-of-one marketplace would be advertising four things that can each
+ * sell once; showing what the business is about instead survives the inventory
+ * turning over.
+ *
+ * It also means the caption cannot name a garment or a price, because the
+ * picture does not show one. So there is a single caption that stays put across
+ * every frame, and what rotates is only the image. That is the honest version
+ * and the more readable one — a headline swapping under a crossfade is a
+ * headline nobody finishes.
  *
  * ## Why the caption is a solid block, not text on the image
  *
@@ -47,32 +52,26 @@ import type { ProductSummary } from '@/lib/types'
  * itself is precisely what that preference is asking us not to do.
  */
 
-/** Long enough to look at a garment, short enough to see a second one. */
+/** Long enough to look at a picture, short enough to see a second one. */
 const INTERVAL_MS = 6000
 
-export function HeroCarousel({ products }: { products: readonly ProductSummary[] }) {
+export function HeroCarousel() {
+  const slides = home.hero.slides
   const reduced = useReducedMotion()
   const [index, setIndex] = useState(0)
   // Autoplay is opt-out, but a single interaction ends it for the session.
   const [playing, setPlaying] = useState(true)
   const [suspended, setSuspended] = useState(false)
   const regionId = useId()
-  const total = products.length
-
-  const go = useCallback(
-    (next: number) => {
-      setIndex(((next % total) + total) % total)
-    },
-    [total],
-  )
+  const total = slides.length
 
   /** Any deliberate navigation ends autoplay for good. */
   const steer = useCallback(
     (next: number) => {
       setPlaying(false)
-      go(next)
+      setIndex(((next % total) + total) % total)
     },
-    [go],
+    [total],
   )
 
   const active = playing && !reduced && !suspended && total > 1
@@ -91,8 +90,7 @@ export function HeroCarousel({ products }: { products: readonly ProductSummary[]
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
-  if (total === 0) return null
-  const current = products[index]
+  const current = slides[index]
   if (current === undefined) return null
 
   return (
@@ -128,7 +126,7 @@ export function HeroCarousel({ products }: { products: readonly ProductSummary[]
       >
         <AnimatePresence initial={false} mode="sync">
           <motion.div
-            key={current.id}
+            key={current.src}
             initial={reduced ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -136,10 +134,11 @@ export function HeroCarousel({ products }: { products: readonly ProductSummary[]
             className="absolute inset-0"
           >
             <Image
-              src={current.primaryImage.url}
-              alt={current.primaryImage.alt}
+              src={current.src}
+              alt={current.alt}
               fill
-              // The first frame is the largest paint on the page.
+              // Only the first frame. Preloading all four would compete with
+              // the fonts and the stylesheet for the initial render.
               priority={index === 0}
               sizes="100vw"
               className="object-cover"
@@ -147,15 +146,15 @@ export function HeroCarousel({ products }: { products: readonly ProductSummary[]
           </motion.div>
         </AnimatePresence>
 
-        {/* Every slide announced to assistive tech, without duplicating the DOM. */}
+        {/* Position announced to assistive tech without duplicating the DOM. */}
         <span className="sr-only">{home.hero.carousel.position(index + 1, total)}</span>
       </div>
 
       {/* The caption. Absolutely placed on desktop, stacked beneath on a phone,
-          where an overlay would cover most of the garment. */}
+          where an overlay would cover most of the picture. */}
       <Container className="relative">
         <div className="pointer-events-none desktop:absolute desktop:inset-x-0 desktop:bottom-10">
-          <div className="pointer-events-auto bg-background p-6 desktop:max-w-sm desktop:p-8">
+          <div className="pointer-events-auto bg-background p-6 desktop:max-w-md desktop:p-8">
             <Eyebrow>{home.hero.eyebrow}</Eyebrow>
             <Type
               as="h1"
@@ -169,27 +168,9 @@ export function HeroCarousel({ products }: { products: readonly ProductSummary[]
             <Type size="sm" tone="muted" measure="narrow" className="mt-3">
               {home.hero.lede}
             </Type>
-
-            <div className="mt-5 border-t border-line pt-4">
-              <Type size="sm" weight="emphasis">
-                {current.brand}
-              </Type>
-              <Type size="sm" tone="muted">
-                {current.title}
-              </Type>
-              <div className="mt-2 flex items-baseline gap-3">
-                <Price
-                  priceInr={current.priceInr}
-                  originalRetailInr={current.originalRetailInr}
-                  availability={current.availability}
-                />
-                <PassportMark hasPassport={current.passportId !== null} />
-              </div>
-            </div>
-
             <Link
-              href={`/product/${current.slug}`}
-              className="group/cta ease mt-5 inline-flex items-center gap-3 border-b border-line-strong pb-1 text-sm text-ink transition-colors duration-base hover:border-ink"
+              href={home.hero.ctaHref}
+              className="group/cta ease mt-6 inline-flex items-center gap-3 border-b border-line-strong pb-1 text-sm text-ink transition-colors duration-base hover:border-ink"
             >
               {home.hero.cta}
               <ArrowRight
@@ -246,7 +227,7 @@ export function HeroCarousel({ products }: { products: readonly ProductSummary[]
  * The position rail: numbered rules rather than dots.
  *
  * Dots are ambiguous about how many there are once you pass about six, and they
- * are a small target. A rule per slide reads as an index, sits in the same
+ * are a small target. A rule per frame reads as an index, sits in the same
  * typographic register as everything else, and is easier to hit.
  */
 function Counter({

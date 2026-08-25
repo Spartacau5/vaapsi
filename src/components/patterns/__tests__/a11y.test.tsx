@@ -16,7 +16,6 @@ import { PincodeCheck } from '../product/pincode-check'
 import { ProductGrid, ProductGridSkeleton } from '../shop/product-grid'
 import { SiteFooter } from '../site-footer'
 import { SiteHeader } from '../site-header'
-import { listFeaturedProducts } from '@/lib/data'
 import { passports } from '@/lib/data/fixtures/passports'
 import { products } from '@/lib/data/fixtures/products'
 import { useCartStore } from '@/lib/store/cart'
@@ -117,11 +116,7 @@ describe('axe — shell', () => {
 
 describe('axe — home', () => {
   it('hero carousel', async () => {
-    await auditInMain(<HeroCarousel products={await listFeaturedProducts(4)} />)
-  })
-
-  it('hero carousel with a single garment, controls suppressed', async () => {
-    await auditInMain(<HeroCarousel products={await listFeaturedProducts(1)} />)
+    await auditInMain(<HeroCarousel />)
   })
 
   it('how it works', async () => {

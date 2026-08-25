@@ -16,28 +16,48 @@ export const home = {
     /** Sits above the garment title. The thesis of the whole site. */
     thesis: 'This one has a past.',
     lede: 'Every piece here has been somewhere before it reached you. We keep the record, and it stays with the garment.',
-    cta: 'See this piece',
-    /** Labels for the provenance facts shown beside the garment. */
-    facts: {
-      made: 'Made',
-      owners: 'Owners',
-      returned: 'Came back',
-      condition: 'Condition',
-    },
-    /** Used when the featured garment has no passport. Should not happen. */
-    fallbackNote: 'Featured piece',
+    cta: 'See everything',
+    /** Where the hero's one call to action goes. */
+    ctaHref: '/shop?sort=newest',
+    /**
+     * The hero frames. Editorial rather than catalogue: these are pictures of
+     * denim being lived in and looked after, not listings. The caption stays put
+     * across all of them, so what rotates is the mood and nothing else - a
+     * headline that changes under a crossfade is unreadable, and a price that
+     * changed would be describing a garment the picture does not show.
+     *
+     * Photography credits are in `public/hero/README.md`.
+     */
+    slides: [
+      {
+        src: '/hero/1-hanger.jpg',
+        alt: 'A pair of pale, well-worn jeans on a wooden hanger in afternoon light, waistband and coin pocket in close view',
+      },
+      {
+        src: '/hero/2-jacket.jpg',
+        alt: 'Someone in a faded denim trucker jacket over a white t-shirt, standing against a tree in woodland',
+      },
+      {
+        src: '/hero/3-line.jpg',
+        alt: 'Five pairs of jeans pegged out to dry on a line against a yellow wall beneath a green shuttered window',
+      },
+      {
+        src: '/hero/4-bag.jpg',
+        alt: 'A shoulder bag pieced together from squares of denim in six different washes, hanging on a white wall',
+      },
+    ],
     /**
      * Carousel controls. Every one of these is read aloud, so they say what the
      * control does rather than which direction it points.
      */
     carousel: {
-      label: 'Featured pieces',
-      previous: 'Previous piece',
-      next: 'Next piece',
-      /** Announced as a slide arrives, and used as each dot's label. */
-      position: (index: number, total: number) => `Piece ${index} of ${total}`,
+      label: 'Featured images',
+      previous: 'Previous image',
+      next: 'Next image',
+      /** Announced as a frame arrives, and used as each control's label. */
+      position: (index: number, total: number) => `Image ${index} of ${total}`,
       /**
-       * Autoplay has to be stoppable to meet WCAG 2.2.2 — anything that moves
+       * Autoplay has to be stoppable to meet WCAG 2.2.2 - anything that moves
        * for more than five seconds needs a pause control that is not a hover.
        */
       pause: 'Pause',
