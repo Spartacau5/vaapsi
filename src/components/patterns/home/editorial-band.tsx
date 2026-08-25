@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { Reveal } from '../reveal'
-import { Container, Stack } from '@/components/primitives/layout'
+import { Container } from '@/components/primitives/layout'
 import { Type } from '@/components/primitives/type'
 import { home } from '@/content/home'
 
@@ -33,28 +33,23 @@ export function EditorialBand() {
 
           <div className="absolute inset-0 flex items-end">
             <Container>
-              <Stack gap={2} className="pb-8 desktop:pb-12">
-                <Type
-                  as="p"
-                  family="display"
-                  size="2xl"
-                  weight="heading"
-                  tone="inherit"
-                  measure="narrow"
-                  className="text-background desktop:text-3xl"
-                >
-                  {home.editorial.statement}
-                </Type>
-                <Type
-                  as="p"
-                  size="xs"
-                  tone="inherit"
-                  tracking="caps"
-                  className="text-background/70"
-                >
-                  {home.editorial.attribution}
-                </Type>
-              </Stack>
+              {/*
+                Sits low in the frame. The statement is the only thing here now
+                — the place line went, because a strapline needs no byline —
+                and with nothing under it the type can drop nearer the edge
+                than a stacked block safely could.
+              */}
+              <Type
+                as="p"
+                family="display"
+                size="2xl"
+                weight="heading"
+                tone="inherit"
+                measure="narrow"
+                className="pb-6 text-background desktop:pb-8 desktop:text-3xl"
+              >
+                {home.editorial.statement}
+              </Type>
             </Container>
           </div>
         </div>

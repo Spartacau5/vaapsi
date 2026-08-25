@@ -135,7 +135,6 @@ export const home = {
   editorial: {
     /** The breathing room in the page. One image, one statement. */
     statement: 'The most sustainable garment is the one that already exists.',
-    attribution: 'Vaapsi, New Delhi',
     imageAlt: 'A rail of pre-loved denim in a studio, photographed in daylight',
   },
 } as const

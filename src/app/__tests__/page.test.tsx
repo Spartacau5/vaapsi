@@ -149,6 +149,15 @@ describe('NewInRail', () => {
     expect(screen.queryByRole('link', { name: new RegExp(home.newIn.cta, 'i') })).toBeNull()
   })
 
+  it('holds the arrows against the right edge even when the header wraps', async () => {
+    // `justify-between` alone puts a lone wrapped item at the start of its
+    // line, which silently turns a right-aligned control into a left-aligned
+    // one at exactly the widths where the heading and lede are longest.
+    render(<NewInRail products={await recent()} />)
+    const controls = screen.getByRole('button', { name: home.newIn.next }).parentElement!
+    expect(controls.parentElement?.className).toContain('ml-auto')
+  })
+
   it('disables back at the start rather than wrapping', async () => {
     // This is a scroll position, not a carousel. A rail that silently jumps to
     // the start loses the reader's place.

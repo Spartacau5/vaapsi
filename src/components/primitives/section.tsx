@@ -106,7 +106,14 @@ export function Section({
           </Type>
         )}
       </div>
-      {action !== undefined && <div className="shrink-0">{action}</div>}
+      {/*
+        `ml-auto` as well as `justify-between`. The header wraps, and once the
+        action drops to its own line it is the only item on that line, where
+        `justify-between` puts it at the start — so a right-aligned control
+        silently becomes a left-aligned one at the widths where the heading and
+        the lede are longest.
+      */}
+      {action !== undefined && <div className="ml-auto shrink-0">{action}</div>}
     </div>
   ) : null
 

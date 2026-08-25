@@ -28,12 +28,12 @@ import { cn } from '@/lib/utils'
  * mark have very different aspect ratios — 2.7:1 against roughly 1:3.5. Width
  * follows from the intrinsic ratio.
  *
- * The image is then pushed down 5%. Centring the bounding box centres the
+ * The image is then pushed down 9%. Centring the bounding box centres the
  * *descender of the p* along with everything else: cap height starts at y=2 of
  * 118 but the baseline is at y=93, so a quarter of the box is empty space at the
- * bottom and the letterforms float visibly high. Optically centring on
- * cap-to-baseline alone would mean 9.75%, which overshoots — a descender is not
- * weightless. Half of it lands the mark where the eye expects it.
+ * bottom and the letterforms float visibly high. Centring on cap-to-baseline
+ * instead comes to 9.75%; 9% is a hair short of that, leaving the descender a
+ * sliver of the weight it does carry.
  */
 
 /** Intrinsic pixel dimensions, so Next can reserve the box and avoid a shift. */
@@ -98,7 +98,7 @@ function LogoImage({
       // nothing for lazy loading to defer.
       priority
       unoptimized
-      className={cn('h-full w-auto translate-y-[5%]', className)}
+      className={cn('h-full w-auto translate-y-[9%]', className)}
     />
   )
 }
