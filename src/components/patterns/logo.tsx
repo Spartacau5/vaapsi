@@ -21,12 +21,19 @@ import { cn } from '@/lib/utils'
  * dot, and CSS picks between them off `data-theme`. Both are in the markup; only
  * one is ever painted. They are a few kilobytes each.
  *
- * ## Sizing
+ * ## Sizing and the optical nudge
  *
  * Sized by height, never width. The header, the footer and the mobile drawer all
  * reason in terms of how tall the mark is, and the wordmark and the standalone
  * mark have very different aspect ratios — 2.7:1 against roughly 1:3.5. Width
  * follows from the intrinsic ratio.
+ *
+ * The image is then pushed down 5%. Centring the bounding box centres the
+ * *descender of the p* along with everything else: cap height starts at y=2 of
+ * 118 but the baseline is at y=93, so a quarter of the box is empty space at the
+ * bottom and the letterforms float visibly high. Optically centring on
+ * cap-to-baseline alone would mean 9.75%, which overshoots — a descender is not
+ * weightless. Half of it lands the mark where the eye expects it.
  */
 
 /** Intrinsic pixel dimensions, so Next can reserve the box and avoid a shift. */
@@ -91,7 +98,7 @@ function LogoImage({
       // nothing for lazy loading to defer.
       priority
       unoptimized
-      className={cn('h-full w-auto', className)}
+      className={cn('h-full w-auto translate-y-[5%]', className)}
     />
   )
 }

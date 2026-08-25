@@ -7,36 +7,41 @@ import { Type } from '@/components/primitives/type'
 import { home } from '@/content/home'
 
 /**
- * Shop by category. Deliberately uneven.
+ * Shop by category.
  *
- * A four-up row of square tiles is the default e-commerce move and it reads as a
- * menu: every option identical, none of them chosen. An editorial grid makes a
- * decision — ethnicwear is the largest cell because it is the category that is
- * specific to this market and unavailable on a Western resale site.
+ * ## The layout, and why it is two rows and not one grid
+ *
+ * There are five categories, which is an awkward number. A uniform three-up grid
+ * leaves a hole in the second row; a uniform two-up leaves one at the end. Both
+ * read as a page that ran out rather than a page that decided.
+ *
+ * So: two cells on the first row, three on the second. Twelve columns split as
+ * 6 + 6 and 4 + 4 + 4, which fills both rows exactly. Every cell in a row is the
+ * same size as its neighbours and every cell shares the same crop, so nothing
+ * looks accidental — but the rows differ in scale, which keeps this from
+ * reading as a menu where every option is equally unchosen.
+ *
+ * The previous version put one tall cell beside two short ones. It made the
+ * editorial point but the heights never resolved against each other, and the
+ * leftover space around the tall cell was the first thing you saw.
+ *
+ * ## The crop
+ *
+ * One aspect ratio for every cell, so the grid stays a grid at any width. 4:3 —
+ * landscape rather than portrait, because five portrait cells is most of a
+ * viewport for what is functionally five links.
  *
  * No hover transform on the images. It was there and it was cut in the Phase 7
  * audit: a 2% scale on a photograph carries no information, and it made these
  * tiles the only images on the site that move on hover — where the product card
  * cross-fades to a detail shot, which actually tells you something.
- *
- * The layout: on desktop, one tall cell beside two stacked ones, then a row of
- * three. The unevenness is the point — a four-up row of identical squares reads
- * as a menu where every option is equally unchosen.
- *
- * **Cells are much shorter than they were.** The tall one was 36rem minimum,
- * which made this single section a full viewport on desktop and nearly two on
- * mobile — a lot of screen for what is, functionally, six links. Landscape crops
- * on mobile rather than portrait, so the whole set is scannable at once.
  */
 
-/** Per-cell shape at desktop. Index-matched to `home.categories.items`. */
-const CELLS = [
-  { desktop: 6 as const, tall: true },
-  { desktop: 6 as const, tall: false },
-  { desktop: 6 as const, tall: false },
-  { desktop: 6 as const, tall: false },
-  { desktop: 6 as const, tall: false },
-]
+/**
+ * Desktop column span per cell, index-matched to `home.categories.items`.
+ * Sums to 12 on each row, which is what keeps the rows flush.
+ */
+const SPANS = [6, 6, 4, 4, 4] as const
 
 export function CategoryGrid() {
   return (
@@ -44,31 +49,18 @@ export function CategoryGrid() {
       <Section eyebrow={home.categories.eyebrow} heading={home.categories.title}>
         <Grid gap="default" rowGap="default" as="ul">
           {home.categories.items.map((item, index) => {
-            const cell = CELLS[index] ?? { desktop: 4 as const, tall: false }
+            const desktop = SPANS[index] ?? 4
             return (
-              <Col
-                key={item.href}
-                mobile={4}
-                tablet={4}
-                desktop={cell.desktop}
-                as="li"
-                className={cell.tall ? 'desktop:row-span-2' : undefined}
-              >
+              <Col key={item.href} mobile={4} tablet={4} desktop={desktop} as="li">
                 <Link href={item.href} className="group/cat block focus-visible:outline-offset-4">
-                  <div
-                    className={
-                      cell.tall
-                        ? 'relative aspect-[16/10] overflow-hidden bg-surface desktop:aspect-auto desktop:h-full desktop:min-h-[22rem]'
-                        : 'relative aspect-[16/10] overflow-hidden bg-surface desktop:aspect-[16/11]'
-                    }
-                  >
+                  <div className="relative aspect-[4/3] overflow-hidden bg-surface">
                     <Image
-                      src={`https://picsum.photos/seed/vaapsi-cat-${item.label.toLowerCase()}/1200/1500`}
+                      src={`https://picsum.photos/seed/vaapsi-cat-${item.label.toLowerCase()}/1200/900`}
                       alt=""
                       aria-hidden
                       fill
                       sizes={
-                        cell.desktop === 6
+                        desktop === 6
                           ? '(min-width: 1024px) 50vw, (min-width: 768px) 50vw, 100vw'
                           : '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw'
                       }
@@ -79,7 +71,7 @@ export function CategoryGrid() {
                     <Type
                       as="h3"
                       family="display"
-                      size={cell.tall ? 'lg' : 'base'}
+                      size={desktop === 6 ? 'lg' : 'base'}
                       weight="heading"
                     >
                       {item.label}

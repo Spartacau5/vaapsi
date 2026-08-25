@@ -34,11 +34,19 @@ export function SiteFooter() {
               </Type>
             </Col>
 
-            <Col mobile={4} tablet={8} desktop={8} startDesktop={5}>
+            <Col mobile={4} tablet={8} desktop={9} startDesktop={4}>
+              {/*
+                Flex with `justify-end`, not grid columns. Five groups in a
+                twelve-column grid can only occupy ten of them, so the last
+                column stopped two columns short of the container edge while the
+                legal links in the bar below sat flush against it — two right
+                edges, a gutter apart, which reads as a mistake. Flexed to the
+                end, the last group finishes exactly where that bar does.
+              */}
               <nav aria-label={navLabels.footerNav}>
-                <Grid gap="default" rowGap="loose">
+                <div className="flex flex-wrap gap-x-10 gap-y-10 desktop:justify-end desktop:gap-x-12">
                   {footerNav.map((group) => (
-                    <Col key={group.heading} mobile={2} tablet={2} desktop={2} as="section">
+                    <section key={group.heading} className="min-w-[8rem] flex-1 desktop:flex-none">
                       <Eyebrow as="h2">{group.heading}</Eyebrow>
                       <Stack gap={1} as="ul" className="mt-3">
                         {group.items.map((item) => (
@@ -54,9 +62,9 @@ export function SiteFooter() {
                           </li>
                         ))}
                       </Stack>
-                    </Col>
+                    </section>
                   ))}
-                </Grid>
+                </div>
               </nav>
             </Col>
           </Grid>
