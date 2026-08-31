@@ -34,6 +34,11 @@ export const shop = {
     label: 'Sort',
     options: {
       newest: 'Newest',
+      /**
+       * "Popular", not "Best selling". The ordering is curated until there is
+       * order history to count, and the label must not out-claim the data.
+       */
+      popular: 'Popular',
       price_asc: 'Price, low to high',
       price_desc: 'Price, high to low',
     },

@@ -1,129 +1,49 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { HeroCarousel } from '@/components/patterns/home/hero-carousel'
+import { HeroTiles } from '@/components/patterns/home/hero-tiles'
 import { NewInRail } from '@/components/patterns/home/new-in-rail'
 import { home } from '@/content/home'
 import { listProducts } from '@/lib/data'
 
 /**
- * The hero is editorial: it carries the page's thesis over rotating photography
- * and takes no data. So what is worth asserting is that the thesis is the page
- * heading, that every frame is described for someone who cannot see it, and that
- * the rotation is something a person can stop.
+ * The three tiles that replaced the hero carousel.
+ *
+ * What matters here is that the set stays a real choice and stays reachable: one
+ * link per tile pointing where the copy says, a heading for the document, and an
+ * alt text on every photograph. The old carousel's tests covered rotation,
+ * pausing and frame announcement — none of which exists any more, by design.
  */
-
-/**
- * jsdom ships no `matchMedia`, so `useReducedMotion` holds its safe default and
- * every component renders its motion-off branch. This installs a stub that
- * reports motion as allowed, for the tests that need the animated path.
- */
-function withMotion() {
-  Object.defineProperty(window, 'matchMedia', {
-    configurable: true,
-    writable: true,
-    value: (query: string) => ({
-      matches: false,
-      media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    }),
-  })
-}
-
-afterEach(() => {
-  Reflect.deleteProperty(window, 'matchMedia')
-})
-
-const TOTAL = home.hero.slides.length
-
-describe('HeroCarousel', () => {
-  it('leads with the thesis as the page heading', () => {
-    render(<HeroCarousel />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(home.hero.thesis)
-  })
-
-  it('keeps the thesis as the heading even though nothing renders it', () => {
-    // The picture carries the hero, but the document still needs an h1 and
-    // search still needs to know what this page is about.
-    render(<HeroCarousel />)
+describe('HeroTiles', () => {
+  it('gives the page an h1 even though the tiles carry the visible type', () => {
+    render(<HeroTiles />)
     const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading).toHaveTextContent(home.heroTiles.heading)
     expect(heading.className).toContain('sr-only')
   })
 
-  it('shows no caption over the photograph', () => {
-    // A white card floating mid-image was the one piece of chrome here that
-    // could not be justified. Nothing visible should carry the lede or a price.
-    const { container } = render(<HeroCarousel />)
-    expect(container.textContent).not.toContain(home.hero.lede)
-    expect(container.textContent).not.toMatch(/₹/)
-  })
-
-  it('describes every frame rather than leaving alt empty', async () => {
-    render(<HeroCarousel />)
-    for (let i = 0; i < TOTAL; i++) {
-      const slide = home.hero.slides[i]!
-      expect(screen.getByAltText(slide.alt)).toBeInTheDocument()
-      if (i < TOTAL - 1) {
-        await userEvent.click(
-          screen.getByRole('button', { name: home.hero.carousel.position(i + 2, TOTAL) }),
-        )
-      }
+  it('renders exactly three tiles, each a link to where its copy says', () => {
+    render(<HeroTiles />)
+    const links = screen.getAllByRole('link')
+    expect(links).toHaveLength(3)
+    for (const tile of home.heroTiles.tiles) {
+      expect(screen.getByRole('link', { name: new RegExp(tile.title) })).toHaveAttribute(
+        'href',
+        tile.href,
+      )
     }
   })
 
-  it('is steered by the position rail alone', async () => {
-    // The rail is the whole control surface. It says how many frames there are,
-    // which one you are on, and clicking one goes straight there — arrows and a
-    // pause button beside it were three controls doing one control's work.
-    withMotion()
-    render(<HeroCarousel />)
-    const controls = screen.getAllByRole('button')
-    expect(controls).toHaveLength(TOTAL)
-    await userEvent.click(controls.at(-1)!)
-    expect(screen.getByAltText(home.hero.slides.at(-1)!.alt)).toBeInTheDocument()
-  })
-
-  it('marks the frame on screen as current', async () => {
-    render(<HeroCarousel />)
-    expect(screen.getAllByRole('button')[0]).toHaveAttribute('aria-current', 'true')
-    await userEvent.click(screen.getAllByRole('button')[1]!)
-    expect(screen.getAllByRole('button')[1]).toHaveAttribute('aria-current', 'true')
-    expect(screen.getAllByRole('button')[0]).not.toHaveAttribute('aria-current')
-  })
-
-  it('keeps looping after the rail is used', async () => {
-    // The rotation is meant to run indefinitely, so picking a frame jumps there
-    // and lets it carry on rather than handing control over permanently.
-    withMotion()
-    jest.useFakeTimers({ advanceTimers: true })
-    try {
-      render(<HeroCarousel />)
-      const rule = screen.getAllByRole('button')[1]!
-      await userEvent.click(rule)
-      expect(screen.getByAltText(home.hero.slides[1]!.alt)).toBeInTheDocument()
-      // jsdom cannot answer `:focus-visible`, so the component takes the safe
-      // branch and treats this as keyboard focus. In a browser a pointer click
-      // never pauses; here we blur to reach the same state.
-      await act(async () => {
-        rule.blur()
-      })
-      await act(async () => {
-        jest.advanceTimersByTime(4100)
-      })
-      expect(screen.getByAltText(home.hero.slides[2]!.alt)).toBeInTheDocument()
-    } finally {
-      jest.useRealTimers()
+  it('titles each tile as an h2 under the page heading', () => {
+    render(<HeroTiles />)
+    for (const tile of home.heroTiles.tiles) {
+      expect(screen.getByRole('heading', { level: 2, name: tile.title })).toBeInTheDocument()
     }
   })
 
-  it('is announced as a carousel, with a labelled position for every frame', () => {
-    render(<HeroCarousel />)
-    const region = screen.getByRole('region', { name: home.hero.carousel.label })
-    expect(region).toHaveAttribute('aria-roledescription', 'carousel')
-    for (let i = 0; i < TOTAL; i++) {
-      expect(
-        screen.getAllByLabelText(home.hero.carousel.position(i + 1, TOTAL)).length,
-      ).toBeGreaterThan(0)
+  it('describes every photograph', () => {
+    render(<HeroTiles />)
+    for (const tile of home.heroTiles.tiles) {
+      expect(screen.getByAltText(tile.image.alt)).toBeInTheDocument()
     }
   })
 })

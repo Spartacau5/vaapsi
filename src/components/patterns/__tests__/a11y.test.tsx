@@ -4,7 +4,7 @@ import { renderWithProviders as render } from '@/test-utils'
 import { CartDrawer } from '../cart/cart-drawer'
 import { CartView } from '../cart/cart-view'
 import { ConditionScale } from '../home/condition-scale'
-import { HeroCarousel } from '../home/hero-carousel'
+import { HeroTiles } from '../home/hero-tiles'
 import { HowItWorks } from '../home/how-it-works'
 import { MobileNav } from '../mobile-nav'
 import { PassportStory } from '../passport/story'
@@ -74,7 +74,11 @@ function summary(source: typeof product): ProductSummary {
     title: source.title,
     brand: source.brand,
     category: source.category,
+    subcategory: source.subcategory,
+    listingType: source.listingType,
     condition: source.condition,
+    color: source.color,
+    colorVariants: source.colorVariants,
     size: source.size,
     priceInr: source.priceInr,
     originalRetailInr: source.originalRetailInr,
@@ -115,8 +119,8 @@ describe('axe — shell', () => {
 })
 
 describe('axe — home', () => {
-  it('hero carousel', async () => {
-    await auditInMain(<HeroCarousel />)
+  it('hero tiles', async () => {
+    await auditInMain(<HeroTiles />)
   })
 
   it('how it works', async () => {

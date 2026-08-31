@@ -1,6 +1,6 @@
 import { CategoryGrid } from '@/components/patterns/home/category-grid'
 import { EditorialBand } from '@/components/patterns/home/editorial-band'
-import { HeroCarousel } from '@/components/patterns/home/hero-carousel'
+import { HeroTiles } from '@/components/patterns/home/hero-tiles'
 import { NewInRail } from '@/components/patterns/home/new-in-rail'
 import { listProducts } from '@/lib/data'
 
@@ -10,9 +10,9 @@ import { listProducts } from '@/lib/data'
  * A server component reading through the data adapter, so every fetch here is a
  * single-file change away from a real endpoint.
  *
- * Section order is the argument the page makes: here is the work (hero) → here
- * is what just arrived (rail) → here is how to find things (categories) → and
- * here is why any of this matters (editorial).
+ * Section order is the argument the page makes: here are the three ways in
+ * (tiles) → here is what just arrived (rail) → here is how to find things
+ * (categories) → and here is why any of this matters (editorial).
  *
  * The explanatory sections that used to sit here — how a passport is made, what
  * the five condition grades mean — are gone from the home page deliberately.
@@ -22,8 +22,8 @@ import { listProducts } from '@/lib/data'
  * that explain them.
  */
 export default async function HomePage() {
-  // The hero is editorial and needs no data at all — it reads its frames from
-  // the content module. The rail asks "what turned up recently", which is a fact
+  // The tiles are navigation and need no data at all — they read from the
+  // content module. The rail asks "what turned up recently", which is a fact
   // about the stock, and is what its own "See everything" link promises since
   // that points at `?sort=newest`.
   //
@@ -35,7 +35,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <HeroCarousel />
+      <HeroTiles />
       <NewInRail products={recent.items.filter((p) => p.availability !== 'sold')} />
       <CategoryGrid />
       <EditorialBand />

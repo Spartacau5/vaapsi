@@ -11,50 +11,55 @@ import { PASSPORT_NAME } from './passport'
  * Where a number appears, it comes from the data, not from here.
  */
 export const home = {
-  hero: {
-    eyebrow: 'One of one',
-    /** Sits above the garment title. The thesis of the whole site. */
-    thesis: 'This one has a past.',
-    lede: 'Every piece here has been somewhere before it reached you. We keep the record, and it stays with the garment.',
-    cta: 'See everything',
-    /** Where the hero's one call to action goes. */
-    ctaHref: '/shop?sort=newest',
-    /**
-     * The hero frames. Editorial rather than catalogue: these are pictures of
-     * denim being lived in and looked after, not listings. The caption stays put
-     * across all of them, so what rotates is the mood and nothing else - a
-     * headline that changes under a crossfade is unreadable, and a price that
-     * changed would be describing a garment the picture does not show.
-     *
-     * Photography credits are in `public/hero/README.md`.
-     */
-    slides: [
+  /**
+   * The three doors off the home page.
+   *
+   * This replaced a rotating full-bleed carousel. The carousel was better
+   * photography and a worse front door: it said what the business is about but
+   * gave a shopper arriving with an intention nowhere to put it, and the one
+   * link it carried was buried under a four-second rotation. Three equal tiles
+   * make the choice the page's whole content — the shopper picks a route in one
+   * look, and no frame is more important than another, which is why they are
+   * equal thirds rather than a feature plus two thumbnails.
+   *
+   * Titles are short because they are set large. "New Arrivals" at display size
+   * over a photograph is legible at a glance; a sentence is not.
+   */
+  heroTiles: {
+    /** Read by screen readers as the page heading; the tiles carry no h1 each. */
+    heading: 'Shop Vaapsi',
+    /** Announced as the set's accessible name. */
+    label: 'Where to start',
+    tiles: [
       {
-        src: '/hero/1-hanger.jpg',
-        alt: 'A pair of pale, well-worn jeans on a wooden hanger in afternoon light, waistband and coin pocket in close view',
+        title: 'New Arrivals',
+        /** One line under the title. Says what is behind the door. */
+        note: 'The latest in, newest first',
+        href: '/shop?sort=newest',
+        image: {
+          src: '/hero/1-hanger.jpg',
+          alt: 'A pair of pale, well-worn jeans on a wooden hanger in afternoon light',
+        },
       },
       {
-        src: '/hero/2-jacket.jpg',
-        alt: 'Someone in a faded denim trucker jacket over a white t-shirt, standing against a tree in woodland',
+        title: 'Best Sellers',
+        note: 'What people keep choosing',
+        href: '/shop?sort=popular',
+        image: {
+          src: '/hero/2-jacket.jpg',
+          alt: 'Someone in a faded denim trucker jacket over a white t-shirt, standing against a tree',
+        },
       },
       {
-        src: '/hero/3-line.jpg',
-        alt: 'Five pairs of jeans pegged out to dry on a line against a yellow wall beneath a green shuttered window',
-      },
-      {
-        src: '/hero/4-bag.jpg',
-        alt: 'A shoulder bag pieced together from squares of denim in six different washes, hanging on a white wall',
+        title: 'Pre-loved',
+        note: 'Second-hand, graded and recorded',
+        href: '/pre-loved',
+        image: {
+          src: '/hero/3-line.jpg',
+          alt: 'Five pairs of jeans pegged out to dry on a line against a yellow wall',
+        },
       },
     ],
-    /**
-     * Carousel controls. Every one of these is read aloud, so they say what the
-     * control does rather than which direction it points.
-     */
-    carousel: {
-      label: 'Featured images',
-      /** Announced as a frame arrives, and used as each control's label. */
-      position: (index: number, total: number) => `Image ${index} of ${total}`,
-    },
   },
 
   newIn: {
@@ -100,7 +105,6 @@ export const home = {
         body: 'It goes back up with its whole history attached. When you buy it, the record comes with it, and it is there for whoever has it after you.',
       },
     ],
-    cta: `How ${PASSPORT_NAME.singular}s work`,
   },
 
   categories: {

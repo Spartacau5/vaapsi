@@ -40,7 +40,7 @@ export const PLP_PARAMS = {
 /** What Next hands a page as `searchParams`. */
 export type RawSearchParams = Record<string, string | string[] | undefined>
 
-export const SORTS = ['newest', 'price_asc', 'price_desc'] as const
+export const SORTS = ['newest', 'popular', 'price_asc', 'price_desc'] as const
 export type PlpSort = (typeof SORTS)[number]
 
 /**
