@@ -1,43 +1,39 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { Container, Stack } from '@/components/primitives/layout'
-import { Eyebrow, Type } from '@/components/primitives/type'
-import { cart } from '@/content/cart'
+import { CheckoutView } from '@/components/patterns/checkout/checkout-view'
+import { checkout } from '@/content/checkout'
+import { listProducts } from '@/lib/data'
 
 export const metadata: Metadata = {
-  title: cart.checkout.action,
+  title: checkout.title,
   robots: { index: false, follow: false },
 }
 
 /**
- * Checkout placeholder.
+ * Checkout — the details step.
  *
- * **Deliberately not a fake payment screen.** A stubbed card form with a
- * disabled Pay button is the single most misleading thing this repo could
- * contain: the client sees it, believes payments are done, and the estimate for
- * the phase that actually builds it never gets taken seriously.
+ * ## What changed here, and what did not
  *
- * So this page says plainly that checkout does not exist, and sends the shopper
- * back. It is the honest version, and it protects the schedule.
+ * This used to be a single honest placeholder saying checkout did not exist. It
+ * is now a working details step — contact, address, and the delivery choice that
+ * carries the slower-shipping discount — and **payment is still a stated
+ * boundary rather than a fake card form.** That line has not moved: a stubbed
+ * payment screen gets believed, and then the phase that builds it never gets
+ * estimated seriously. See `content/checkout.ts`.
+ *
+ * Nothing on the page is submitted anywhere.
+ *
+ * ## The subtotal
+ *
+ * Passed in from the server as a nominal figure over available stock, because
+ * the real one needs the GST treatment that is still open (PRD #6). The summary
+ * says on its face that tax comes at payment, so the number is indicative and
+ * admits it rather than looking authoritative and being wrong.
  */
-export default function CheckoutPage() {
-  return (
-    <Container>
-      <Stack gap={4} className="max-w-measure py-section">
-        <Eyebrow>{cart.checkout.action}</Eyebrow>
-        <Type as="h1" family="display" size="3xl" weight="heading">
-          {cart.checkout.notBuiltTitle}
-        </Type>
-        <Type size="lg" tone="muted">
-          {cart.checkout.notBuiltBody}
-        </Type>
-        <Link
-          href="/cart"
-          className="ease mt-6 self-start bg-ink px-6 py-3 text-sm text-background transition-colors duration-fast hover:bg-ink-muted"
-        >
-          {cart.checkout.notBuiltAction}
-        </Link>
-      </Stack>
-    </Container>
-  )
+export default async function CheckoutPage() {
+  const page = await listProducts({ limit: 3 })
+  const subtotalInr = page.items
+    .filter((item) => item.availability === 'available')
+    .reduce((sum, item) => sum + item.priceInr, 0)
+
+  return <CheckoutView subtotalInr={subtotalInr} />
 }
