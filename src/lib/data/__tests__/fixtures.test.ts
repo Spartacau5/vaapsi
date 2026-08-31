@@ -12,11 +12,63 @@ import { sellers } from '../fixtures/sellers'
  * broken PDP either way.
  */
 
+describe('listing type invariants', () => {
+  /**
+   * The rule the nullable `condition` exists to express, asserted rather than
+   * trusted. If either half of this breaks, the UI starts either hiding a grade
+   * a shopper needs or inventing one that nobody assigned.
+   */
+  it('grades every pre-loved garment and none of the new stock', () => {
+    for (const product of products) {
+      if (product.listingType === 'pre_loved') {
+        expect(product.condition).not.toBeNull()
+        expect(product.conditionNotes).not.toBeNull()
+      } else {
+        expect(product.condition).toBeNull()
+        expect(product.conditionNotes).toBeNull()
+        expect(product.flaws).toHaveLength(0)
+        expect(product.passportId).toBeNull()
+      }
+    }
+  })
+
+  it('gives colourways to new stock only, and never to a one-of-one garment', () => {
+    for (const product of products) {
+      if (product.listingType === 'pre_loved') {
+        expect(product.colorVariants).toHaveLength(0)
+      } else {
+        expect(product.colorVariants.length).toBeGreaterThan(1)
+      }
+    }
+  })
+
+  it('names a colour on every garment, since every card shows one', () => {
+    for (const product of products) {
+      expect(product.color.name).not.toBe('')
+      expect(product.color.hex).toMatch(/^#[0-9a-f]{6}$/i)
+    }
+  })
+
+  it('offers a size in every colourway that is not sold out', () => {
+    for (const product of products) {
+      for (const variant of product.colorVariants) {
+        if (variant.availability === 'sold') continue
+        expect(variant.sizes.length).toBeGreaterThan(0)
+      }
+    }
+  })
+})
+
 describe('fixture shape', () => {
-  it('has eight garments, five passported and three not', () => {
-    expect(products).toHaveLength(8)
+  it('has eleven garments — eight pre-loved and three new', () => {
+    expect(products).toHaveLength(11)
+    expect(products.filter((p) => p.listingType === 'pre_loved')).toHaveLength(8)
+    expect(products.filter((p) => p.listingType === 'new')).toHaveLength(3)
+    // Five of the eight pre-loved pieces are passported. New stock never is —
+    // a passport records where a garment has been, and a new one has been
+    // nowhere.
     expect(products.filter((p) => p.passportId !== null)).toHaveLength(5)
-    expect(products.filter((p) => p.passportId === null)).toHaveLength(3)
+    expect(products.filter((p) => p.passportId === null)).toHaveLength(6)
     expect(passports).toHaveLength(5)
   })
 
@@ -169,7 +221,7 @@ describe('passport integrity', () => {
 
 describe('adapter reads', () => {
   it('finds a product by id and by slug', async () => {
-    const bySlug = await getProduct('bhaane-oversized-trucker-jacket-raw-indigo')
+    const bySlug = await getProduct('chenab-trucker-jacket')
     const byId = await getProduct('prd_bhaane_trucker_indigo')
     expect(bySlug?.id).toBe('prd_bhaane_trucker_indigo')
     expect(byId).toEqual(bySlug)
@@ -194,8 +246,8 @@ describe('adapter reads', () => {
 
   it('lists every product with a summary carrying a primary image', async () => {
     const page = await listProducts()
-    expect(page.total).toBe(8)
-    expect(page.items).toHaveLength(8)
+    expect(page.total).toBe(11)
+    expect(page.items).toHaveLength(11)
     expect(page.nextCursor).toBeNull()
     for (const item of page.items) expect(item.primaryImage.kind).toBe('primary')
   })

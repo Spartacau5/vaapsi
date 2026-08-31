@@ -24,7 +24,13 @@ import type {
  * needs to change when a real network hop appears behind it.
  */
 
-export type ProductSort = 'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'alphabetical'
+/**
+ * `popular` is curated rather than measured while there is no order history —
+ * see the mock adapter. Named `popular` and not `best_selling` on purpose: the
+ * second is a factual claim about sales volume.
+ */
+export type ProductSort =
+  'relevance' | 'newest' | 'popular' | 'price_asc' | 'price_desc' | 'alphabetical'
 
 /**
  * PLP filters. All optional; omitting one means "do not filter on this".
@@ -122,10 +128,26 @@ export interface DataAdapter {
   resolveCart(items: readonly CartItemRef[]): Promise<Cart>
 }
 
-/** What the persisted client store holds per garment. Nothing else. */
+/**
+ * What the persisted client store holds per line.
+ *
+ * Still deliberately thin: no price, no availability, no title. Those are
+ * resolved fresh on every read, which is why a garment that sells while it sits
+ * in a bag is handled honestly instead of discovered at checkout.
+ *
+ * **The variant fields are the exception, and they are a choice, not a
+ * snapshot.** `colorSlug` and `sizeNormalized` record what the shopper picked.
+ * They have to persist, because there is nothing on the server to re-derive them
+ * from — a product with four colourways has no "the" colour. They are null for a
+ * pre-loved garment, which is one physical object with one colour and one size.
+ */
 export type CartItemRef = {
   productId: ProductId
   addedAt: string
+  /** The chosen colourway. Null for one-of-one stock, which has no choice. */
+  colorSlug?: string | null
+  /** The chosen size, as `Size.normalized`. Null for one-of-one stock. */
+  sizeNormalized?: string | null
 }
 
 /** Thrown when a mutation cannot proceed. Carries a code the UI can branch on. */

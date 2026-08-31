@@ -117,6 +117,62 @@ export type ProductCategory =
   | 'suiting'
   | 'accessories'
 
+/**
+ * What kind of stock a listing is.
+ *
+ * `pre_loved` is the original business: one physical second-hand garment, graded
+ * and passported, with no quantity and no variants. `new` is first-party retail
+ * stock, which behaves like a conventional product — several colourways, several
+ * sizes, replaceable inventory — and which has no condition grade because
+ * "condition" is a judgement about wear and there is none to judge.
+ *
+ * **This is the discriminator for everything the UI is allowed to claim.** A
+ * condition grade on new stock is a meaningless badge; a colour picker on a
+ * pre-loved garment is a promise the inventory cannot keep. Both are guarded on
+ * this field, so read it before rendering either.
+ */
+export const LISTING_TYPES = ['new', 'pre_loved'] as const
+
+export type ListingType = (typeof LISTING_TYPES)[number]
+
+/**
+ * A colour, as a shopper picks it.
+ *
+ * `hex` is a single flat swatch fill and is an approximation by definition — a
+ * mid-wash denim is a hundred colours and a 4mm circle is one. It is a
+ * navigation aid, never the basis of a purchase decision, which is why the name
+ * is always rendered beside the swatch rather than the swatch standing alone.
+ */
+export type ProductColor = {
+  /** Canonical handle, for URLs and filters. e.g. `mid-indigo`. */
+  slug: string
+  /** Shopper-facing name. e.g. "Mid indigo". */
+  name: string
+  /** Swatch fill, `#rrggbb`. An approximation — see above. */
+  hex: string
+}
+
+/**
+ * One colourway of a `new` product.
+ *
+ * Only new stock has these. A pre-loved garment is one physical object in one
+ * colour, so its `colorVariants` is empty and its colour is `Product.color`.
+ *
+ * Sizes are per colourway rather than per product because they genuinely differ
+ * — a colour sells out of M before it sells out of XL, and a size list that
+ * ignores the selected colour offers sizes that cannot be bought.
+ */
+export type ColorVariant = {
+  color: ProductColor
+  /** Sizes with stock in this colour. Empty means this colourway is sold out. */
+  sizes: readonly Size[]
+  availability: Availability
+  /** Set only when this colourway is priced differently. Null means use the product price. */
+  priceInr: Paise | null
+  /** Colour-specific imagery. Empty falls back to `Product.images`. */
+  images: readonly ProductImage[]
+}
+
 export type Product = {
   // identity
   id: ProductId
@@ -127,11 +183,27 @@ export type Product = {
   brand: string
   category: ProductCategory
   subcategory: string
+  /** New retail stock or a second-hand garment. Gates condition and colourways. */
+  listingType: ListingType
+
+  /** The garment's own colour. Always present — every card shows it. */
+  color: ProductColor
+  /**
+   * Selectable colourways. **Non-empty only when `listingType` is `new`.**
+   * Pre-loved garments are one-of-one and carry an empty array.
+   */
+  colorVariants: readonly ColorVariant[]
 
   // resale specifics
-  condition: Condition
-  /** Free text from the inspector. Sits next to the grade and qualifies it. */
-  conditionNotes: string
+  /**
+   * **Null for `new` stock, and never null for `pre_loved`.** Nullable rather
+   * than defaulted: a placeholder grade on unworn stock is a claim about wear
+   * that nobody made, and the compiler forcing a null check at every read is
+   * the point.
+   */
+  condition: Condition | null
+  /** Free text from the inspector. Sits next to the grade and qualifies it. Null with `condition`. */
+  conditionNotes: string | null
   flaws: readonly Flaw[]
   measurements: Measurements
   size: Size
@@ -163,7 +235,16 @@ export type ProductSummary = Pick<
   | 'title'
   | 'brand'
   | 'category'
+  | 'subcategory'
+  | 'listingType'
   | 'condition'
+  | 'color'
+  /**
+   * Carried on the summary because grid cards take the colour and size choice
+   * inline now — a card that had to fetch the product to know its colourways
+   * would either block the grid or make the choice a trip to another page.
+   */
+  | 'colorVariants'
   | 'size'
   | 'priceInr'
   | 'originalRetailInr'

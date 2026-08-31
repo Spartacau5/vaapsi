@@ -237,7 +237,7 @@ describe('specification panel', () => {
     render(<ProductDrawers tabs={tabsFor(withPassport, passport)} />)
     const panel = await openDetails(user)
 
-    expect(within(panel).queryByText(withPassport.conditionNotes)).toBeNull()
+    expect(within(panel).queryByText(withPassport.conditionNotes ?? '')).toBeNull()
   })
 })
 

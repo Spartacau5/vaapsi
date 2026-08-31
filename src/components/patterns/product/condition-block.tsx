@@ -44,6 +44,10 @@ export function ConditionBlock({
    */
   headless?: boolean
 }) {
+  // New stock has no grade, so this block has nothing to say about it. The
+  // PDP already guards on `listingType`; returning null here means a future
+  // caller that forgets cannot render an empty condition panel.
+  if (product.condition === null) return null
   const condition = conditionCopy[product.condition]
 
   const body = (

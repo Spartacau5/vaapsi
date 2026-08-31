@@ -25,10 +25,14 @@ function product(overrides: Partial<ProductSummary> = {}): ProductSummary {
   return {
     id: 'prd_1',
     slug: 'a-navy-sweater',
-    title: 'Merino crewneck in navy',
+    title: 'Merino Crewneck',
     brand: 'Uniqlo',
     category: 'knitwear',
+    subcategory: 'Crewneck',
+    listingType: 'pre_loved',
     condition: 'very_good',
+    color: { slug: 'navy', name: 'Navy', hex: '#25314f' },
+    colorVariants: [],
     size: { label: 'M', system: 'IN', normalized: 'm' },
     priceInr: 69_000,
     originalRetailInr: 299_000,
@@ -41,13 +45,41 @@ function product(overrides: Partial<ProductSummary> = {}): ProductSummary {
 }
 
 describe('ProductCard', () => {
-  it('links to the product and names brand, title, size and condition', () => {
+  it('links to the product, and names it for a screen reader', () => {
     render(<ProductCard product={product()} />)
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/product/a-navy-sweater')
-    expect(screen.getByText('Uniqlo')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Merino crewneck in navy')
+    // The card link is a stretched overlay with no visible text of its own, so
+    // its accessible name has to carry the facts a shopper is choosing between.
+    const link = screen.getByRole('link', {
+      name: /Merino Crewneck, Crewneck, size M, Navy/,
+    })
+    expect(link).toHaveAttribute('href', '/product/a-navy-sweater')
+  })
+
+  it('states the three facts: price, size and colour', () => {
+    render(<ProductCard product={product()} />)
+    expect(screen.getByText('₹690')).toBeInTheDocument()
     expect(screen.getByText('M')).toBeInTheDocument()
+    expect(screen.getByText('Navy')).toBeInTheDocument()
+  })
+
+  it("leads with the garment's own name, not the brand", () => {
+    render(<ProductCard product={product()} />)
+    // Every listing is Vaapsi, so a brand heading distinguishes nothing.
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Merino Crewneck')
+    expect(screen.getByText('Crewneck')).toBeInTheDocument()
+    expect(screen.queryByText('Uniqlo')).toBeNull()
+  })
+
+  it('grades a pre-loved garment', () => {
+    render(<ProductCard product={product()} />)
     expect(screen.getByText(conditionCopy.very_good.label)).toBeInTheDocument()
+  })
+
+  it('shows no grade on new stock, which has no wear to grade', () => {
+    render(<ProductCard product={product({ listingType: 'new', condition: null })} />)
+    for (const grade of Object.values(conditionCopy)) {
+      expect(screen.queryByText(grade.label)).toBeNull()
+    }
   })
 
   it('shows the price with original retail struck through', () => {

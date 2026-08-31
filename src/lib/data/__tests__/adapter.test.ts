@@ -2,16 +2,17 @@ import { getProductFacets, listFeaturedProducts, listProducts, resolveCart } fro
 
 describe('listProducts filtering', () => {
   it('filters by category', async () => {
-    // Three of the eight denim pieces are bottoms: the 501s, the maxi skirt and
-    // the straight-leg jeans.
+    // Four pieces are bottoms: the 501s, the maxi skirt, the pre-loved
+    // straight-legs and the new Vaapsi straight jeans.
     const page = await listProducts({ filters: { category: 'bottoms' } })
-    expect(page.total).toBe(3)
+    expect(page.total).toBe(4)
     expect(page.items.every((item) => item.category === 'bottoms')).toBe(true)
   })
 
   it('filters by passport presence in both directions', async () => {
     expect((await listProducts({ filters: { hasPassport: true } })).total).toBe(5)
-    expect((await listProducts({ filters: { hasPassport: false } })).total).toBe(3)
+    // Three unpassported pre-loved pieces plus the three new ones.
+    expect((await listProducts({ filters: { hasPassport: false } })).total).toBe(6)
   })
 
   it('filters by condition', async () => {
@@ -26,11 +27,13 @@ describe('listProducts filtering', () => {
   })
 
   it('searches title, brand and subcategory', async () => {
-    expect((await listProducts({ filters: { query: 'trucker' } })).total).toBe(1)
-    expect((await listProducts({ filters: { query: 'nicobar' } })).total).toBe(1)
-    // Two pieces are jeans — the 501s and the wide-legs — so a query that hits
-    // both is a better test of the search than one that hits exactly one.
-    expect((await listProducts({ filters: { query: 'jeans' } })).total).toBe(2)
+    // Two trucker jackets: the pre-loved Chenab and the new Kaveri.
+    expect((await listProducts({ filters: { query: 'trucker' } })).total).toBe(2)
+    // Search covers the product's own name, which is now what identifies it —
+    // every listing shares one brand.
+    expect((await listProducts({ filters: { query: 'sutlej' } })).total).toBe(1)
+    // "Jean" hits the three trousers: Ravi, Tapti and the new Indus.
+    expect((await listProducts({ filters: { query: 'jean' } })).total).toBe(3)
     expect((await listProducts({ filters: { query: 'zzzz' } })).total).toBe(0)
   })
 
@@ -38,8 +41,12 @@ describe('listProducts filtering', () => {
     const page = await listProducts({
       filters: { category: 'bottoms', hasPassport: false },
     })
-    expect(page.total).toBe(1)
-    expect(page.items[0]?.brand).toBe('Uniqlo')
+    // The pre-loved Tapti straight-legs and the new Indus straight jean.
+    expect(page.total).toBe(2)
+    expect(page.items.map((item) => item.title).sort()).toEqual([
+      'Indus Straight Jean',
+      'Tapti Straight-Leg Jean',
+    ])
   })
 })
 
@@ -75,9 +82,23 @@ describe('listProducts pagination', () => {
     expect(second.items).toHaveLength(3)
     expect(second.items[0]?.id).not.toBe(first.items[0]?.id)
 
-    const third = await listProducts({ limit: 3, sort: 'alphabetical', cursor: second.nextCursor })
-    expect(third.items).toHaveLength(2)
-    expect(third.nextCursor).toBeNull()
+    // Walked to the end rather than asserting which page is last: the count of
+    // fixtures is not the thing under test, and hardcoding it means every new
+    // fixture breaks this.
+    let cursor = second.nextCursor
+    let seen = first.items.length + second.items.length
+    let pages = 2
+    while (cursor !== null) {
+      const next = await listProducts({ limit: 3, sort: 'alphabetical', cursor })
+      expect(next.items.length).toBeGreaterThan(0)
+      expect(next.items.length).toBeLessThanOrEqual(3)
+      seen += next.items.length
+      cursor = next.nextCursor
+      pages += 1
+      // A cursor that never exhausts is the failure this guards against.
+      expect(pages).toBeLessThan(20)
+    }
+    expect(seen).toBe(first.total)
   })
 })
 
@@ -85,7 +106,7 @@ describe('getProductFacets', () => {
   it('counts facets against the full set', async () => {
     const facets = await getProductFacets()
     const brandTotal = facets.brands.reduce((sum, brand) => sum + brand.count, 0)
-    expect(brandTotal).toBe(8)
+    expect(brandTotal).toBe(11)
     expect(facets.priceRangeInr.min).toBeLessThan(facets.priceRangeInr.max)
   })
 

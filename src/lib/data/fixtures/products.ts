@@ -1,5 +1,5 @@
 import { rupees } from '@/lib/format/currency'
-import type { Product, ProductImage } from '@/lib/types'
+import type { Product, ProductColor, ProductImage, Size } from '@/lib/types'
 
 /**
  * Eight fixture garments. **All denim**, clothing and accessories.
@@ -53,7 +53,19 @@ const PORTRAIT = 4 / 5
  * biggest thing between this build and a client review that shows the design
  * rather than the scaffolding.
  */
-const LOCAL_PHOTOGRAPHY = new Map<string, string>([['uniqlo-straight-leg-jeans-mid-wash', 'png']])
+const LOCAL_PHOTOGRAPHY = new Map<string, string>([
+  ['chenab-trucker-jacket', 'jpg'],
+  ['ravi-straight-jean', 'jpg'],
+  ['beas-denim-skirt', 'jpg'],
+  ['sutlej-shirt-dress', 'jpg'],
+  ['jhelum-shoulder-bag', 'jpg'],
+  ['gomti-waistcoat', 'jpg'],
+  ['narmada-jumpsuit', 'jpg'],
+  ['tapti-straight-leg-jean', 'png'],
+  ['indus-straight-jean', 'jpg'],
+  ['kaveri-trucker-jacket', 'jpg'],
+  ['yamuna-chambray-shirt', 'jpg'],
+])
 
 /**
  * Frame filenames, matched to `SHOT_LIST` order. Flaw frames are named
@@ -104,16 +116,63 @@ function image(
   }
 }
 
+/**
+ * The denim palette.
+ *
+ * Shared so a colour name means the same thing on every listing — "Mid wash" on
+ * a jacket and on a pair of jeans must be the same swatch, or the picker is
+ * lying about what matches what.
+ *
+ * Every hex is an approximation of a wash. See `ProductColor.hex`.
+ */
+export const DENIM_COLORS = {
+  raw: { slug: 'raw-indigo', name: 'Raw indigo', hex: '#2b3a55' },
+  indigo: { slug: 'indigo', name: 'Indigo', hex: '#3a5480' },
+  midIndigo: { slug: 'mid-indigo', name: 'Mid indigo', hex: '#4a6a99' },
+  midWash: { slug: 'mid-wash', name: 'Mid wash', hex: '#5d7fa8' },
+  washedBlue: { slug: 'washed-blue', name: 'Washed blue', hex: '#7c9cc4' },
+  lightWash: { slug: 'light-wash', name: 'Light wash', hex: '#a8c0d8' },
+  ecru: { slug: 'ecru', name: 'Ecru', hex: '#ded6c4' },
+  black: { slug: 'washed-black', name: 'Washed black', hex: '#2f2f33' },
+} as const satisfies Record<string, ProductColor>
+
+/**
+ * Size ladders for new stock.
+ *
+ * Pre-loved garments carry whatever their own label says, transcribed and never
+ * inferred. New stock is ours, so it runs a known ladder — and a colourway picks
+ * its available sizes out of it rather than inventing labels.
+ */
+const SIZES_ALPHA: readonly Size[] = [
+  { label: 'XS', system: 'IN', normalized: 'xs' },
+  { label: 'S', system: 'IN', normalized: 's' },
+  { label: 'M', system: 'IN', normalized: 'm' },
+  { label: 'L', system: 'IN', normalized: 'l' },
+  { label: 'XL', system: 'IN', normalized: 'xl' },
+]
+
+const SIZES_W: readonly Size[] = [
+  { label: 'W28', system: 'IN', normalized: 'w28' },
+  { label: 'W30', system: 'IN', normalized: 'w30' },
+  { label: 'W32', system: 'IN', normalized: 'w32' },
+  { label: 'W34', system: 'IN', normalized: 'w34' },
+  { label: 'W36', system: 'IN', normalized: 'w36' },
+]
+
 export const products: readonly Product[] = [
   // 1 — passport, pristine, outerwear. The editorial lead.
   {
     id: 'prd_bhaane_trucker_indigo',
-    slug: 'bhaane-oversized-trucker-jacket-raw-indigo',
+    slug: 'chenab-trucker-jacket',
     sku: 'VP-2601-0148',
-    title: 'Oversized trucker jacket in raw indigo',
-    brand: 'Bhaane',
+    title: 'Chenab Trucker Jacket',
+    brand: 'Vaapsi',
     category: 'outerwear',
     subcategory: 'Trucker jacket',
+    listingType: 'pre_loved',
+    color: DENIM_COLORS.raw,
+    // One physical garment. No colourways to pick between.
+    colorVariants: [],
     condition: 'pristine',
     conditionNotes:
       'Unworn, tags attached. Raw selvedge that has never been washed — it will fade to whoever wears it, not to whoever owned it before.',
@@ -126,40 +185,36 @@ export const products: readonly Product[] = [
     availability: 'available',
     images: [
       image(
-        'img_bh_1',
-        'vaapsi-denim-bh-1',
-        'Raw indigo trucker jacket alone on a light grey ground, front, buttoned',
+        'img_ch_1',
+        'chenab-trucker-jacket-1',
+        'Raw indigo trucker jacket held open to show a printed cotton lining',
         'primary',
+        'chenab-trucker-jacket',
+        0,
       ),
       image(
-        'img_bh_2',
-        'vaapsi-denim-bh-2',
-        'Model wearing the trucker jacket open over a white tee, full length, front',
+        'img_ch_2',
+        'chenab-trucker-jacket-2',
+        'Someone wearing the trucker jacket open over a white shirt, on the street',
         'worn',
+        'chenab-trucker-jacket',
+        1,
       ),
       image(
-        'img_bh_3',
-        'vaapsi-denim-bh-3',
-        'Worn close-up of the chest yoke and button placket',
+        'img_ch_3',
+        'chenab-trucker-jacket-3',
+        'The jacket turned back to show the patterned inner facing at the placket',
         'detail',
+        'chenab-trucker-jacket',
+        2,
       ),
       image(
-        'img_bh_4',
-        'vaapsi-denim-bh-4',
-        'Close crop of the copper rivet and chest pocket flap',
-        'detail',
-      ),
-      image(
-        'img_bh_5',
-        'vaapsi-denim-bh-5',
-        'Model wearing the trucker jacket, full length, back, showing the yoke seam',
-        'worn',
-      ),
-      image(
-        'img_bh_6',
-        'vaapsi-denim-bh-6',
-        'Macro of the collar and the woven brand label inside the neck',
+        'img_ch_4',
+        'chenab-trucker-jacket-4',
+        'Macro of hand-stitched thread work on woven indigo cloth',
         'label',
+        'chenab-trucker-jacket',
+        3,
       ),
     ],
     passportId: 'psp_bhaane_trucker_indigo',
@@ -170,12 +225,16 @@ export const products: readonly Product[] = [
   // 2 — passport, good, jeans, documented flaws
   {
     id: 'prd_levis_501_indigo',
-    slug: 'levis-501-original-straight-jeans-mid-indigo',
+    slug: 'ravi-straight-jean',
     sku: 'VP-2605-0902',
-    title: '501 Original straight jeans in mid indigo',
-    brand: 'Levi Strauss & Co.',
+    title: 'Ravi Straight Jean',
+    brand: 'Vaapsi',
     category: 'bottoms',
     subcategory: 'Straight jeans',
+    listingType: 'pre_loved',
+    color: DENIM_COLORS.midIndigo,
+    // One physical garment. No colourways to pick between.
+    colorVariants: [],
     condition: 'good',
     conditionNotes:
       'Broken in properly. Even fade through the thigh and a soft hem — the wear pattern is the appeal here, not a defect.',
@@ -199,47 +258,50 @@ export const products: readonly Product[] = [
     availability: 'available',
     images: [
       image(
-        'img_lv_1',
-        'vaapsi-denim-lv-1',
-        '501 straight jeans laid flat on a light grey ground, front',
+        'img_rv_1',
+        'ravi-straight-jean-1',
+        'Mid indigo straight jeans worn full length, front, with a leather belt',
         'primary',
+        'ravi-straight-jean',
+        0,
       ),
       image(
-        'img_lv_2',
-        'vaapsi-denim-lv-2',
-        'Model wearing the 501s with a white tee, full length, front',
+        'img_rv_2',
+        'ravi-straight-jean-2',
+        'The jeans worn on a staircase, showing the fade through the thigh',
         'worn',
+        'ravi-straight-jean',
+        1,
       ),
       image(
-        'img_lv_3',
-        'vaapsi-denim-lv-3',
-        'Worn close-up of the waistband, fly and front pockets',
+        'img_rv_3',
+        'ravi-straight-jean-3',
+        'Close crop of the front rise, button fly and pocket bags',
         'detail',
+        'ravi-straight-jean',
+        2,
       ),
       image(
-        'img_lv_4',
-        'vaapsi-denim-lv-4',
-        'Close crop of the fade pattern across the front thigh',
-        'detail',
+        'img_rv_4',
+        'ravi-straight-jean-4',
+        'The jeans worn from the side, showing the leg line and hem break',
+        'worn',
+        'ravi-straight-jean',
+        3,
       ),
+      // Placeholder. See the note in restore_flaws — no flaw photography exists.
       image(
         'img_lv_flaw_1',
-        'vaapsi-denim-lv-f1',
-        'Fraying at the left hem, photographed close',
+        'flaw-ravi-1',
+        'Close crop of about 3 cm of fraying along the left hem',
         'flaw',
       ),
+      // Placeholder. See the note in restore_flaws — no flaw photography exists.
       image(
         'img_lv_flaw_2',
-        'vaapsi-denim-lv-f2',
-        'Small paint fleck on the right back pocket, photographed close',
+        'flaw-ravi-2',
+        'Close crop of a 4 mm paint fleck on the right back pocket',
         'flaw',
-      ),
-      image('img_lv_5', 'vaapsi-denim-lv-5', 'Model wearing the 501s, full length, back', 'worn'),
-      image(
-        'img_lv_6',
-        'vaapsi-denim-lv-6',
-        'Macro of the leather waistband patch and the care label',
-        'label',
       ),
     ],
     passportId: 'psp_levis_501_indigo',
@@ -250,12 +312,16 @@ export const products: readonly Product[] = [
   // 3 — passport, excellent, skirt, reserved
   {
     id: 'prd_acne_denim_maxi_skirt',
-    slug: 'acne-studios-denim-maxi-skirt-washed-blue',
+    slug: 'beas-denim-skirt',
     sku: 'VP-2604-0331',
-    title: 'Denim maxi skirt in washed blue',
-    brand: 'Acne Studios',
+    title: 'Beas Denim Skirt',
+    brand: 'Vaapsi',
     category: 'bottoms',
     subcategory: 'Maxi skirt',
+    listingType: 'pre_loved',
+    color: DENIM_COLORS.washedBlue,
+    // One physical garment. No colourways to pick between.
+    colorVariants: [],
     condition: 'excellent',
     conditionNotes:
       'Worn four or five times across one summer. The wash is even, the back vent sits flat, and the zip runs clean.',
@@ -270,40 +336,36 @@ export const products: readonly Product[] = [
     availability: 'reserved',
     images: [
       image(
-        'img_ac_1',
-        'vaapsi-denim-ac-1',
-        'Washed blue denim maxi skirt alone on a light grey ground, front',
+        'img_bs_1',
+        'beas-denim-skirt-1',
+        'Washed blue denim skirt with a full gathered hem, worn full length',
         'primary',
+        'beas-denim-skirt',
+        0,
       ),
       image(
-        'img_ac_2',
-        'vaapsi-denim-ac-2',
-        'Model wearing the maxi skirt with a plain vest, full length, front',
+        'img_bs_2',
+        'beas-denim-skirt-2',
+        'The skirt worn with a matching indigo top, front, in a panelled room',
         'worn',
+        'beas-denim-skirt',
+        1,
       ),
       image(
-        'img_ac_3',
-        'vaapsi-denim-ac-3',
-        'Worn close-up of the waistband and hip seam',
+        'img_bs_3',
+        'beas-denim-skirt-3',
+        'Close crop of appliqué and running-stitch detail on the denim panel',
         'detail',
+        'beas-denim-skirt',
+        2,
       ),
       image(
-        'img_ac_4',
-        'vaapsi-denim-ac-4',
-        'Close crop of the topstitched back vent and hem',
-        'detail',
-      ),
-      image(
-        'img_ac_5',
-        'vaapsi-denim-ac-5',
-        'Model wearing the maxi skirt, full length, back',
+        'img_bs_4',
+        'beas-denim-skirt-4',
+        'The skirt worn outdoors with a strappy top, full length',
         'worn',
-      ),
-      image(
-        'img_ac_6',
-        'vaapsi-denim-ac-6',
-        'Macro of the interior waistband label and button',
-        'label',
+        'beas-denim-skirt',
+        3,
       ),
     ],
     passportId: 'psp_acne_denim_maxi_skirt',
@@ -314,12 +376,16 @@ export const products: readonly Product[] = [
   // 4 — passport, very_good, chambray dress
   {
     id: 'prd_nicobar_chambray_shirtdress',
-    slug: 'nicobar-chambray-shirt-dress-indigo',
+    slug: 'sutlej-shirt-dress',
     sku: 'VP-2606-1177',
-    title: 'Chambray shirt dress in indigo',
-    brand: 'Nicobar',
+    title: 'Sutlej Shirt Dress',
+    brand: 'Vaapsi',
     category: 'dresses',
     subcategory: 'Shirt dress',
+    listingType: 'pre_loved',
+    color: DENIM_COLORS.indigo,
+    // One physical garment. No colourways to pick between.
+    colorVariants: [],
     condition: 'very_good',
     conditionNotes:
       'A summer of regular wear. The chambray has softened the way it should and the colour is intact. Two spare buttons still in the pocket.',
@@ -338,41 +404,43 @@ export const products: readonly Product[] = [
     availability: 'available',
     images: [
       image(
-        'img_nb_1',
-        'vaapsi-denim-nb-1',
-        'Indigo chambray shirt dress alone on a light grey ground, front',
+        'img_su_1',
+        'sutlej-shirt-dress-1',
+        'Indigo chambray shirt dress worn belted at the waist, front, full length',
         'primary',
+        'sutlej-shirt-dress',
+        0,
       ),
       image(
-        'img_nb_2',
-        'vaapsi-denim-nb-2',
-        'Model wearing the shirt dress belted, full length, front',
+        'img_su_2',
+        'sutlej-shirt-dress-2',
+        'The shirt dress worn open over a matching skirt, front',
         'worn',
+        'sutlej-shirt-dress',
+        1,
       ),
       image(
-        'img_nb_3',
-        'vaapsi-denim-nb-3',
-        'Worn close-up of the collar, placket and chest pocket',
+        'img_su_3',
+        'sutlej-shirt-dress-3',
+        'Close crop of the cuff, patch pocket and topstitching',
         'detail',
+        'sutlej-shirt-dress',
+        2,
       ),
-      image('img_nb_4', 'vaapsi-denim-nb-4', 'Close crop of the cuff and its button', 'detail'),
+      image(
+        'img_su_4',
+        'sutlej-shirt-dress-4',
+        'The chambray worn with the sleeves rolled, upper body, front',
+        'worn',
+        'sutlej-shirt-dress',
+        3,
+      ),
+      // Placeholder. See the note in restore_flaws — no flaw photography exists.
       image(
         'img_nb_flaw_1',
-        'vaapsi-denim-nb-f1',
-        'Interior left underarm showing a faint shadow',
+        'flaw-sutlej-1',
+        'The dress turned inside out at the left underarm, showing a faint shadow',
         'flaw',
-      ),
-      image(
-        'img_nb_5',
-        'vaapsi-denim-nb-5',
-        'Model wearing the shirt dress, full length, back',
-        'worn',
-      ),
-      image(
-        'img_nb_6',
-        'vaapsi-denim-nb-6',
-        'Macro of the neck label and composition tag',
-        'label',
       ),
     ],
     passportId: 'psp_nicobar_chambray_shirtdress',
@@ -383,12 +451,16 @@ export const products: readonly Product[] = [
   // 5 — passport, well_loved, bag, repaired, sold
   {
     id: 'prd_diesel_denim_shoulder_bag',
-    slug: 'diesel-denim-shoulder-bag-mid-wash',
+    slug: 'jhelum-shoulder-bag',
     sku: 'VP-2602-0455',
-    title: 'Denim shoulder bag with detachable sling',
-    brand: 'Diesel',
+    title: 'Jhelum Shoulder Bag',
+    brand: 'Vaapsi',
     category: 'accessories',
     subcategory: 'Shoulder bag',
+    listingType: 'pre_loved',
+    color: DENIM_COLORS.midWash,
+    // One physical garment. No colourways to pick between.
+    colorVariants: [],
     condition: 'well_loved',
     conditionNotes:
       'Carried for years and it shows. One re-stitched strap anchor, done properly and visible. Priced for it. The repair is on the passport.',
@@ -416,52 +488,50 @@ export const products: readonly Product[] = [
     availability: 'sold',
     images: [
       image(
-        'img_dl_1',
-        'vaapsi-denim-dl-1',
-        'Mid-wash denim shoulder bag alone on a light grey ground, buckle forward',
+        'img_jh_1',
+        'jhelum-shoulder-bag-1',
+        'Mid-wash denim shoulder bag alone on a pale ground, buckle forward',
         'primary',
+        'jhelum-shoulder-bag',
+        0,
       ),
       image(
-        'img_dl_2',
-        'vaapsi-denim-dl-2',
-        'Model carrying the bag on the shoulder, full length, front',
+        'img_jh_2',
+        'jhelum-shoulder-bag-2',
+        'The bag from the front, showing the belted flap and shoulder strap',
         'worn',
+        'jhelum-shoulder-bag',
+        1,
       ),
       image(
-        'img_dl_3',
-        'vaapsi-denim-dl-3',
-        'Worn close-up of the bag against the hip, sling attached',
+        'img_jh_3',
+        'jhelum-shoulder-bag-3',
+        'Close crop of the buckle hardware and the strap anchor',
         'detail',
+        'jhelum-shoulder-bag',
+        2,
       ),
       image(
-        'img_dl_4',
-        'vaapsi-denim-dl-4',
-        'Close crop of the antique brass buckle and strap keeper',
-        'detail',
+        'img_jh_4',
+        'jhelum-shoulder-bag-4',
+        'The bag turned to show the D-ring and the stitched gusset',
+        'label',
+        'jhelum-shoulder-bag',
+        3,
       ),
+      // Placeholder. See the note in restore_flaws — no flaw photography exists.
       image(
         'img_dl_flaw_1',
-        'vaapsi-denim-dl-f1',
-        'Re-stitched left strap anchor, photographed close',
+        'flaw-jhelum-1',
+        'Close crop of the re-stitched left strap anchor in matching thread',
         'flaw',
       ),
+      // Placeholder. See the note in restore_flaws — no flaw photography exists.
       image(
         'img_dl_flaw_2',
-        'vaapsi-denim-dl-f2',
-        'Pale rubbed denim along the base edge, photographed close',
+        'flaw-jhelum-2',
+        'Close crop of the base edge where the denim has rubbed pale',
         'flaw',
-      ),
-      image(
-        'img_dl_5',
-        'vaapsi-denim-dl-5',
-        'Model carrying the bag, full length, back, sling across the body',
-        'worn',
-      ),
-      image(
-        'img_dl_6',
-        'vaapsi-denim-dl-6',
-        'Macro of the embossed brand mark on the interior patch',
-        'label',
       ),
     ],
     passportId: 'psp_diesel_denim_shoulder_bag',
@@ -472,12 +542,16 @@ export const products: readonly Product[] = [
   // 6 — NO passport, good, waistcoat
   {
     id: 'prd_zara_denim_waistcoat',
-    slug: 'zara-denim-waistcoat-light-wash',
+    slug: 'gomti-waistcoat',
     sku: 'VP-2607-1402',
-    title: 'Denim waistcoat in light wash',
-    brand: 'Zara',
+    title: 'Gomti Waistcoat',
+    brand: 'Vaapsi',
     category: 'tops',
     subcategory: 'Waistcoat',
+    listingType: 'pre_loved',
+    color: DENIM_COLORS.lightWash,
+    // One physical garment. No colourways to pick between.
+    colorVariants: [],
     condition: 'good',
     conditionNotes:
       'Light wash, worn a season. All five buttons original, the back tie is intact, and the armholes have kept their shape.',
@@ -496,46 +570,43 @@ export const products: readonly Product[] = [
     availability: 'available',
     images: [
       image(
-        'img_zr_1',
-        'vaapsi-denim-zr-1',
-        'Light wash denim waistcoat alone on a light grey ground, front',
+        'img_go_1',
+        'gomti-waistcoat-1',
+        'Light wash denim waistcoat worn over white trousers, front, buttoned',
         'primary',
+        'gomti-waistcoat',
+        0,
       ),
       image(
-        'img_zr_2',
-        'vaapsi-denim-zr-2',
-        'Model wearing the waistcoat over wide trousers, full length, front',
+        'img_go_2',
+        'gomti-waistcoat-2',
+        'The waistcoat worn open over a white shirt with a linen jacket',
         'worn',
+        'gomti-waistcoat',
+        1,
       ),
       image(
-        'img_zr_3',
-        'vaapsi-denim-zr-3',
-        'Worn close-up of the button front and welt pockets',
+        'img_go_3',
+        'gomti-waistcoat-3',
+        'The waistcoat worn as a set, upper body, showing the shoulder line',
         'detail',
+        'gomti-waistcoat',
+        2,
       ),
       image(
-        'img_zr_4',
-        'vaapsi-denim-zr-4',
-        'Close crop of the shoulder seam and topstitching',
-        'detail',
+        'img_go_4',
+        'gomti-waistcoat-4',
+        'The waistcoat worn with wide denim trousers, full length',
+        'worn',
+        'gomti-waistcoat',
+        3,
       ),
+      // Placeholder. See the note in restore_flaws — no flaw photography exists.
       image(
         'img_zr_flaw_1',
-        'vaapsi-denim-zr-f1',
-        'Two small pulls in the weave near the left armhole',
+        'flaw-gomti-1',
+        'Close crop of two small pulls in the weave near the left armhole',
         'flaw',
-      ),
-      image(
-        'img_zr_5',
-        'vaapsi-denim-zr-5',
-        'Model wearing the waistcoat, full length, back, showing the tie',
-        'worn',
-      ),
-      image(
-        'img_zr_6',
-        'vaapsi-denim-zr-6',
-        'Macro of the interior label and button shank',
-        'label',
       ),
     ],
     // No passport. Three of the eight fixtures are like this on purpose.
@@ -547,12 +618,16 @@ export const products: readonly Product[] = [
   // 7 — NO passport, excellent, jumpsuit, original retail unknown
   {
     id: 'prd_cos_denim_jumpsuit',
-    slug: 'cos-denim-jumpsuit-mid-wash',
+    slug: 'narmada-jumpsuit',
     sku: 'VP-2607-1519',
-    title: 'Denim jumpsuit in mid wash',
-    brand: 'COS',
+    title: 'Narmada Jumpsuit',
+    brand: 'Vaapsi',
     category: 'dresses',
     subcategory: 'Jumpsuit',
+    listingType: 'pre_loved',
+    color: DENIM_COLORS.midWash,
+    // One physical garment. No colourways to pick between.
+    colorVariants: [],
     condition: 'excellent',
     conditionNotes:
       'Worn twice. Utility pockets still crisp, the belt is present, and the zip runs the full length without catching.',
@@ -567,36 +642,37 @@ export const products: readonly Product[] = [
     availability: 'available',
     images: [
       image(
-        'img_cs_1',
-        'vaapsi-denim-cs-1',
-        'Mid-wash denim jumpsuit alone on a light grey ground, front, belted',
+        'img_na_1',
+        'narmada-jumpsuit-1',
+        'Mid-wash denim jumpsuit with a wide leg, worn full length, front',
         'primary',
+        'narmada-jumpsuit',
+        0,
       ),
       image(
-        'img_cs_2',
-        'vaapsi-denim-cs-2',
-        'Model wearing the jumpsuit belted, full length, front',
+        'img_na_2',
+        'narmada-jumpsuit-2',
+        'The jumpsuit worn outdoors with a woven basket bag, full length',
         'worn',
+        'narmada-jumpsuit',
+        1,
       ),
       image(
-        'img_cs_3',
-        'vaapsi-denim-cs-3',
-        'Worn close-up of the collar, zip and chest pockets',
+        'img_na_3',
+        'narmada-jumpsuit-3',
+        'Close crop of the front seam and the zip pull at the placket',
         'detail',
+        'narmada-jumpsuit',
+        2,
       ),
       image(
-        'img_cs_4',
-        'vaapsi-denim-cs-4',
-        'Close crop of the utility thigh pocket and its flap',
-        'detail',
-      ),
-      image(
-        'img_cs_5',
-        'vaapsi-denim-cs-5',
-        'Model wearing the jumpsuit, full length, back',
+        'img_na_4',
+        'narmada-jumpsuit-4',
+        'The jumpsuit worn on the street, showing the leg and the taper',
         'worn',
+        'narmada-jumpsuit',
+        3,
       ),
-      image('img_cs_6', 'vaapsi-denim-cs-6', 'Macro of the zip pull and interior label', 'label'),
     ],
     passportId: null,
     sellerId: 'sel_ananya_r',
@@ -606,12 +682,16 @@ export const products: readonly Product[] = [
   // 8 — NO passport, very_good, straight-leg jeans. The one garment shot for real.
   {
     id: 'prd_uniqlo_wide_leg_jeans',
-    slug: 'uniqlo-straight-leg-jeans-mid-wash',
+    slug: 'tapti-straight-leg-jean',
     sku: 'VP-2608-1633',
-    title: 'Straight-leg jeans in mid wash',
-    brand: 'Uniqlo',
+    title: 'Tapti Straight-Leg Jean',
+    brand: 'Vaapsi',
     category: 'bottoms',
     subcategory: 'Straight-leg jeans',
+    listingType: 'pre_loved',
+    color: DENIM_COLORS.midWash,
+    // One physical garment. No colourways to pick between.
+    colorVariants: [],
     condition: 'very_good',
     conditionNotes:
       'Worn in properly and evenly. The fade runs where a person puts it — soft whiskering at the front hip, a lighter panel down the thigh, the seat and knees a shade paler than the outseam. Copper rivets and the ecru topstitch are all present. Hem taken up once by a tailor and finished with the original chain stitch, so it reads as factory.',
@@ -626,40 +706,311 @@ export const products: readonly Product[] = [
     availability: 'available',
     images: [
       image(
-        'img_uq_1',
-        'vaapsi-denim-uq-1',
-        'The jeans laid flat on a pale grey ground, front, showing the full leg and the five-pocket front',
+        'img_tp_1',
+        'tapti-straight-leg-jean-1',
+        'Mid-wash straight-leg jeans alone on a light grey ground, front',
         'primary',
-        'uniqlo-straight-leg-jeans-mid-wash',
+        'tapti-straight-leg-jean',
         0,
       ),
       image(
-        'img_uq_2',
-        'vaapsi-denim-uq-2',
-        'Model wearing the jeans with a printed shirt and a tan suede jacket, full length, front',
+        'img_tp_2',
+        'tapti-straight-leg-jean-2',
+        'Model wearing the straight-leg jeans, full length, front',
         'worn',
-        'uniqlo-straight-leg-jeans-mid-wash',
+        'tapti-straight-leg-jean',
         1,
       ),
       image(
-        'img_uq_3',
-        'vaapsi-denim-uq-3',
-        'Worn from the side, showing the straight leg, the outseam and the cropped hem above the ankle',
+        'img_tp_3',
+        'tapti-straight-leg-jean-3',
+        'Worn from the side, showing the straight leg and the cropped hem',
         'detail',
-        'uniqlo-straight-leg-jeans-mid-wash',
+        'tapti-straight-leg-jean',
         2,
       ),
       image(
-        'img_uq_4',
-        'vaapsi-denim-uq-4',
+        'img_tp_4',
+        'tapti-straight-leg-jean-4',
         'Model wearing the jeans, full length, back',
         'worn',
-        'uniqlo-straight-leg-jeans-mid-wash',
+        'tapti-straight-leg-jean',
         3,
       ),
     ],
     passportId: null,
     sellerId: 'sel_devika_s',
     listedAt: '2026-08-22T15:25:00.000Z',
+  },
+
+  // ---------------------------------------------------------------------------
+  // New retail stock.
+  //
+  // Vaapsi's own first-party denim, and the only listings on the site with
+  // colourways and repeatable inventory. Everything above this line is one
+  // physical second-hand garment.
+  //
+  // Three things separate these from the eight above, and each is load-bearing
+  // in the UI:
+  //   - `condition` and `conditionNotes` are null. Unworn stock has no grade,
+  //     and a placeholder grade would be a claim about wear nobody made.
+  //   - `flaws` is empty and `passportId` is null. A passport records where a
+  //     garment has been; a new one has been nowhere yet.
+  //   - `colorVariants` is populated, so the PDP shows a picker.
+  //
+  // `ColorVariant.images` is empty on every colourway below: the photography we
+  // have is one set per style, not one set per colour. An empty array falls back
+  // to `Product.images`, which is the honest behaviour — better a shopper sees
+  // the mid indigo shot while the ecru is selected than a picture of a garment
+  // that is not the one they picked. Per-colour frames drop in here when shot.
+  // ---------------------------------------------------------------------------
+
+  // 9 — new, jeans, four colourways. The colour-picker reference case.
+  {
+    id: 'prd_vaapsi_straight_jean_new',
+    slug: 'indus-straight-jean',
+    sku: 'VP-NEW-1001',
+    title: 'Indus Straight Jean',
+    brand: 'Vaapsi',
+    category: 'bottoms',
+    subcategory: 'Straight jeans',
+    listingType: 'new',
+    color: DENIM_COLORS.midIndigo,
+    colorVariants: [
+      {
+        color: DENIM_COLORS.raw,
+        sizes: SIZES_W.filter((size) => size.normalized !== 'w36'),
+        availability: 'available',
+        priceInr: null,
+        images: [],
+      },
+      {
+        color: DENIM_COLORS.midIndigo,
+        sizes: SIZES_W,
+        availability: 'available',
+        priceInr: null,
+        images: [],
+      },
+      {
+        color: DENIM_COLORS.lightWash,
+        // Two sizes left. Picking this colour must not offer W34.
+        sizes: SIZES_W.filter((size) => ['w28', 'w30'].includes(size.normalized)),
+        availability: 'available',
+        priceInr: null,
+        images: [],
+      },
+      {
+        color: DENIM_COLORS.black,
+        // Sold out, and shown as such rather than hidden — see ColorPicker.
+        sizes: [],
+        availability: 'sold',
+        priceInr: null,
+        images: [],
+      },
+    ],
+    condition: null,
+    conditionNotes: null,
+    flaws: [],
+    measurements: { waist: 76, hip: 98, inseam: 76, rise: 28, thigh: 58, hem: 18 },
+    size: { label: 'W30', system: 'IN', normalized: 'w30' },
+    priceInr: rupees(3_900),
+    originalRetailInr: null,
+    currency: 'INR',
+    availability: 'available',
+    images: [
+      image(
+        'img_in_1',
+        'indus-straight-jean-1',
+        'Pale wash straight jeans worn full length, front, against a grey wall',
+        'primary',
+        'indus-straight-jean',
+        0,
+      ),
+      image(
+        'img_in_2',
+        'indus-straight-jean-2',
+        'The jeans worn full length, front, showing the straight leg to the ankle',
+        'worn',
+        'indus-straight-jean',
+        1,
+      ),
+      image(
+        'img_in_3',
+        'indus-straight-jean-3',
+        'Close crop of the waistband, belt loops and front rise',
+        'detail',
+        'indus-straight-jean',
+        2,
+      ),
+      image(
+        'img_in_4',
+        'indus-straight-jean-4',
+        'The jeans worn with the hem breaking over the shoe, side',
+        'worn',
+        'indus-straight-jean',
+        3,
+      ),
+    ],
+    passportId: null,
+    sellerId: 'sel_vaapsi_studio',
+    listedAt: '2026-08-28T09:00:00.000Z',
+  },
+
+  // 10 — new, jacket, three colourways, one priced differently.
+  {
+    id: 'prd_vaapsi_trucker_new',
+    slug: 'kaveri-trucker-jacket',
+    sku: 'VP-NEW-1002',
+    title: 'Kaveri Trucker Jacket',
+    brand: 'Vaapsi',
+    category: 'outerwear',
+    subcategory: 'Trucker jacket',
+    listingType: 'new',
+    color: DENIM_COLORS.midWash,
+    colorVariants: [
+      {
+        color: DENIM_COLORS.midWash,
+        sizes: SIZES_ALPHA,
+        availability: 'available',
+        priceInr: null,
+        images: [],
+      },
+      {
+        color: DENIM_COLORS.ecru,
+        sizes: SIZES_ALPHA.filter((size) => size.normalized !== 'xs'),
+        availability: 'available',
+        // Ecru is dyed differently and costs more. Priced per colourway.
+        priceInr: rupees(5_200),
+        images: [],
+      },
+      {
+        color: DENIM_COLORS.washedBlue,
+        sizes: SIZES_ALPHA.filter((size) => ['m', 'l'].includes(size.normalized)),
+        availability: 'available',
+        priceInr: null,
+        images: [],
+      },
+    ],
+    condition: null,
+    conditionNotes: null,
+    flaws: [],
+    measurements: { chest: 108, shoulder: 46, length: 62, sleeveLength: 60 },
+    size: { label: 'M', system: 'IN', normalized: 'm' },
+    priceInr: rupees(4_800),
+    originalRetailInr: null,
+    currency: 'INR',
+    availability: 'available',
+    images: [
+      image(
+        'img_kv_1',
+        'kaveri-trucker-jacket-1',
+        'Mid-wash denim trucker jacket alone, front, zipped, showing four pockets',
+        'primary',
+        'kaveri-trucker-jacket',
+        0,
+      ),
+      image(
+        'img_kv_2',
+        'kaveri-trucker-jacket-2',
+        'The trucker jacket worn buttoned over a pale shirt, upper body, front',
+        'worn',
+        'kaveri-trucker-jacket',
+        1,
+      ),
+      image(
+        'img_kv_3',
+        'kaveri-trucker-jacket-3',
+        'Close crop of the chest pocket, the placket and the topstitch',
+        'detail',
+        'kaveri-trucker-jacket',
+        2,
+      ),
+      image(
+        'img_kv_4',
+        'kaveri-trucker-jacket-4',
+        'The jacket worn open, showing the collar and the shoulder seam',
+        'worn',
+        'kaveri-trucker-jacket',
+        3,
+      ),
+    ],
+    passportId: null,
+    sellerId: 'sel_vaapsi_studio',
+    listedAt: '2026-08-27T09:00:00.000Z',
+  },
+
+  // 11 — new, shirt, two colourways. Deliberately the plainest of the three.
+  {
+    id: 'prd_vaapsi_chambray_shirt_new',
+    slug: 'yamuna-chambray-shirt',
+    sku: 'VP-NEW-1003',
+    title: 'Yamuna Chambray Shirt',
+    brand: 'Vaapsi',
+    category: 'tops',
+    subcategory: 'Shirt',
+    listingType: 'new',
+    color: DENIM_COLORS.lightWash,
+    colorVariants: [
+      {
+        color: DENIM_COLORS.lightWash,
+        sizes: SIZES_ALPHA,
+        availability: 'available',
+        priceInr: null,
+        images: [],
+      },
+      {
+        color: DENIM_COLORS.indigo,
+        sizes: SIZES_ALPHA,
+        availability: 'available',
+        priceInr: null,
+        images: [],
+      },
+    ],
+    condition: null,
+    conditionNotes: null,
+    flaws: [],
+    measurements: { chest: 104, shoulder: 44, length: 74, sleeveLength: 62, neck: 39 },
+    size: { label: 'M', system: 'IN', normalized: 'm' },
+    priceInr: rupees(2_600),
+    originalRetailInr: null,
+    currency: 'INR',
+    availability: 'available',
+    images: [
+      image(
+        'img_ya_1',
+        'yamuna-chambray-shirt-1',
+        'Light wash chambray shirt worn buttoned with the sleeves rolled, front',
+        'primary',
+        'yamuna-chambray-shirt',
+        0,
+      ),
+      image(
+        'img_ya_2',
+        'yamuna-chambray-shirt-2',
+        'The chambray shirt worn open over white trousers, full length',
+        'worn',
+        'yamuna-chambray-shirt',
+        1,
+      ),
+      image(
+        'img_ya_3',
+        'yamuna-chambray-shirt-3',
+        'Close crop of the cuff, the placket and the topstitching',
+        'detail',
+        'yamuna-chambray-shirt',
+        2,
+      ),
+      image(
+        'img_ya_4',
+        'yamuna-chambray-shirt-4',
+        'The shirt worn under a jacket, upper body, showing the collar',
+        'worn',
+        'yamuna-chambray-shirt',
+        3,
+      ),
+    ],
+    passportId: null,
+    sellerId: 'sel_vaapsi_studio',
+    listedAt: '2026-08-26T09:00:00.000Z',
   },
 ]

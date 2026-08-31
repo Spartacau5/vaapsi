@@ -50,10 +50,21 @@ function seed(...productIds: string[]) {
 // ---------------------------------------------------------------------------
 
 describe('cart store', () => {
-  it('stores only an id and a timestamp — never a price or availability', () => {
+  it('stores an id, a timestamp and the chosen variant — and nothing else', () => {
     act(() => useCartStore.getState().add(AVAILABLE))
     const item = useCartStore.getState().items[0]
-    expect(Object.keys(item ?? {}).sort()).toEqual(['addedAt', 'productId'])
+    // The variant is a *choice*, which cannot be re-derived server-side. Price,
+    // availability, title and image are all resolved fresh on every read, and a
+    // cart that remembered any of them would show a stale one.
+    expect(Object.keys(item ?? {}).sort()).toEqual([
+      'addedAt',
+      'colorSlug',
+      'productId',
+      'sizeNormalized',
+    ])
+    for (const forbidden of ['priceInr', 'availability', 'title', 'primaryImage', 'quantity']) {
+      expect(item).not.toHaveProperty(forbidden)
+    }
   })
 
   it('is idempotent, because there is only one of each garment', () => {
@@ -63,6 +74,50 @@ describe('cart store', () => {
       useCartStore.getState().add(AVAILABLE)
     })
     expect(useCartStore.getState().items).toHaveLength(1)
+  })
+
+  it('treats two colourways of one style as two lines', () => {
+    act(() => {
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'raw-indigo', sizeNormalized: 'w30' })
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'light-wash', sizeNormalized: 'w30' })
+    })
+    expect(useCartStore.getState().items).toHaveLength(2)
+  })
+
+  it('is still idempotent per colour and size', () => {
+    act(() => {
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'raw-indigo', sizeNormalized: 'w30' })
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'raw-indigo', sizeNormalized: 'w30' })
+    })
+    expect(useCartStore.getState().items).toHaveLength(1)
+  })
+
+  it('separates the same colour in two sizes', () => {
+    act(() => {
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'raw-indigo', sizeNormalized: 'w30' })
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'raw-indigo', sizeNormalized: 'w32' })
+    })
+    expect(useCartStore.getState().items).toHaveLength(2)
+  })
+
+  it('removes one variant without touching the other', () => {
+    act(() => {
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'raw-indigo', sizeNormalized: 'w30' })
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'light-wash', sizeNormalized: 'w30' })
+      useCartStore.getState().remove(AVAILABLE, { colorSlug: 'raw-indigo', sizeNormalized: 'w30' })
+    })
+    const items = useCartStore.getState().items
+    expect(items).toHaveLength(1)
+    expect(items[0]?.colorSlug).toBe('light-wash')
+  })
+
+  it('removes every line for a product when no variant is named', () => {
+    act(() => {
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'raw-indigo', sizeNormalized: 'w30' })
+      useCartStore.getState().add(AVAILABLE, { colorSlug: 'light-wash', sizeNormalized: 'w30' })
+      useCartStore.getState().remove(AVAILABLE)
+    })
+    expect(useCartStore.getState().items).toHaveLength(0)
   })
 
   it('has no quantity anywhere', () => {
@@ -94,14 +149,14 @@ describe('CartView', () => {
   it('renders a resolved line with its price', async () => {
     seed(AVAILABLE)
     render(<CartView />)
-    expect(await screen.findByText('501 Original straight jeans in mid indigo')).toBeInTheDocument()
+    expect(await screen.findByText('Ravi Straight Jean')).toBeInTheDocument()
     expect(screen.getAllByText('₹2,650').length).toBeGreaterThan(0)
   })
 
   it('never shows a quantity stepper, not even a disabled one', async () => {
     seed(AVAILABLE)
     const { container } = render(<CartView />)
-    await screen.findByText('501 Original straight jeans in mid indigo')
+    await screen.findByText('Ravi Straight Jean')
     expect(container.querySelector('input[type="number"]')).toBeNull()
     expect(screen.queryByRole('button', { name: /increase|decrease|\+|−/ })).toBeNull()
   })
@@ -111,7 +166,7 @@ describe('CartView', () => {
     render(<CartView />)
     expect(await screen.findByText(copy.line.soldOut)).toBeInTheDocument()
     // Still there, still named.
-    expect(screen.getByText('Denim shoulder bag with detachable sling')).toBeInTheDocument()
+    expect(screen.getByText('Jhelum Shoulder Bag')).toBeInTheDocument()
     // The total is the available garment only.
     expect(screen.getByText(copy.summary.excludedNote(1))).toBeInTheDocument()
   })
@@ -146,11 +201,11 @@ describe('CartView', () => {
     const user = userEvent.setup()
     seed(AVAILABLE)
     render(<CartView />)
-    await screen.findByText('501 Original straight jeans in mid indigo')
+    await screen.findByText('Ravi Straight Jean')
 
     await user.click(
       screen.getByRole('button', {
-        name: copy.line.removeLabel('501 Original straight jeans in mid indigo'),
+        name: copy.line.removeLabel('Ravi Straight Jean'),
       }),
     )
     expect(useCartStore.getState().items).toHaveLength(0)
@@ -160,7 +215,7 @@ describe('CartView', () => {
     const user = userEvent.setup()
     seed(AVAILABLE)
     render(<CartView />)
-    await screen.findByText('501 Original straight jeans in mid indigo')
+    await screen.findByText('Ravi Straight Jean')
 
     await user.click(screen.getByRole('button', { name: copy.line.moveToWishlist }))
     expect(useWishlistStore.getState().items).toContain(AVAILABLE)
@@ -219,13 +274,19 @@ describe('CartDrawer', () => {
 describe('CartSummary', () => {
   const line = (status: CartLineType['status']): CartLineType => ({
     id: 'crl_x',
+    // Pre-loved fixture: one physical garment, so nothing was chosen.
+    selection: null,
     product: {
       id: 'p',
       slug: 's',
       title: 'T',
       brand: 'B',
       category: 'knitwear',
+      subcategory: 'Crewneck',
+      listingType: 'pre_loved',
       condition: 'good',
+      color: { slug: 'navy', name: 'Navy', hex: '#25314f' },
+      colorVariants: [],
       size: { label: 'M', system: 'IN', normalized: 'm' },
       priceInr: 100_000,
       originalRetailInr: null,
@@ -286,13 +347,18 @@ describe('CartLine', () => {
   it('strikes the price through on an unavailable line', () => {
     const soldLine: CartLineType = {
       id: 'crl_x',
+      selection: null,
       product: {
         id: 'p',
         slug: 's',
         title: 'A sweater',
         brand: 'B',
         category: 'knitwear',
+        subcategory: 'Crewneck',
+        listingType: 'pre_loved',
         condition: 'good',
+        color: { slug: 'navy', name: 'Navy', hex: '#25314f' },
+        colorVariants: [],
         size: { label: 'M', system: 'IN', normalized: 'm' },
         priceInr: 100_000,
         originalRetailInr: null,

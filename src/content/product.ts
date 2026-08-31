@@ -48,7 +48,70 @@ export const conditionCopy: Record<
   },
 }
 
+/**
+ * The colour picker's copy. Lives here rather than in the component so the
+ * "sold out" phrasing can be changed without touching the picker's logic.
+ */
+export const colorPickerCopy = {
+  label: 'Colour',
+  sizeLabel: 'Size',
+  sizeUnchosen: 'Choose a size',
+  /** Spoken name for a swatch that cannot be picked. */
+  soldOutOption: (name: string) => `${name} — sold out`,
+  colorSoldOut: 'This colour is sold out. Pick another to see its sizes.',
+  pricedDifferently: (price: string) => `This colour is ${price}.`,
+} as const
+
+/**
+ * Card copy.
+ *
+ * The card shows the garment's name, what it is, size, colour and price, and —
+ * on pre-loved only — a condition grade. The brand is not on the card: every
+ * listing is Vaapsi, so it distinguished nothing and read as a repeated label.
+ */
+export const productCard = {
+  /**
+   * The card's link is a stretched overlay with no visible text of its own, so
+   * it needs a spoken name. Built from the facts a shopper is choosing between.
+   */
+  linkLabel: (parts: { name: string; garment: string; size: string; color: string }): string =>
+    `${parts.name}, ${parts.garment}, size ${parts.size}, ${parts.color}`,
+  /** Screen-reader prefixes, so three bare values are not read as one string. */
+  sizeLabel: 'Size',
+  colorLabel: 'Colour',
+  /**
+   * The card's own add button, and the two states before it can be used.
+   *
+   * The two "pick…" strings sit on the button itself rather than beside it. A
+   * greyed-out "Add to cart" says only that something is wrong; this says what.
+   */
+  addToCart: 'Add to cart',
+  pickColorFirst: 'Pick a colour',
+  pickSizeFirst: 'Pick a size',
+  /** Names the inline controls for a screen reader, so they are not orphaned. */
+  choiceGroup: (name: string) => `Choose a colour and size for ${name}`,
+} as const
+
 export const productPage = {
+  colorPicker: colorPickerCopy,
+
+  /**
+   * Gallery copy.
+   *
+   * Every control here is named for what it does rather than which way it
+   * points, so a screen-reader user hears "Previous photograph", not "left".
+   */
+  gallery: {
+    label: 'Product photographs',
+    thumbnails: 'Choose a photograph',
+    previous: 'Previous photograph',
+    next: 'Next photograph',
+    frame: (n: number, total: number) => `Photograph ${n} of ${total}`,
+    position: (n: number, total: number) => `${n} / ${total}`,
+    save: 'Save to wishlist',
+    saved: 'Saved to wishlist',
+  },
+
   sections: {
     condition: 'Condition',
     conditionNote: 'Graded at intake. Every flaw below is photographed.',

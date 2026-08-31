@@ -56,7 +56,11 @@ function toSummary(product: Product): ProductSummary {
     title: product.title,
     brand: product.brand,
     category: product.category,
+    subcategory: product.subcategory,
+    listingType: product.listingType,
     condition: product.condition,
+    color: product.color,
+    colorVariants: product.colorVariants,
     size: product.size,
     priceInr: product.priceInr,
     originalRetailInr: product.originalRetailInr,
@@ -73,6 +77,9 @@ function matches(product: Product, filters: ProductFilters): boolean {
     if (!filters.brands.includes(product.brand)) return false
   }
   if (filters.conditions !== undefined && filters.conditions.length > 0) {
+    // New stock has no grade, so a condition filter excludes it rather than
+    // matching everything. Asking for "very good" is asking about wear.
+    if (product.condition === null) return false
     if (!filters.conditions.includes(product.condition)) return false
   }
   if (filters.sizes !== undefined && filters.sizes.length > 0) {
@@ -101,6 +108,24 @@ function sorted(list: readonly Product[], sort: ProductSort): readonly Product[]
       return copy.sort((a, b) => a.title.localeCompare(b.title))
     case 'newest':
       return copy.sort((a, b) => Date.parse(b.listedAt) - Date.parse(a.listedAt))
+    case 'popular':
+      // **Curated, not measured.** There is no order history in Phase 1, so
+      // there is nothing to count — this is the same editorial order that feeds
+      // the home page, with everything unranked falling in behind it by
+      // recency. When real sales data exists it replaces this case and nothing
+      // above it changes.
+      //
+      // The shopper-facing label says "Popular", never "Best selling", because
+      // the second is a factual claim this cannot yet support.
+      return copy.sort((a, b) => {
+        const rank = (product: Product) => {
+          const index = EDITORIAL_ORDER.indexOf(product.id)
+          return index === -1 ? Number.MAX_SAFE_INTEGER : index
+        }
+        const byRank = rank(a) - rank(b)
+        if (byRank !== 0) return byRank
+        return Date.parse(b.listedAt) - Date.parse(a.listedAt)
+      })
     case 'relevance':
     default:
       // Available first, then newest. A sold garment sinking below an available
@@ -271,12 +296,40 @@ export const mockAdapter: DataAdapter = {
         // an error. Delisted is different from sold, and there is nothing for a
         // shopper to do about it.
         if (product === undefined) return null
+
+        // Resolve the stored choice against live stock rather than trusting it.
+        const variant =
+          item.colorSlug === undefined || item.colorSlug === null
+            ? null
+            : (product.colorVariants.find((candidate) => candidate.color.slug === item.colorSlug) ??
+              null)
+
+        const size =
+          item.sizeNormalized === undefined || item.sizeNormalized === null
+            ? null
+            : (variant?.sizes.find((candidate) => candidate.normalized === item.sizeNormalized) ??
+              null)
+
         return {
-          id: `crl_${product.id}`,
+          // The line id includes the variant, so two colourways of one style are
+          // two lines rather than one that overwrites the other.
+          id: `crl_${product.id}${item.colorSlug != null ? `_${item.colorSlug}` : ''}${
+            item.sizeNormalized != null ? `_${item.sizeNormalized}` : ''
+          }`,
           product: toSummary(product),
-          priceAtAddInr: product.priceInr,
+          // A colourway may be priced differently from the style.
+          priceAtAddInr: variant?.priceInr ?? product.priceInr,
           addedAt: item.addedAt,
-          status: statusFor(product.availability),
+          // A chosen colourway that has since sold out makes the line stale,
+          // even though the style itself is still available.
+          status:
+            variant !== null && variant.availability !== 'available'
+              ? statusFor(variant.availability)
+              : statusFor(product.availability),
+          selection:
+            variant === null
+              ? null
+              : { colorName: variant.color.name, sizeLabel: size?.label ?? '—' },
         }
       })
       .filter((line): line is CartLine => line !== null)

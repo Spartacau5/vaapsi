@@ -38,7 +38,8 @@ export function CartLine({
   const savedForLater = useWishlistStore((state) => state.items.includes(line.product.id))
 
   const unavailable = line.status !== 'active'
-  const condition = conditionCopy[line.product.condition]
+  // Null on new stock. A cart can hold both kinds.
+  const condition = line.product.condition === null ? null : conditionCopy[line.product.condition]
 
   return (
     <li className="border-b border-line py-5 first:pt-0">
@@ -98,8 +99,16 @@ export function CartLine({
             </Type>
             <span aria-hidden>·</span>
             <Type as="span" size="xs" tone="inherit">
-              {condition.label}
+              {line.product.color.name}
             </Type>
+            {condition !== null && (
+              <>
+                <span aria-hidden>·</span>
+                <Type as="span" size="xs" tone="inherit">
+                  {condition.label}
+                </Type>
+              </>
+            )}
           </Row>
 
           {unavailable && (

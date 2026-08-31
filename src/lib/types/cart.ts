@@ -20,6 +20,15 @@ export type CartLine = {
    * checkout on a one-of-one marketplace, and needs its own treatment.
    */
   status: 'active' | 'reserved' | 'sold_out' | 'price_changed'
+  /**
+   * What the shopper chose, echoed back for display. Null on one-of-one stock.
+   *
+   * Resolved rather than trusted: the adapter checks the stored slug against the
+   * product's live colourways, so a colour that has been discontinued since it
+   * went in the bag comes back as unavailable instead of as a name nobody can
+   * fulfil.
+   */
+  selection: { colorName: string; sizeLabel: string } | null
 }
 
 /**

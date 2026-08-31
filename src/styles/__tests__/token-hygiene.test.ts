@@ -40,6 +40,13 @@ function scannedFiles(): { path: string; source: string }[] {
       // white-on-white would make the only control that can undo that choice
       // invisible. Its fixed palette is the point, not an oversight.
       .filter((file) => !file.path.startsWith('src/components/theme/studio/'))
+      // Product colour swatches are catalogue *data*, not design tokens, and the
+      // distinction matters both ways: a garment's colour must not shift when
+      // someone re-themes the site, and the theme must not gain a token for
+      // "mid indigo" that only one product uses. In production these hexes
+      // arrive from the API with the product; this fixture file stands in for
+      // that response. `ProductColor.hex` is the only place they are allowed.
+      .filter((file) => file.path !== 'src/lib/data/fixtures/products.ts')
   )
 }
 

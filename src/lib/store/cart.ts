@@ -17,9 +17,12 @@ import type { ProductId } from '@/lib/types'
  * whole design, and it is the reason this file is thirty lines instead of three
  * hundred.
  *
- * **There is no quantity.** Every garment is one-of-one, so membership is a set
- * and `add` is idempotent. If a `quantity` field ever appears here, something
- * upstream has started treating garments as SKUs.
+ * **There is no quantity.** A pre-loved garment is one-of-one, so membership is
+ * a set and `add` is idempotent. New stock has colourways and sizes, so the set
+ * is keyed on *product + colour + size* rather than on the product alone — two
+ * colourways of one style are two lines, and adding the same colour and size
+ * twice is still a no-op. There is still no quantity: if a `quantity` field
+ * appears here, decide deliberately, because everything downstream assumes a set.
  */
 
 type CartState = {
@@ -27,10 +30,29 @@ type CartState = {
   /** True once the persisted value has been read. Guards the first render. */
   hydrated: boolean
 
-  add: (productId: ProductId) => void
-  remove: (productId: ProductId) => void
+  /** `variant` is omitted for one-of-one stock, which has nothing to choose. */
+  add: (productId: ProductId, variant?: CartVariantChoice) => void
+  remove: (productId: ProductId, variant?: CartVariantChoice) => void
   clear: () => void
-  has: (productId: ProductId) => boolean
+  has: (productId: ProductId, variant?: CartVariantChoice) => boolean
+}
+
+/** What a shopper picked on a product with colourways. */
+export type CartVariantChoice = {
+  colorSlug: string
+  sizeNormalized: string
+}
+
+/**
+ * Identity of a bag line. Product plus variant, so the same style in two colours
+ * is two lines and the same colour twice is one.
+ */
+function sameLine(item: CartItemRef, productId: ProductId, variant?: CartVariantChoice): boolean {
+  if (item.productId !== productId) return false
+  return (
+    (item.colorSlug ?? null) === (variant?.colorSlug ?? null) &&
+    (item.sizeNormalized ?? null) === (variant?.sizeNormalized ?? null)
+  )
 }
 
 export const CART_STORAGE_KEY = 'vaapsi.cart.v1'
@@ -41,19 +63,34 @@ export const useCartStore = create<CartState>()(
       items: [],
       hydrated: false,
 
-      add: (productId) =>
+      add: (productId, variant) =>
         set((state) => {
-          // Idempotent. There is only one of these, so adding twice is a no-op
-          // rather than an error or a second line.
-          if (state.items.some((item) => item.productId === productId)) return state
+          // Idempotent per variant. Adding the same colour and size twice is a
+          // no-op rather than an error or a second line.
+          if (state.items.some((item) => sameLine(item, productId, variant))) return state
           return {
-            items: [...state.items, { productId, addedAt: new Date().toISOString() }],
+            items: [
+              ...state.items,
+              {
+                productId,
+                addedAt: new Date().toISOString(),
+                colorSlug: variant?.colorSlug ?? null,
+                sizeNormalized: variant?.sizeNormalized ?? null,
+              },
+            ],
           }
         }),
 
-      remove: (productId) =>
+      remove: (productId, variant) =>
         set((state) => ({
-          items: state.items.filter((item) => item.productId !== productId),
+          // With no variant given, remove every line for the product — which is
+          // what a one-of-one garment means, and what the cart page wants when
+          // it does not track which line it is on.
+          items: state.items.filter((item) =>
+            variant === undefined
+              ? item.productId !== productId
+              : !sameLine(item, productId, variant),
+          ),
         })),
 
       clear: () => set({ items: [] }),

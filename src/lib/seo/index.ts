@@ -68,7 +68,9 @@ export function productJsonLd({
   passport: Passport | null
   seller: Seller | null
 }): Record<string, unknown> {
-  const condition = conditionCopy[product.condition]
+  // Null for new stock. Schema.org has a value for that, so this maps rather
+  // than omits — see `itemCondition` below.
+  const condition = product.condition === null ? null : conditionCopy[product.condition]
   const images = product.images.map((image) => image.url)
 
   return {
@@ -77,10 +79,20 @@ export function productJsonLd({
     name: `${product.brand} ${product.title}`,
     sku: product.sku,
     brand: { '@type': 'Brand', name: product.brand },
-    description: `${condition.label} — ${condition.definition} ${product.conditionNotes}`.trim(),
+    description:
+      condition === null
+        ? `${product.brand} ${product.subcategory} in ${product.color.name}.`
+        : `${condition.label} — ${condition.definition} ${product.conditionNotes ?? ''}`.trim(),
     image: images,
     url: absoluteUrl(`/product/${product.slug}`),
-    itemCondition: 'https://schema.org/UsedCondition',
+    // Schema.org distinguishes these, and getting it wrong is a rich-result
+    // penalty as well as a false claim: new stock marked used loses the price
+    // and availability treatment, and used stock marked new is a lie.
+    itemCondition:
+      product.listingType === 'new'
+        ? 'https://schema.org/NewCondition'
+        : 'https://schema.org/UsedCondition',
+    color: product.color.name,
     size: product.size.label,
     ...(passport !== null
       ? {
@@ -127,7 +139,12 @@ export function productJsonLd({
 export function productMetadata(product: Product): Metadata {
   const primary = product.images.find((image) => image.kind === 'primary') ?? product.images[0]
   const title = `${product.title} — ${product.brand}`
-  const description = `${conditionCopy[product.condition].label}. ${product.conditionNotes}`
+  // New stock has no grade and no inspector's note, so it describes itself by
+  // what it is instead of by its wear.
+  const description =
+    product.condition === null
+      ? `${product.subcategory} in ${product.color.name}. New.`
+      : `${conditionCopy[product.condition].label}. ${product.conditionNotes ?? ''}`.trim()
 
   return {
     title,
