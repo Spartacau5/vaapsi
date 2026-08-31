@@ -65,16 +65,83 @@ Describes one physical garment. Every garment is one-of-one.
 | `brand`       | `string`          | Free text today. A `Brand` relation would be a contract change                                |
 | `category`    | `ProductCategory` | `tops \| bottoms \| dresses \| outerwear \| knitwear \| ethnicwear \| suiting \| accessories` |
 | `subcategory` | `string`          | Free text. "Kurta", "Shirt dress", "Jeans"                                                    |
+| `listingType` | `ListingType`     | **`new \| pre_loved`.** The discriminator for condition and colourways — see below            |
+| `color`       | `ProductColor`    | The garment's own colour. **Always present** — every grid card shows it                       |
+
+### New stock versus pre-loved
+
+`listingType` splits the catalogue in two, and it gates what the UI is allowed to
+claim about a listing. Get this field wrong and the storefront either hides a
+grade a shopper needs or invents one nobody assigned.
+
+| `listingType` | Inventory                                | `condition`  | `colorVariants` | `passportId` |
+| ------------- | ---------------------------------------- | ------------ | --------------- | ------------ |
+| `pre_loved`   | One physical garment. No quantity        | **required** | **empty**       | may be set   |
+| `new`         | First-party retail. Colourways and sizes | **null**     | **non-empty**   | always null  |
+
+Both halves are load-bearing:
+
+- **`condition` is null for `new` and never null for `pre_loved`.** Nullable
+  rather than defaulted on purpose — a placeholder grade on unworn stock is a
+  claim about wear that no inspector made. Same for `conditionNotes`.
+- **`colorVariants` is non-empty only for `new`.** A colour picker on a
+  one-of-one garment offers objects that do not exist.
+
+### Colour
+
+**`ProductColor`** — `{ slug: string; name: string; hex: string }`
+
+`hex` is a flat swatch fill and an approximation by definition: a mid-wash denim
+is a hundred colours and a 4mm dot is one. The storefront always renders `name`
+beside the swatch and never relies on the swatch alone. `slug` is the handle for
+URLs and filters.
+
+**`ColorVariant`** — one colourway of a `new` product.
+
+| Field          | Type             | Notes                                                                   |
+| -------------- | ---------------- | ----------------------------------------------------------------------- |
+| `color`        | `ProductColor`   |                                                                         |
+| `sizes`        | `Size[]`         | Sizes **with stock in this colour**. Empty means this colourway is gone |
+| `availability` | `Availability`   | Per colourway, not per product                                          |
+| `priceInr`     | `Paise \| null`  | Set only when this colourway is priced differently                      |
+| `images`       | `ProductImage[]` | Colour-specific frames. Empty falls back to `Product.images`            |
+
+Sizes are per colourway rather than per product because stock genuinely differs
+— a colour sells out of M before XL, and a size list that ignores the selected
+colour offers sizes that cannot be bought.
+
+**Resolved: the cart now carries the variant.** `CartItemRef` is
+`{ productId, addedAt, colorSlug, sizeNormalized }`, and `CartLine` gains a
+`selection` echoing the resolved colour and size back for display. Two notes for
+the backend:
+
+- The variant fields are a **choice**, not a snapshot — they persist because
+  there is nothing server-side to re-derive them from. Price and availability are
+  still resolved fresh on every read and must never be stored client-side.
+- `resolveCart` must **validate the stored slug against live colourways**. A
+  colourway that has sold out since it went in the bag returns a stale line
+  status, not a name nobody can fulfil. The mock adapter does this; the real one
+  must too.
+
+Line identity is product + colour + size, so two colourways of one style are two
+lines and the same colour twice is one. There is still no quantity field.
+
+⚠️ **Still open: a customisation cannot be expressed either.** "Make it your
+own" (`content/customise.ts`) lets a shopper add hand work to a specific garment.
+Those selections are local component state today. Carrying them needs a field on
+`CartItemRef` **and** a route to whoever does the work — a customisation that
+reaches the order but not the studio is worse than one that was never offered.
 
 ### Resale specifics
 
-| Field            | Type           | Notes                                                                     |
-| ---------------- | -------------- | ------------------------------------------------------------------------- |
-| `condition`      | `Condition`    | `pristine \| excellent \| very_good \| good \| well_loved`. Best to worst |
-| `conditionNotes` | `string`       | Free prose from the inspector. Rendered as prose, not small print         |
-| `flaws`          | `Flaw[]`       | Empty array is meaningful — it is a claim that there are none             |
-| `measurements`   | `Measurements` | Partial record, **centimetres**, taken flat                               |
-| `size`           | `Size`         | `{ label, system, normalized }`                                           |
+| Field            | Type                | Notes                                                                                |
+| ---------------- | ------------------- | ------------------------------------------------------------------------------------ |
+| `condition`      | `Condition \| null` | `pristine \| excellent \| very_good \| good \| well_loved`. Best to worst.           |
+|                  |                     | **Null for `new` stock only**                                                        |
+| `conditionNotes` | `string \| null`    | Free prose from the inspector. Null with `condition`                                 |
+| `flaws`          | `Flaw[]`            | Empty array is meaningful — it is a claim that there are none                        |
+| `measurements`   | `Measurements`      | Partial record, **centimetres**, taken flat                                          |
+| `size`           | `Size`              | `{ label, system, normalized }`. For `new`, the default; the ladder is per colourway |
 
 **`Flaw`** — `{ description: string; imageId: ImageId; location: string }`
 

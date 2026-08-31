@@ -134,17 +134,17 @@ display face swaps with no layout break and no font loading.
 
 ### Surfaces built
 
-| Route                       | What it is                                                                                                                       |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                         | Home. Hero built on one garment and its history, new-in rail, passport explainer, category grid, condition scale, editorial band |
-| `/shop`, `/shop/[category]` | Listing. Filters, sort and pagination all live in `searchParams` — no filter state in Zustand                                    |
-| `/product/[slug]`           | PDP. Gallery, condition and flaw disclosure, measurements, and the passport inline. Statically generated                         |
-| `/passport/[id]`            | The standalone passport. **This is what the QR resolves to.** Print styles included. Statically generated                        |
-| `/cart`                     | The bag, plus a drawer from the header sharing the same components                                                               |
-| `/checkout`                 | An honest placeholder. Deliberately **not** a fake payment screen                                                                |
-| `/passport`                 | The explainer                                                                                                                    |
-| `/kitchen-sink`             | Every component in every state. Internal, not indexed                                                                            |
-| `/tokens`                   | Token specimen sheet. Internal, not indexed                                                                                      |
+| Route                       | What it is                                                                                                                                                 |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                         | Home. Hero built on one garment and its history, new-in rail, passport explainer, category grid, condition scale, editorial band                           |
+| `/shop`, `/shop/[category]` | Listing. Filters, sort and pagination all live in `searchParams` — no filter state in Zustand                                                              |
+| `/product/[slug]`           | PDP. Gallery, condition and flaw disclosure, measurements, and the passport inline. Statically generated                                                   |
+| `/passport/[id]`            | The standalone passport. **This is what the QR resolves to.** Print styles included. Statically generated                                                  |
+| `/pre-loved`                | Seller entry point, plus the pre-loved stock grid. **The surface that states condition grades.** CTA is honest that selling needs auth                     |
+| `/cart`                     | The bag, plus a drawer from the header sharing the same components                                                                                         |
+| `/checkout`                 | Details step: contact, address, and the delivery choice carrying the slower-shipping discount. Payment is a stated boundary, **not** a fake payment screen |
+| `/kitchen-sink`             | Every component in every state. Internal, not indexed                                                                                                      |
+| `/tokens`                   | Token specimen sheet. Internal, not indexed                                                                                                                |
 
 Add `?studio=1` to any URL for the theme switcher. Ctrl/⌘ + K toggles it.
 
@@ -190,15 +190,22 @@ the passport QR to SVG. No client JS, no canvas, no layout shift.
 
 ### Still stubbed or provisional
 
-| What                    | Where                       | Blocked on                               |
-| ----------------------- | --------------------------- | ---------------------------------------- |
-| PIN-code serviceability | `product/pincode-check.tsx` | Parcel provider (PRD Q8)                 |
-| Returns policy copy     | `content/delivery.ts`       | C2C returns policy (PRD Q7)              |
-| GST / tax line          | `content/navigation.ts`     | Merchant of record (PRD Q6)              |
-| Add to bag              | `product/add-to-bag.tsx`    | Phase 6                                  |
-| Care symbols            | `passport/front.tsx`        | GINETEX icon set; labels shown meanwhile |
-| Product photography     | fixtures                    | Client (PRD Q10)                         |
-| The passport's name     | `content/passport.ts`       | Client                                   |
+| What                       | Where                       | Blocked on                                                                         |
+| -------------------------- | --------------------------- | ---------------------------------------------------------------------------------- |
+| PIN-code serviceability    | `product/pincode-check.tsx` | Parcel provider (PRD Q8)                                                           |
+| Returns policy copy        | `content/delivery.ts`       | C2C returns policy (PRD Q7)                                                        |
+| GST / tax line             | `content/navigation.ts`     | Merchant of record (PRD Q6)                                                        |
+| Add to bag                 | `product/add-to-bag.tsx`    | Phase 6                                                                            |
+| Seller sign-in / listing   | `content/pre-loved.ts`      | Phase 7 — auth and seller accounts                                                 |
+| Customisation in the cart  | `product/customiser.tsx`    | Selections are local state — needs a `CartItemRef` field and a route to the studio |
+| Trinket prices, lead times | `content/customise.ts`      | Placeholders; the non-returnable policy needs sign-off (PRD Q7)                    |
+| Slower-delivery discount   | `content/checkout.ts`       | The 15% and the 8–11 day window need finance and the courier contract (PRD Q8)     |
+| Product photography        | `public/products/`          | Lookbook frames, not per-garment shoots. No flaw photography exists                |
+| Size chart numbers         | `content/size-guide.ts`     | Follows H&M; needs Vaapsi's own spec + legal sign-off                              |
+| "Popular" sort             | `lib/data/mock.ts`          | Curated — no order history to rank by yet                                          |
+| Care symbols               | `passport/front.tsx`        | GINETEX icon set; labels shown meanwhile                                           |
+| Product photography        | fixtures                    | Client (PRD Q10)                                                                   |
+| The passport's name        | `content/passport.ts`       | Client                                                                             |
 
 ### Conventions worth knowing
 
