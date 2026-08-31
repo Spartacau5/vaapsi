@@ -1,5 +1,3 @@
-import { PASSPORT_NAME } from './passport'
-
 /**
  * Header and footer structure. Routes live beside their labels so a nav item
  * cannot drift out of sync with where it points.
@@ -13,11 +11,10 @@ export type NavItem = {
 }
 
 export const primaryNav: readonly NavItem[] = [
-  { label: 'New in', href: '/shop?sort=newest' },
+  { label: 'New', href: '/shop?sort=newest' },
   { label: 'Women', href: '/shop/women' },
   { label: 'Men', href: '/shop/men' },
-  { label: 'Brands', href: '/shop/brands' },
-  { label: PASSPORT_NAME.title, href: '/passport' },
+  { label: 'Pre-loved', href: '/pre-loved' },
 ]
 
 export const navLabels = {
@@ -40,19 +37,17 @@ export const footerNav: readonly { heading: string; items: readonly NavItem[] }[
   {
     heading: 'Shop',
     items: [
-      { label: 'New in', href: '/shop?sort=newest' },
+      { label: 'New', href: '/shop?sort=newest' },
       { label: 'Women', href: '/shop/women' },
       { label: 'Men', href: '/shop/men' },
-      { label: 'Brands', href: '/shop/brands' },
       { label: 'Everything', href: '/shop' },
     ],
   },
   {
     heading: 'Circularity',
     items: [
-      { label: PASSPORT_NAME.title, href: '/passport' },
       { label: 'How condition is graded', href: '/condition' },
-      { label: 'Sell with us', href: '/sell' },
+      { label: 'Sell with us', href: '/pre-loved' },
       { label: 'Repairs', href: '/repairs' },
       { label: 'End of life', href: '/end-of-life' },
     ],

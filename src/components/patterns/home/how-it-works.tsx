@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { Reveal } from '../reveal'
 import { Col, Grid, Stack } from '@/components/primitives/layout'
 import { Section } from '@/components/primitives/section'
@@ -29,14 +28,6 @@ export function HowItWorks() {
         heading={home.howItWorks.title}
         headingSize="3xl"
         lede={home.howItWorks.lede}
-        action={
-          <Link
-            href="/passport"
-            className="ease inline-flex border-b border-line-strong pb-1 text-sm text-ink transition-colors duration-base hover:border-ink"
-          >
-            {home.howItWorks.cta}
-          </Link>
-        }
       >
         <Grid gap="loose" rowGap="default" as="ol">
           {home.howItWorks.steps.map((step, index) => (

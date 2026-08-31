@@ -8,7 +8,7 @@ import { SiteFooter } from '../site-footer'
 import { SiteHeader } from '../site-header'
 import { SkipLink } from '../skip-link'
 import { footerMeta, navLabels, primaryNav } from '@/content/navigation'
-import { PASSPORT_NAME } from '@/content/passport'
+import { passportCopy } from '@/content/passport'
 import { useCartStore } from '@/lib/store/cart'
 import { useUiStore } from '@/lib/store/ui'
 
@@ -48,10 +48,8 @@ describe('isActive', () => {
 
 describe('NavLink', () => {
   it('marks the active item with aria-current and the accent dot', () => {
-    pathname = '/passport'
-    const { container } = render(
-      <NavLink item={{ label: PASSPORT_NAME.title, href: '/passport' }} />,
-    )
+    pathname = '/shop/women'
+    const { container } = render(<NavLink item={{ label: 'Women', href: '/shop/women' }} />)
     const link = screen.getByRole('link')
     expect(link).toHaveAttribute('aria-current', 'page')
     // The dot, not an underline.
@@ -61,7 +59,7 @@ describe('NavLink', () => {
 
   it('reserves the dot slot when inactive, so the label does not shift', () => {
     pathname = '/shop'
-    const { container } = render(<NavLink item={{ label: 'Brands', href: '/shop/brands' }} />)
+    const { container } = render(<NavLink item={{ label: 'Men', href: '/shop/men' }} />)
     expect(screen.getByRole('link')).not.toHaveAttribute('aria-current')
     expect(container.querySelector('.bg-accent')).toBeNull()
     // The empty slot is still there.
@@ -328,6 +326,6 @@ describe('SiteFooter', () => {
 
   it('names the passport from the content constant, never a hardcoded string', () => {
     render(<SiteFooter />)
-    expect(screen.getByRole('link', { name: PASSPORT_NAME.title })).toBeInTheDocument()
+    expect(screen.getByText(passportCopy.oneLiner)).toBeInTheDocument()
   })
 })
