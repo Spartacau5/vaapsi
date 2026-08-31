@@ -83,6 +83,11 @@ export const CHAIN_EVENT_TYPES = [
   'returned',
   'inspected',
   'repaired',
+  // An addition made at the owner's request — a patch, embroidery, initials.
+  // Distinct from `repaired`: a repair answers damage, this answers a choice,
+  // and a shopper reading the record needs to be able to tell them apart.
+  // See `content/customise.ts`.
+  'customised',
   'relisted',
 ] as const
 

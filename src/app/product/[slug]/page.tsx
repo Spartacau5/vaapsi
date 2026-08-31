@@ -7,6 +7,11 @@ import { PassportStory } from '@/components/patterns/passport/story'
 import { PassportMark } from '@/components/patterns/passport-mark'
 import { Price } from '@/components/patterns/price'
 import { AddToBag } from '@/components/patterns/product/add-to-bag'
+import { ColorPicker } from '@/components/patterns/product/color-picker'
+import { CustomiseSection } from '@/components/patterns/product/customise-section'
+import { Customiser } from '@/components/patterns/product/customiser'
+import { SizeAndMeasurements } from '@/components/patterns/product/measurements'
+import { SizeGuide } from '@/components/patterns/product/size-guide'
 import { CompleteTheLook } from '@/components/patterns/product/complete-the-look'
 import { ConditionBlock } from '@/components/patterns/product/condition-block'
 import { Gallery } from '@/components/patterns/product/gallery'
@@ -17,6 +22,7 @@ import { Row, Stack } from '@/components/primitives/layout'
 import type { TabItem } from '@/components/primitives/tabs'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { drawers } from '@/content/drawers'
+import { chartForCategory } from '@/content/size-guide'
 import { PASSPORT_NAME, passportCopy } from '@/content/passport'
 import { conditionCopy, productPage } from '@/content/product'
 import {
@@ -89,7 +95,9 @@ export default async function ProductPage({ params }: { params: Params }) {
 
   const images = orderGalleryImages(product.images)
   const sold = product.availability === 'sold'
-  const condition = conditionCopy[product.condition]
+  // Pre-loved only. New stock shows a colour picker and a size guide in the
+  // space this used to occupy.
+  const condition = product.condition === null ? null : conditionCopy[product.condition]
   const passportUrl =
     passport === null
       ? null
@@ -106,12 +114,18 @@ export default async function ProductPage({ params }: { params: Params }) {
       label: drawers.tabs.specification,
       panel: <ProductSpecification product={product} passport={passport} seller={seller} />,
     },
-    {
-      id: 'condition',
-      label: drawers.tabs.condition,
-      hint: condition.label,
-      panel: <ConditionBlock product={product} headless />,
-    },
+    // Pre-loved only. There is no wear to describe on new stock, so the tab is
+    // absent rather than present and empty.
+    ...(condition === null
+      ? []
+      : [
+          {
+            id: 'condition',
+            label: drawers.tabs.condition,
+            hint: condition.label,
+            panel: <ConditionBlock product={product} headless />,
+          },
+        ]),
   ]
 
   if (passport !== null && passportUrl !== null) {
@@ -164,12 +178,16 @@ export default async function ProductPage({ params }: { params: Params }) {
         <Gallery images={images} sold={sold} productId={product.id} />
 
         {/*
-          Sticky and vertically centred, so the decision sits at eye level and
-          stays there while the photographs scroll past it. `overflow-y-auto`
-          because the column now carries the look rail as well and must not
-          overflow a short viewport.
+          Sticky, and top-aligned rather than centred.
+
+          It used to be vertically centred against a column of full-height
+          photographs. The gallery is now hero-plus-thumbnails and roughly one
+          screen tall, so centring left a band of dead space above the brand line
+          and pushed the price below the fold on shorter laptops. Aligning both
+          columns to the top puts the name, price and the buy controls on the
+          first screen, which is the whole point of the gallery change.
         */}
-        <div className="desktop:sticky desktop:top-0 desktop:flex desktop:h-svh desktop:min-h-[40rem] desktop:items-center desktop:overflow-y-auto">
+        <div className="desktop:sticky desktop:top-0 desktop:flex desktop:max-h-svh desktop:items-start desktop:overflow-y-auto">
           <div className="w-full px-gutter py-10 desktop:max-w-[30rem] desktop:py-12">
             <Stack gap={5}>
               <Stack gap={2}>
@@ -200,38 +218,87 @@ export default async function ProductPage({ params }: { params: Params }) {
                 shopper should never have to click to find out what they are
                 being promised.
               */}
-              <Stack gap={1} className="border-t border-line pt-4">
-                <Row gap={2} align="baseline">
-                  <Type as="span" size="xs" tone="subtle" tracking="caps">
-                    {productPage.sections.condition}
+              {condition !== null && (
+                <Stack gap={1} className="border-t border-line pt-4">
+                  <Row gap={2} align="baseline">
+                    <Type as="span" size="xs" tone="subtle" tracking="caps">
+                      {productPage.sections.condition}
+                    </Type>
+                    <Type as="span" size="sm" weight="emphasis">
+                      {condition.label}
+                    </Type>
+                  </Row>
+                  <Type size="xs" tone="muted">
+                    {condition.short}
                   </Type>
-                  <Type as="span" size="sm" weight="emphasis">
-                    {condition.label}
-                  </Type>
-                </Row>
-                <Type size="xs" tone="muted">
-                  {condition.short}
-                </Type>
-              </Stack>
+                </Stack>
+              )}
 
-              <Stack gap={1} className="border-t border-line pt-4">
-                <Row gap={2} align="baseline">
-                  <Type as="span" size="xs" tone="subtle" tracking="caps">
-                    Size
-                  </Type>
-                  <Type as="span" size="sm" weight="emphasis">
-                    {product.size.label}
-                  </Type>
-                  <Type as="span" size="xs" tone="subtle">
-                    as labelled ({product.size.system})
-                  </Type>
-                </Row>
-                <Type size="xs" tone="muted">
-                  {productPage.oneOfOne}
-                </Type>
+              {/*
+                Two different controls for two different inventories.
+
+                New stock gets a colour picker and a size row, because there are
+                genuinely several of each to choose between. A pre-loved garment
+                gets its own label transcribed and nothing to pick, because there
+                is exactly one of it in exactly one size — a disabled size row
+                there would imply options that do not exist.
+
+                The size guide sits with whichever of the two is showing, since
+                "what size am I" is the same question either way.
+              */}
+              <Stack gap={3} className="border-t border-line pt-4">
+                {product.colorVariants.length > 0 ? (
+                  <ColorPicker
+                    variants={product.colorVariants}
+                    defaultColorSlug={product.color.slug}
+                    priceInr={product.priceInr}
+                  />
+                ) : (
+                  <Stack gap={1}>
+                    <Row gap={2} align="baseline">
+                      <Type as="span" size="xs" tone="subtle" tracking="caps">
+                        Size
+                      </Type>
+                      <Type as="span" size="sm" weight="emphasis">
+                        {product.size.label}
+                      </Type>
+                      <Type as="span" size="xs" tone="subtle">
+                        as labelled ({product.size.system})
+                      </Type>
+                    </Row>
+                    <Type size="xs" tone="muted">
+                      {productPage.oneOfOne}
+                    </Type>
+                  </Stack>
+                )}
+
+                <SizeGuide
+                  chartId={chartForCategory(product.category)}
+                  garmentPanel={
+                    <SizeAndMeasurements size={product.size} measurements={product.measurements} />
+                  }
+                  oneOfOne={product.listingType === 'pre_loved'}
+                />
               </Stack>
 
               <AddToBag productId={product.id} availability={product.availability} />
+
+              {/*
+                Make it your own.
+
+                Directly under the buy button and above the drawers, which is a
+                deliberate choice about prominence: it is the last thing a
+                shopper meets before they stop reading, and burying it in a
+                drawer would turn an argument the brand cares about into an
+                option nobody opens. Still collapsed by default — see
+                `CustomiseSection` — because a five-item configurator open on
+                arrival competes with the price.
+              */}
+              <div className="border-t border-line pt-5">
+                <CustomiseSection>
+                  <Customiser category={product.category} hasPassport={passport !== null} />
+                </CustomiseSection>
+              </div>
 
               {/* The drawers. Everything that used to stack below the fold. */}
               <div className="border-t border-line pt-5">

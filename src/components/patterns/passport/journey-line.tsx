@@ -40,6 +40,9 @@ const EVENT_LABEL: Record<ChainEventType, string> = {
   returned: 'Came back',
   inspected: 'Inspected',
   repaired: 'Repaired',
+  // Not "Personalised". An owner had something added; the record says what
+  // happened, in the same register as the rest of the verbs.
+  customised: 'Added to',
   relisted: 'Relisted',
 }
 
