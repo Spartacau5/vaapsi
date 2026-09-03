@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { CartItemRef } from '@/lib/data'
 import type { Cart } from '@/lib/types'
 import { useCartStore } from '@/lib/store/cart'
 
@@ -20,7 +21,7 @@ import { useCartStore } from '@/lib/store/cart'
 
 const CART_QUERY_KEY = ['cart'] as const
 
-async function fetchCart(items: readonly { productId: string; addedAt: string }[]): Promise<Cart> {
+async function fetchCart(items: readonly CartItemRef[]): Promise<Cart> {
   const response = await fetch('/api/cart', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -41,8 +42,11 @@ export function useCart() {
     // refetches without any manual invalidation.
     queryKey: [
       ...CART_QUERY_KEY,
+      // Keyed on the variant too, not just the product: two colourways of one
+      // style are two lines, and a key that ignored colour would serve the
+      // first line's resolution for both.
       items
-        .map((item) => item.productId)
+        .map((item) => `${item.productId}:${item.colorSlug ?? ''}:${item.sizeNormalized ?? ''}`)
         .sort()
         .join(','),
     ],
