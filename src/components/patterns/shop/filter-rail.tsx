@@ -6,6 +6,7 @@ import { Row, Stack } from '@/components/primitives/layout'
 import { Type } from '@/components/primitives/type'
 import { shop } from '@/content/shop'
 import type { ProductFacets } from '@/lib/data'
+import type { ListingType } from '@/lib/types'
 import { activeFilterCount, emptyPlpState } from '@/lib/plp/search-params'
 
 /**
@@ -21,7 +22,17 @@ import { activeFilterCount, emptyPlpState } from '@/lib/plp/search-params'
  * pending draft with an Apply button would be strictly worse. Mobile is the
  * opposite case, which is why the sheet works differently.
  */
-export function FilterRail({ facets }: { facets: ProductFacets }) {
+export function FilterRail({
+  facets,
+  listingType,
+  categoryLocked,
+}: {
+  facets: ProductFacets
+  /** Which half of the catalogue this panel filters. */
+  listingType: ListingType
+  /** True when the route already fixes the category, so Type is hidden. */
+  categoryLocked?: boolean
+}) {
   const { state, applyFilters, setState } = usePlpUrl()
   const applied = activeFilterCount(state)
 
@@ -48,7 +59,13 @@ export function FilterRail({ facets }: { facets: ProductFacets }) {
       </Row>
 
       <Stack gap={8}>
-        <FilterControls facets={facets} draft={toDraft(state)} onChange={onChange} />
+        <FilterControls
+          facets={facets}
+          draft={toDraft(state)}
+          onChange={onChange}
+          listingType={listingType}
+          categoryLocked={categoryLocked}
+        />
       </Stack>
     </aside>
   )

@@ -5,6 +5,7 @@ import { Col, Grid, Stack } from '@/components/primitives/layout'
 import { Section } from '@/components/primitives/section'
 import { Type } from '@/components/primitives/type'
 import { home } from '@/content/home'
+import { PHOTO_QUALITY } from '@/lib/image'
 
 /**
  * Shop by category.
@@ -31,6 +32,16 @@ import { home } from '@/content/home'
  * landscape rather than portrait, because five portrait cells is most of a
  * viewport for what is functionally five links.
  *
+ * The photography is real garment photography now rather than `picsum`
+ * landscapes, and the frames were chosen for this crop specifically: a
+ * flat-laid jacket, a shoulder bag and a construction close-up all survive
+ * being cut to 4:3, where a standing full-length shot loses the garment and
+ * keeps a midsection. `home.categories` records which frame and why.
+ *
+ * The images are decorative — `alt=""` and `aria-hidden`. The link already
+ * announces "Jackets, truckers and chore coats"; describing the photograph on
+ * top of that reads the same tile to a screen reader twice.
+ *
  * No hover transform on the images. It was there and it was cut in the Phase 7
  * audit: a 2% scale on a photograph carries no information, and it made these
  * tiles the only images on the site that move on hover — where the product card
@@ -55,7 +66,7 @@ export function CategoryGrid() {
                 <Link href={item.href} className="group/cat block focus-visible:outline-offset-4">
                   <div className="relative aspect-[4/3] overflow-hidden bg-surface">
                     <Image
-                      src={`https://picsum.photos/seed/vaapsi-cat-${item.label.toLowerCase()}/1200/900`}
+                      src={item.image}
                       alt=""
                       aria-hidden
                       fill
@@ -64,6 +75,7 @@ export function CategoryGrid() {
                           ? '(min-width: 1024px) 50vw, (min-width: 768px) 50vw, 100vw'
                           : '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw'
                       }
+                      quality={PHOTO_QUALITY}
                       className="object-cover"
                     />
                   </div>

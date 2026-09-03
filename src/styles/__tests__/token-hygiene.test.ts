@@ -115,6 +115,7 @@ describe('tokens.css completeness', () => {
       'line-strong',
       'accent',
       'accent-ink',
+      'positive',
     ]) {
       expect(tokens).toContain(`--${slot}:`)
     }

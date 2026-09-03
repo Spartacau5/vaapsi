@@ -69,10 +69,12 @@ export function toDraft(state: PlpState): FilterDraft {
   return {
     brands: state.brands,
     conditions: state.conditions,
+    genders: state.genders,
+    materials: state.materials,
+    types: state.types,
     sizes: state.sizes,
     minRupees: state.minRupees,
     maxRupees: state.maxRupees,
-    hasPassport: state.hasPassport,
     sizeSystem: state.sizeSystem,
   }
 }

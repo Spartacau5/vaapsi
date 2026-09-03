@@ -29,7 +29,7 @@ export type TypeSize = (typeof TYPE_SIZES)[number]
 
 export type TypeFamily = 'display' | 'body'
 export type TypeWeight = 'regular' | 'emphasis' | 'heading'
-export type TypeTone = 'default' | 'muted' | 'subtle' | 'accent' | 'inherit'
+export type TypeTone = 'default' | 'muted' | 'subtle' | 'accent' | 'positive' | 'inherit'
 export type TypeTracking = 'default' | 'caps' | 'tight'
 export type TypeLeading = 'none' | 'tight' | 'snug' | 'normal' | 'relaxed'
 
@@ -82,6 +82,9 @@ const TONE: Record<TypeTone, string> = {
   muted: 'text-ink-muted',
   subtle: 'text-ink-subtle',
   accent: 'text-accent',
+  // Money the shopper keeps, and nothing else. Not a success tone — see the
+  // note on --positive in tokens.css.
+  positive: 'text-positive',
   inherit: '',
 }
 
@@ -119,6 +122,17 @@ export type TypeProps = {
   htmlFor?: string
   dateTime?: string
   title?: string
+  /**
+   * For text derived from the current date.
+   *
+   * A delivery estimate rendered on the server and re-rendered on hydration
+   * disagrees if the two straddle midnight. Both values are correct, so the
+   * warning is noise — and the alternatives are a flash of empty space where
+   * the date should be, or deferring the most useful fact on a checkout to an
+   * effect. Reach for it only for clock-derived text; anything else that
+   * mismatches is a real bug being silenced.
+   */
+  suppressHydrationWarning?: boolean
 }
 
 export function Type({

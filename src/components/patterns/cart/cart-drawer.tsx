@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { X } from 'lucide-react'
 import { CartLine } from './cart-line'
 import { CartSummary } from './cart-summary'
@@ -26,7 +27,26 @@ import { useUiStore } from '@/lib/store/ui'
 export function CartDrawer() {
   const open = useUiStore((state) => state.cartOpen)
   const close = useUiStore((state) => state.closeCart)
+  const pathname = usePathname()
   const { cart, isLoading, unavailable, canCheckout, revalidate } = useCart()
+
+  // Close on navigation. Every link in here leaves the page — Checkout, "view
+  // the full bag", a line's own product link — and a panel that stays open over
+  // the destination hides the thing the shopper just asked for. Keyed on the
+  // pathname rather than wired to each link's `onClick`, so a link added later
+  // cannot forget to do it.
+  //
+  // Fires on a *change* rather than on every run, which matters: the bare
+  // version also closes on mount, so anything that mounts this while the bag is
+  // already open would shut it. That does not happen today — the drawer sits in
+  // the persistent layout and mounts once, before anyone can open it — but it is
+  // a trap for whoever moves it.
+  const lastPathname = useRef(pathname)
+  useEffect(() => {
+    if (lastPathname.current === pathname) return
+    lastPathname.current = pathname
+    close()
+  }, [pathname, close])
 
   useEffect(() => {
     if (open) void revalidate()

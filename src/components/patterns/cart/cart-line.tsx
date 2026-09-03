@@ -6,6 +6,7 @@ import { Row, Stack } from '@/components/primitives/layout'
 import { Type } from '@/components/primitives/type'
 import { cart as copy } from '@/content/cart'
 import { conditionCopy } from '@/content/product'
+import { PHOTO_QUALITY } from '@/lib/image'
 import { formatInr } from '@/lib/format/currency'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore } from '@/lib/store/wishlist'
@@ -56,6 +57,7 @@ export function CartLine({
             alt={line.product.primaryImage.alt}
             fill
             sizes={compact ? '72px' : '120px'}
+            quality={PHOTO_QUALITY}
             className={cn('object-cover', unavailable && 'opacity-60 saturate-0')}
           />
         </Link>

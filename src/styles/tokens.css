@@ -60,6 +60,21 @@
   --accent: 0 100% 28%;
   --accent-ink: 0 0% 100%;
 
+  /* Money the shopper keeps. The second and last colour in the system, and it
+   * exists because the alternative was worse: a delivery discount rendered in
+   * --accent read as an error or a penalty, when it is the one number on the
+   * checkout page that is unambiguously good news. Red for "− ₹1,845" is
+   * actively misleading.
+   *
+   * It is NOT a success/positive-feedback colour and there is no --positive-ink
+   * to sit text on, because nothing is ever filled with it. Its only job is a
+   * numeral and the word next to it. Everything else — confirmations, valid
+   * states, applied badges — stays monochrome.
+   *
+   * Deep enough to clear 4.5:1 on both --background and --surface, because it
+   * is always small text. */
+  --positive: 152 62% 28%;
+
   /* ---- shadcn required set ---------------------------------------------- *
    * Mapped onto the slots above, never given values of their own. A shadcn
    * primitive dropped in unmodified then already looks like Vaapsi.           */
@@ -101,6 +116,10 @@
    * and reads as brown; the dot has to stay recognisably the dot. */
   --accent: 0 100% 42%;
   --accent-ink: 0 0% 100%;
+
+  /* Lifted for the same reason. A 28%-lightness green on a near-black ground is
+   * a dark smudge, not a saving. */
+  --positive: 150 55% 55%;
 
   --primary-foreground: 0 0% 7%;
   --primary: var(--ink);
@@ -372,6 +391,11 @@
      * loses it loses the thing it is evidence of. */
     --accent: 0 100% 28%;
     --accent-ink: 0 0% 100%;
+
+    /* Unchanged: the print ground is white, which is what the mono value was
+     * chosen against. A printed order summary that loses the green loses the
+     * distinction between a charge and a saving. */
+    --positive: 152 62% 28%;
 
     --elevation-overlay: none;
     --elevation-sheet: none;

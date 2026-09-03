@@ -76,6 +76,7 @@ function summary(source: typeof product): ProductSummary {
     category: source.category,
     subcategory: source.subcategory,
     listingType: source.listingType,
+    gender: source.gender,
     condition: source.condition,
     color: source.color,
     composition: source.composition,

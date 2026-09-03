@@ -12,7 +12,10 @@ import { useUiStore } from '@/lib/store/ui'
 import { useWishlistStore } from '@/lib/store/wishlist'
 import type { Cart, CartLine as CartLineType } from '@/lib/types'
 
-jest.mock('next/navigation', () => ({ usePathname: () => '/cart' }))
+// Mutable, so a test can simulate navigating away. Defaults to '/cart' for
+// every other test in this file.
+let pathname = '/cart'
+jest.mock('next/navigation', () => ({ usePathname: () => pathname }))
 
 /**
  * The cart route handler is exercised here by pointing `fetch` straight at the
@@ -236,10 +239,34 @@ describe('CartView', () => {
 // ---------------------------------------------------------------------------
 
 describe('CartDrawer', () => {
+  afterEach(() => {
+    pathname = '/cart'
+  })
+
+  it('closes itself when the shopper navigates away', async () => {
+    seed(AVAILABLE)
+    act(() => useUiStore.getState().openCart())
+    const { rerender } = render(<CartDrawer />)
+    await screen.findByText('Ravi Straight Jean')
+    expect(useUiStore.getState().cartOpen).toBe(true)
+
+    // Every link in the drawer leaves the page — Checkout, "view the full bag",
+    // a line's product link — and a panel left open over the destination hides
+    // the thing the shopper just asked for.
+    pathname = '/checkout'
+    rerender(<CartDrawer />)
+
+    expect(useUiStore.getState().cartOpen).toBe(false)
+  })
+
   it('is unfocusable while closed', () => {
-    const { container } = render(<CartDrawer />)
-    expect(container.firstElementChild?.className).toContain('invisible')
-    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true')
+    render(<CartDrawer />)
+    // The panel is portalled to `document.body` so its z-index is compared
+    // against the header rather than against whatever page element opened it —
+    // so it is not in the render container.
+    const panel = document.body.querySelector('[aria-hidden="true"]')
+    expect(panel).not.toBeNull()
+    expect(panel?.className).toContain('invisible')
   })
 
   it('opens, traps focus, and closes on Escape', async () => {
@@ -284,6 +311,7 @@ describe('CartSummary', () => {
       category: 'knitwear',
       subcategory: 'Crewneck',
       listingType: 'pre_loved',
+      gender: 'unisex',
       condition: 'good',
       color: { slug: 'navy', name: 'Navy', hex: '#25314f' },
       colorVariants: [],
@@ -357,6 +385,7 @@ describe('CartLine', () => {
         category: 'knitwear',
         subcategory: 'Crewneck',
         listingType: 'pre_loved',
+        gender: 'unisex',
         condition: 'good',
         color: { slug: 'navy', name: 'Navy', hex: '#25314f' },
         colorVariants: [],

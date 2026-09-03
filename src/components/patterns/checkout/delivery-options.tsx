@@ -5,35 +5,53 @@ import { Row, Stack } from '@/components/primitives/layout'
 import { Type } from '@/components/primitives/type'
 import { checkout } from '@/content/checkout'
 import type { DeliveryOption, DeliveryOptionId } from '@/content/checkout'
+import { formatArrival } from '@/lib/format/arrival'
 import { formatInr } from '@/lib/format/currency'
 import { cn } from '@/lib/utils'
 
 /**
  * The delivery choice, in two bands.
  *
- * ## Two groups, not four rows
+ * ## Two bands, not three rows
  *
- * **Get it soon** holds Standard and Express. **Wait longer, pay less** holds
- * the two discount tiers. Four flat radios would ask a shopper to compare four
- * things at once; two bands ask one question — soon, or cheap — and then a
- * smaller one inside the answer.
+ * **Get it soon** holds Standard. **Wait longer, pay less** holds the two
+ * discount tiers, inside a single tinted panel so they read as one dial with two
+ * positions rather than as two separate offers competing with Standard. Three
+ * flat radios would ask a shopper to compare three things at once; the bands ask
+ * one question — soon, or cheaper — and then a smaller one inside the answer.
  *
- * The discount tiers sit inside a single tinted panel so they read as one dial
- * with two positions rather than as two separate offers competing with
- * Standard. That grouping is the point of the layout.
+ * Standard is alone in its band now that Express is gone, and that is the right
+ * shape rather than a leftover: it is the default, and the band it sits in names
+ * what choosing it gets you.
  *
- * ## Express states the difference, not its price
+ * ## Every tier states a date, not a duration
  *
- * "+₹250", not "₹250". The number a shopper is deciding on is the extra, and
- * making them subtract two totals is work the interface should have done.
- * Standard shows "Included" for the same reason — it is the absence of a
- * charge, and "₹0" invites a second look.
+ * "4–6 working days" makes a shopper do arithmetic, and working-day arithmetic
+ * is the kind they get wrong — the answer depends on which day of the week they
+ * happen to be ordering. So each row says "Arrives Tue 9 – Thu 11 Sep". See
+ * `lib/format/arrival`, including what it does about weekends and what it
+ * deliberately does not do about public holidays.
  *
- * ## The saving is in rupees
+ * `now` is a prop rather than a `new Date()` in here, so the whole page agrees
+ * on one clock and the estimate is testable.
+ *
+ * ## The fee is on the row, and it is a real number
+ *
+ * Delivery used to say "Included" on every tier. It is ₹99 now and says so.
+ * `extra()` remains in the copy for a future differential ("+₹250") if a paid
+ * upgrade ever returns, but with a flat fee across all three tiers nothing
+ * reaches it.
+ *
+ * ## The saving is in rupees, and it is green
  *
  * "10% off" is the label; "You save ₹390" is what makes it a decision. Both are
  * shown, and the amount is floored so nobody is quoted a saving larger than they
  * receive.
+ *
+ * It is the one figure on the page rendered in a colour, because it is the one
+ * figure that is unambiguously in the shopper's favour — and in monochrome it
+ * was indistinguishable from the fee it replaced. See `--positive` in
+ * tokens.css for why that colour is not the accent.
  *
  * ## Real radios
  *
@@ -46,10 +64,13 @@ export function DeliveryOptions({
   subtotalInr,
   selected,
   onChange,
+  now,
 }: {
   subtotalInr: number
   selected: DeliveryOptionId
   onChange: (option: DeliveryOption) => void
+  /** One clock for the whole page. See the note above. */
+  now: Date
 }) {
   const soon = checkout.delivery.options.filter((option) => option.group === 'soon')
   const wait = checkout.delivery.options.filter((option) => option.group === 'wait')
@@ -70,6 +91,7 @@ export function DeliveryOptions({
               subtotalInr={subtotalInr}
               selected={selected === option.id}
               onSelect={() => onChange(option)}
+              now={now}
             />
           ))}
         </Stack>
@@ -98,6 +120,7 @@ export function DeliveryOptions({
               subtotalInr={subtotalInr}
               selected={selected === option.id}
               onSelect={() => onChange(option)}
+              now={now}
               tinted
             />
           ))}
@@ -118,17 +141,20 @@ function OptionRow({
   subtotalInr,
   selected,
   onSelect,
+  now,
   tinted = false,
 }: {
   option: DeliveryOption
   subtotalInr: number
   selected: boolean
   onSelect: () => void
+  now: Date
   /** Inside the discount band, which already has a fill of its own. */
   tinted?: boolean
 }) {
   // Integer paise. Floored, so a saving is never quoted larger than it is.
   const saving = Math.floor((subtotalInr * option.discountPercent) / 100)
+  const arrives = checkout.delivery.arrives(formatArrival(option.lead, now))
 
   return (
     <label
@@ -153,18 +179,32 @@ function OptionRow({
             {option.label}
           </Type>
 
-          <Type as="span" size="sm" tone="muted" numeric className="shrink-0">
-            {option.feeInr > 0
-              ? checkout.delivery.extra(formatInr(option.feeInr))
-              : option.discountPercent > 0
-                ? checkout.delivery.saves(formatInr(saving))
-                : checkout.summary.deliveryFree}
+          {/* Green only when it is money kept. A fee and "Included" stay grey. */}
+          <Type
+            as="span"
+            size="sm"
+            tone={option.discountPercent > 0 ? 'positive' : 'muted'}
+            weight={option.discountPercent > 0 ? 'emphasis' : 'regular'}
+            numeric
+            className="shrink-0"
+          >
+            {option.discountPercent > 0
+              ? checkout.delivery.saves(formatInr(saving))
+              : formatInr(option.feeInr)}
           </Type>
         </Row>
 
         <Row gap={2} align="baseline" wrap={false}>
-          <Type as="span" size="xs" tone="subtle" numeric>
-            {option.window}
+          {/*
+            The estimate is derived from today's date, so the server render and
+            the hydrated render disagree if the two straddle midnight. That is
+            the textbook case for `suppressHydrationWarning`: the value is
+            correct in both renders, and the alternative is either a flash of
+            missing content on the most important fact in the section or a
+            warning nobody can act on.
+          */}
+          <Type as="span" size="xs" tone="subtle" numeric suppressHydrationWarning>
+            {arrives}
           </Type>
           {selected && option.discountPercent > 0 && (
             <Row gap={1} align="center" wrap={false}>

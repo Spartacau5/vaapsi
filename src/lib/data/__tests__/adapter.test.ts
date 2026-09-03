@@ -2,17 +2,26 @@ import { getProductFacets, listFeaturedProducts, listProducts, resolveCart } fro
 
 describe('listProducts filtering', () => {
   it('filters by category', async () => {
-    // Four pieces are bottoms: the 501s, the maxi skirt, the pre-loved
-    // straight-legs and the new Vaapsi straight jeans.
+    const all = await listProducts()
     const page = await listProducts({ filters: { category: 'bottoms' } })
-    expect(page.total).toBe(4)
+
     expect(page.items.every((item) => item.category === 'bottoms')).toBe(true)
+    expect(page.total).toBeGreaterThan(0)
+    // It narrows. A filter that quietly matches everything is the failure this
+    // catches, and unlike a hardcoded count it survives the catalogue growing.
+    expect(page.total).toBeLessThan(all.total)
   })
 
   it('filters by passport presence in both directions', async () => {
-    expect((await listProducts({ filters: { hasPassport: true } })).total).toBe(5)
-    // Three unpassported pre-loved pieces plus the three new ones.
-    expect((await listProducts({ filters: { hasPassport: false } })).total).toBe(6)
+    const all = await listProducts()
+    const withPassport = await listProducts({ filters: { hasPassport: true } })
+    const without = await listProducts({ filters: { hasPassport: false } })
+
+    expect(withPassport.items.every((item) => item.passportId !== null)).toBe(true)
+    expect(without.items.every((item) => item.passportId === null)).toBe(true)
+    // The two halves partition the catalogue exactly — nothing in both, nothing
+    // in neither.
+    expect(withPassport.total + without.total).toBe(all.total)
   })
 
   it('filters by condition', async () => {
@@ -27,13 +36,21 @@ describe('listProducts filtering', () => {
   })
 
   it('searches title, brand and subcategory', async () => {
-    // Two trucker jackets: the pre-loved Chenab and the new Kaveri.
-    expect((await listProducts({ filters: { query: 'trucker' } })).total).toBe(2)
-    // Search covers the product's own name, which is now what identifies it —
-    // every listing shares one brand.
-    expect((await listProducts({ filters: { query: 'sutlej' } })).total).toBe(1)
-    // "Jean" hits the three trousers: Ravi, Tapti and the new Indus.
-    expect((await listProducts({ filters: { query: 'jean' } })).total).toBe(3)
+    // Search covers the garment's own name, which is what identifies it now
+    // that every listing shares one brand.
+    const byName = await listProducts({ filters: { query: 'sutlej' } })
+    expect(byName.total).toBe(1)
+    expect(byName.items[0]?.title).toContain('Sutlej')
+
+    // A term in the garment type reaches several, and every hit really contains
+    // it somewhere searchable.
+    const jeans = await listProducts({ filters: { query: 'jean' } })
+    expect(jeans.total).toBeGreaterThan(1)
+    for (const item of jeans.items) {
+      const haystack = `${item.title} ${item.subcategory} ${item.category}`.toLowerCase()
+      expect(haystack).toContain('jean')
+    }
+
     expect((await listProducts({ filters: { query: 'zzzz' } })).total).toBe(0)
   })
 
@@ -41,12 +58,11 @@ describe('listProducts filtering', () => {
     const page = await listProducts({
       filters: { category: 'bottoms', hasPassport: false },
     })
-    // The pre-loved Tapti straight-legs and the new Indus straight jean.
-    expect(page.total).toBe(2)
-    expect(page.items.map((item) => item.title).sort()).toEqual([
-      'Indus Straight Jean',
-      'Tapti Straight-Leg Jean',
-    ])
+    // Both conditions hold on every result, which is what combining filters has
+    // to guarantee — and it does not change when the catalogue grows.
+    expect(page.total).toBeGreaterThan(0)
+    expect(page.items.every((item) => item.category === 'bottoms')).toBe(true)
+    expect(page.items.every((item) => item.passportId === null)).toBe(true)
   })
 })
 
@@ -106,7 +122,8 @@ describe('getProductFacets', () => {
   it('counts facets against the full set', async () => {
     const facets = await getProductFacets()
     const brandTotal = facets.brands.reduce((sum, brand) => sum + brand.count, 0)
-    expect(brandTotal).toBe(11)
+    const all = await listProducts()
+    expect(brandTotal).toBe(all.total)
     expect(facets.priceRangeInr.min).toBeLessThan(facets.priceRangeInr.max)
   })
 

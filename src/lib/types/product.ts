@@ -107,15 +107,42 @@ export type ProductImage = {
   aspectRatio: number
 }
 
-export type ProductCategory =
-  | 'tops'
-  | 'bottoms'
-  | 'dresses'
-  | 'outerwear'
-  | 'knitwear'
-  | 'ethnicwear'
-  | 'suiting'
-  | 'accessories'
+/**
+ * Who a garment is cut for.
+ *
+ * This closes a gap that has been flagged since the first build: `/shop/women`
+ * and `/shop/men` are in the primary nav and were 404ing, because gender was a
+ * segment the contract had no field for. It is also what the size guide needs to
+ * stop falling back to one chart for every garment.
+ *
+ * `unisex` is a real answer, not a default for missing data — a trucker jacket
+ * cut straight is genuinely unisex, and forcing it into one of the other two
+ * would put it in the wrong listing half the time. Anything genuinely unknown
+ * should be fixed at intake rather than parked here.
+ */
+export const GENDERS = ['women', 'men', 'unisex'] as const
+
+export type Gender = (typeof GENDERS)[number]
+
+/**
+ * Garment type — the shopper-facing "is it a jacket, a shirt, legs".
+ *
+ * A runtime list as well as a type, because the URL parser has to validate
+ * `?type=` against it: an unrecognised value has to be dropped rather than
+ * passed to the adapter.
+ */
+export const PRODUCT_CATEGORIES = [
+  'tops',
+  'bottoms',
+  'dresses',
+  'outerwear',
+  'knitwear',
+  'ethnicwear',
+  'suiting',
+  'accessories',
+] as const
+
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number]
 
 /**
  * What kind of stock a listing is.
@@ -185,6 +212,8 @@ export type Product = {
   subcategory: string
   /** New retail stock or a second-hand garment. Gates condition and colourways. */
   listingType: ListingType
+  /** Who it is cut for. Drives `/shop/women` and `/shop/men`. */
+  gender: Gender
 
   /** The garment's own colour. Always present — every card shows it. */
   color: ProductColor
@@ -251,6 +280,7 @@ export type ProductSummary = Pick<
   | 'category'
   | 'subcategory'
   | 'listingType'
+  | 'gender'
   | 'condition'
   | 'color'
   | 'composition'

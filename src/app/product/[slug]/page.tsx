@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation'
 import { PassportImpact } from '@/components/patterns/passport/impact'
 import { PassportRecord } from '@/components/patterns/passport/record'
 import { PassportStory } from '@/components/patterns/passport/story'
-import { PassportMark } from '@/components/patterns/passport-mark'
 import { Price } from '@/components/patterns/price'
 import { AddToBag } from '@/components/patterns/product/add-to-bag'
 import { ColorPicker } from '@/components/patterns/product/color-picker'
@@ -196,10 +195,7 @@ export default async function ProductPage({ params }: { params: Params }) {
           <div className="w-full px-gutter py-10 desktop:max-w-[30rem] desktop:py-12">
             <Stack gap={5}>
               <Stack gap={2}>
-                <Row gap={3} justify="between" align="start">
-                  <Eyebrow>{product.brand}</Eyebrow>
-                  <PassportMark hasPassport={passport !== null} />
-                </Row>
+                <Eyebrow>{product.brand}</Eyebrow>
                 <Type as="h1" family="display" size="2xl" weight="heading">
                   {product.title}
                 </Type>
@@ -341,12 +337,6 @@ export default async function ProductPage({ params }: { params: Params }) {
                     on Vaapsi since {formatMonthYear(seller.memberSince)}
                   </Type>
                 </Row>
-              )}
-
-              {passport === null && (
-                <Type size="xs" tone="subtle" measure="narrow">
-                  {productPage.noPassport}
-                </Type>
               )}
             </Stack>
           </div>

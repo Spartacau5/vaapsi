@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react'
-import { PassportMark } from '../passport-mark'
 import { Price } from '../price'
 import { ProductCard } from '../product-card'
 import { conditionCopy } from '@/content/product'
@@ -30,6 +29,7 @@ function product(overrides: Partial<ProductSummary> = {}): ProductSummary {
     category: 'knitwear',
     subcategory: 'Crewneck',
     listingType: 'pre_loved',
+    gender: 'unisex',
     condition: 'very_good',
     color: { slug: 'navy', name: 'Navy', hex: '#25314f' },
     colorVariants: [],
@@ -56,12 +56,53 @@ describe('ProductCard', () => {
     expect(link).toHaveAttribute('href', '/product/a-navy-sweater')
   })
 
-  it('states the four facts: price, size, colour and composition', () => {
+  it('states the facts a shopper chooses on: size, composition and price', () => {
     render(<ProductCard product={product()} />)
     expect(screen.getByText('₹690')).toBeInTheDocument()
     expect(screen.getByText('M')).toBeInTheDocument()
-    expect(screen.getByText('Navy')).toBeInTheDocument()
     expect(screen.getByText('100% merino wool')).toBeInTheDocument()
+  })
+
+  it('does not name a colour, since the swatches show what is available', () => {
+    render(<ProductCard product={product()} />)
+    // Naming one colour described a default rather than the offer, and on a
+    // catalogue of blue denim it duplicated the swatch row beside it.
+    expect(screen.queryByText('Navy')).toBeNull()
+  })
+
+  it('shows a size span for stock that has several, not a default size', () => {
+    const size = (label: string, normalized: string) => ({
+      label,
+      system: 'IN' as const,
+      normalized,
+    })
+    render(
+      <ProductCard
+        product={product({
+          listingType: 'new',
+          condition: null,
+          size: size('W30', 'w30'),
+          colorVariants: [
+            {
+              color: { slug: 'raw', name: 'Raw indigo', hex: '#2b3a55' },
+              sizes: [size('W28', 'w28'), size('W30', 'w30'), size('W32', 'w32')],
+              availability: 'available',
+              priceInr: null,
+              images: [],
+            },
+          ],
+        })}
+      />,
+    )
+    expect(screen.getByText('W28–W32')).toBeInTheDocument()
+    // W30 alone was whichever size happened to be the product's default.
+    expect(screen.queryByText('W30', { exact: true })).toBeNull()
+  })
+
+  it('keeps the single size on a one-of-one garment', () => {
+    render(<ProductCard product={product()} />)
+    // Not a default — the only one there is.
+    expect(screen.getByText('M')).toBeInTheDocument()
   })
 
   it("shows the garment's name once, and nothing that repeats it", () => {
@@ -138,19 +179,6 @@ describe('ProductCard', () => {
     expect(html).not.toMatch(/hover:shadow/)
     expect(html).not.toMatch(/hover:-translate-y/)
     expect(html).not.toMatch(/hover:scale/)
-  })
-})
-
-describe('PassportMark', () => {
-  it('renders the dot and a label when there is a passport', () => {
-    const { container } = render(<PassportMark hasPassport />)
-    expect(container.querySelector('.bg-accent')).not.toBeNull()
-  })
-
-  it('renders absolutely nothing when there is not', () => {
-    // An absence that is drawn is still a claim.
-    const { container } = render(<PassportMark hasPassport={false} />)
-    expect(container).toBeEmptyDOMElement()
   })
 })
 

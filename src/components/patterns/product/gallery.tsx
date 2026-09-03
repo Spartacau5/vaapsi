@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react'
 import { Type } from '@/components/primitives/type'
 import { productPage } from '@/content/product'
+import { PHOTO_QUALITY } from '@/lib/image'
 import { useWishlistStore } from '@/lib/store/wishlist'
 import type { ProductImage } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -190,6 +191,7 @@ export function Gallery({
                     aria-hidden
                     fill
                     sizes="(min-width: 1024px) 16vw, 30vw"
+                    quality={PHOTO_QUALITY}
                     className={cn('object-cover', sold && 'saturate-0')}
                   />
                 </span>
@@ -239,6 +241,7 @@ function Frame({
         alt={image.alt}
         fill
         sizes="(min-width: 1024px) 50vw, 100vw"
+        quality={PHOTO_QUALITY}
         priority={priority}
         className={cn('object-cover', sold && 'saturate-0')}
       />

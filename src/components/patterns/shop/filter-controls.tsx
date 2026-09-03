@@ -5,12 +5,10 @@ import { Row, Stack } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { shop } from '@/content/shop'
 import { conditionCopy } from '@/content/product'
-import { convertSize } from '@/lib/format/size'
 import { formatInr } from '@/lib/format/currency'
 import type { ProductFacets } from '@/lib/data'
 import type { PlpState } from '@/lib/plp/search-params'
-import { SIZE_SYSTEMS } from '@/lib/plp/search-params'
-import type { Condition, SizeSystem } from '@/lib/types'
+import type { Condition, ListingType } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 /**
@@ -30,114 +28,157 @@ import { cn } from '@/lib/utils'
 
 export type FilterDraft = Pick<
   PlpState,
-  'brands' | 'conditions' | 'sizes' | 'minRupees' | 'maxRupees' | 'hasPassport' | 'sizeSystem'
+  | 'brands'
+  | 'conditions'
+  | 'genders'
+  | 'materials'
+  | 'types'
+  | 'sizes'
+  | 'minRupees'
+  | 'maxRupees'
+  | 'sizeSystem'
 >
 
 export type FilterControlsProps = {
   facets: ProductFacets
   draft: FilterDraft
   onChange: (next: FilterDraft) => void
+  /**
+   * Which half of the catalogue is being filtered.
+   *
+   * `new` gets For / Type / Size / Material / Price. `pre_loved` gets Condition
+   * as well, because a grade is the first question about a second-hand garment
+   * and meaningless on unworn stock.
+   */
+  listingType: ListingType
+  /**
+   * True when the route already fixes the category (`/shop/outerwear`), so the
+   * Type group is hidden rather than offering a choice that contradicts the URL.
+   */
+  categoryLocked?: boolean
 }
 
 function toggle<T>(list: readonly T[], value: T): readonly T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
 }
 
-export function FilterControls({ facets, draft, onChange }: FilterControlsProps) {
+export function FilterControls({
+  facets,
+  draft,
+  onChange,
+  listingType,
+  categoryLocked = false,
+}: FilterControlsProps) {
   return (
     <Stack gap={8}>
-      {/* Passport first. It is the one filter unique to this business, and the
-          one most likely to be what a shopper actually came for. */}
-      <FilterGroup label={shop.filters.groups.passport}>
-        <CheckboxRow
-          label={shop.filters.passportToggle}
-          checked={draft.hasPassport}
-          onChange={() => onChange({ ...draft, hasPassport: !draft.hasPassport })}
-        />
-      </FilterGroup>
+      {/*
+        No passport filter and no brand filter.
 
-      <FilterGroup label={shop.filters.groups.condition}>
-        <Stack gap={2}>
-          {facets.conditions.map((facet) => (
-            <CheckboxRow
-              key={facet.value}
-              label={conditionCopy[facet.value as Condition].label}
-              hint={conditionCopy[facet.value as Condition].short}
-              count={facet.count}
-              checked={draft.conditions.includes(facet.value)}
-              onChange={() =>
-                onChange({
-                  ...draft,
-                  conditions: toggle(draft.conditions, facet.value) as readonly Condition[],
-                })
-              }
-            />
-          ))}
-        </Stack>
-      </FilterGroup>
+        Every garment has a record, so filtering on the passport sorted the
+        catalogue by how complete our data is rather than by anything a shopper
+        chooses between — and every garment is Vaapsi, so a brand group was one
+        checkbox that matched everything.
 
-      <FilterGroup label={shop.filters.groups.size}>
-        {/* The IN/UK/EU toggle. A display preference, not a filter — it changes
-            how sizes are labelled, never which garments match. */}
-        <Row gap={1} className="pb-3">
-          <Type as="span" size="xs" tone="subtle" className="pr-1">
-            {shop.filters.sizeSystem}
-          </Type>
-          {SIZE_SYSTEMS.map((system) => (
-            <button
-              key={system}
-              type="button"
-              onClick={() => onChange({ ...draft, sizeSystem: system as SizeSystem })}
-              aria-pressed={draft.sizeSystem === system}
-              className={cn(
-                'ease border px-2 py-0.5 text-xs transition-colors duration-fast',
-                draft.sizeSystem === system
-                  ? 'border-ink text-ink'
-                  : 'border-line text-ink-subtle hover:border-line-strong',
-              )}
-            >
-              {system}
-            </button>
-          ))}
-        </Row>
-
-        <Stack gap={2}>
-          {facets.sizes.map((facet) => {
-            const converted = convertSize(
-              { label: facet.label, system: 'IN', normalized: facet.value },
-              draft.sizeSystem,
-            )
-            return (
+        Condition is pre-loved only. It is the first question about a second-hand
+        garment and has no meaning on unworn stock, which is why the facets are
+        scoped to a listing type rather than computed across the catalogue.
+      */}
+      {listingType === 'pre_loved' && facets.conditions.length > 0 && (
+        <FilterGroup label={shop.filters.groups.condition}>
+          <Stack gap={2}>
+            {facets.conditions.map((facet) => (
               <CheckboxRow
                 key={facet.value}
-                label={converted ?? facet.label}
-                // When a conversion exists, show what the label actually says
-                // as the hint. The printed label is the fact; the conversion is
-                // the convenience, and a shopper checking the garment will find
-                // the printed one.
-                hint={converted === null ? undefined : `labelled ${facet.label}`}
+                label={conditionCopy[facet.value as Condition].label}
+                hint={conditionCopy[facet.value as Condition].short}
                 count={facet.count}
-                checked={draft.sizes.includes(facet.value)}
-                onChange={() => onChange({ ...draft, sizes: toggle(draft.sizes, facet.value) })}
+                checked={draft.conditions.includes(facet.value)}
+                onChange={() =>
+                  onChange({
+                    ...draft,
+                    conditions: toggle(draft.conditions, facet.value) as readonly Condition[],
+                  })
+                }
               />
-            )
-          })}
-        </Stack>
-      </FilterGroup>
+            ))}
+          </Stack>
+        </FilterGroup>
+      )}
 
-      <FilterGroup label={shop.filters.groups.brand}>
+      {/* Who it is cut for. `unisex` is not offered as a choice — it would read
+          as a third department when it actually means "appears under both". */}
+      {facets.genders.length > 1 && (
+        <FilterGroup label={shop.filters.groups.gender}>
+          <Stack gap={2}>
+            {facets.genders
+              .filter((facet) => facet.value !== 'unisex')
+              .map((facet) => (
+                <CheckboxRow
+                  key={facet.value}
+                  label={shop.filters.genderLabels[facet.value]}
+                  count={facet.count}
+                  checked={draft.genders.includes(facet.value)}
+                  onChange={() =>
+                    onChange({ ...draft, genders: toggle(draft.genders, facet.value) })
+                  }
+                />
+              ))}
+          </Stack>
+        </FilterGroup>
+      )}
+
+      {!categoryLocked && facets.categories.length > 1 && (
+        <FilterGroup label={shop.filters.groups.type}>
+          <Stack gap={2}>
+            {facets.categories.map((facet) => (
+              <CheckboxRow
+                key={facet.value}
+                label={shop.filters.typeLabels[facet.value]}
+                count={facet.count}
+                checked={draft.types.includes(facet.value)}
+                onChange={() => onChange({ ...draft, types: toggle(draft.types, facet.value) })}
+              />
+            ))}
+          </Stack>
+        </FilterGroup>
+      )}
+
+      {/* Indian sizes only. The IN/UK/EU toggle is gone: the labels collide —
+          an "M" exists on all three scales and means three different garments —
+          so the list repeated the same letter and a shopper could not tell which
+          one matched their own clothes. The conversions live in the size guide,
+          which has room to show them side by side. */}
+      <FilterGroup label={shop.filters.groups.size}>
         <Stack gap={2}>
-          {facets.brands.map((facet) => (
+          {facets.sizes.map((facet) => (
             <CheckboxRow
               key={facet.value}
-              label={facet.value}
+              label={facet.label}
               count={facet.count}
-              checked={draft.brands.includes(facet.value)}
-              onChange={() => onChange({ ...draft, brands: toggle(draft.brands, facet.value) })}
+              checked={draft.sizes.includes(facet.value)}
+              onChange={() => onChange({ ...draft, sizes: toggle(draft.sizes, facet.value) })}
             />
           ))}
         </Stack>
       </FilterGroup>
+
+      {facets.materials.length > 1 && (
+        <FilterGroup label={shop.filters.groups.material}>
+          <Stack gap={2}>
+            {facets.materials.map((facet) => (
+              <CheckboxRow
+                key={facet.value}
+                label={facet.label}
+                count={facet.count}
+                checked={draft.materials.includes(facet.value)}
+                onChange={() =>
+                  onChange({ ...draft, materials: toggle(draft.materials, facet.value) })
+                }
+              />
+            ))}
+          </Stack>
+        </FilterGroup>
+      )}
 
       <FilterGroup
         label={shop.filters.groups.price}

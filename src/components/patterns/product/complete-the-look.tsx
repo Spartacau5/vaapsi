@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Row } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
+import { PHOTO_QUALITY } from '@/lib/image'
 import { formatInr } from '@/lib/format/currency'
 import type { ProductSummary } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -90,6 +91,7 @@ export function CompleteTheLook({
                   alt={product.primaryImage.alt}
                   fill
                   sizes="80px"
+                  quality={PHOTO_QUALITY}
                   className="object-cover"
                 />
               </div>

@@ -66,6 +66,9 @@ const config: Config = {
           ink: hsl('accent-ink'),
           foreground: hsl('accent-foreground'),
         },
+        // Savings only. See the long note on --positive in tokens.css: it is a
+        // numeral colour, and there is deliberately no filled variant.
+        positive: hsl('positive'),
 
         // ---- shadcn required set, so generated primitives theme themselves
         foreground: hsl('foreground'),
@@ -180,6 +183,24 @@ const config: Config = {
         lg: 'var(--radius-lg)',
         xl: 'var(--radius-xl)',
         full: 'var(--radius-full)',
+      },
+
+      /**
+       * The stacking order, named.
+       *
+       * Bare numbers meant the header (`z-40`) and a drawer (`z-50`) were only
+       * correctly ordered by accident, and a drawer rendered inside a page's
+       * own stacking context lost to the header regardless of the number. The
+       * portal in `Overlay` fixes the context; these names fix the ordering
+       * being guesswork.
+       *
+       * Anything above `header` must be portalled to `document.body`, or its
+       * number is compared against the wrong parent and the name lies.
+       */
+      zIndex: {
+        raised: '10',
+        header: '40',
+        overlay: '60',
       },
 
       boxShadow: {

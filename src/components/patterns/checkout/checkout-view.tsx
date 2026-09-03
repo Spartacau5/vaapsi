@@ -6,12 +6,16 @@ import Link from 'next/link'
 import { ConfirmOrder } from './confirm-order'
 import { DeliveryOptions } from './delivery-options'
 import { MockPayment } from './mock-payment'
+import type { PaymentMethodId } from './mock-payment'
 import { useCart } from '../cart/use-cart'
 import { Col, Container, Grid, Row, Rule, Stack } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { checkout } from '@/content/checkout'
 import type { DeliveryOption } from '@/content/checkout'
+import { PHOTO_QUALITY } from '@/lib/image'
+import { formatArrival } from '@/lib/format/arrival'
 import { formatInr } from '@/lib/format/currency'
+import { orderGst } from '@/lib/format/gst'
 import { useCartStore } from '@/lib/store/cart'
 
 /**
@@ -37,9 +41,23 @@ import { useCartStore } from '@/lib/store/cart'
  *
  * Subtotal comes from the resolved lines. A delivery fee adds; a delivery
  * discount subtracts and is floored, so a saving is never quoted larger than it
- * is. Tax is absent and the summary says so — the GST treatment on resale is
- * unresolved (PRD #6), and an authoritative-looking total missing tax is worse
- * than an indicative one that admits it.
+ * is.
+ *
+ * **GST is now a line on the summary**, replacing the note that used to say tax
+ * would be shown at payment. It is a *component* of the total rather than an
+ * addition to it, because every price on this site is GST-inclusive — which is
+ * what a displayed price means in India — so the total does not move when the
+ * row appears. `lib/format/gst` carries the rate split, the reason it is
+ * extracted rather than added, and the resale question still open with the
+ * accountants.
+ *
+ * ## One clock
+ *
+ * `now` is captured once, here, and handed to everything that states a delivery
+ * date — the option rows, the summary, the confirmation dialog. Three
+ * components each calling `new Date()` would eventually disagree with each
+ * other by a day at midnight, and the estimate has to be the same number
+ * everywhere it appears on one page.
  */
 export function CheckoutView() {
   const { cart, isLoading } = useCart()
@@ -47,15 +65,37 @@ export function CheckoutView() {
 
   const [delivery, setDelivery] = useState<DeliveryOption>(checkout.delivery.options[0]!)
   const [paymentReady, setPaymentReady] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>('card')
   const [placed, setPlaced] = useState<string | null>(null)
 
+  /*
+    One clock for the page, captured once on first render. A state initialiser
+    rather than a bare `new Date()` in the body, so a re-render (choosing a
+    delivery tier, typing a card number) does not silently re-date the order
+    mid-session.
+  */
+  const [now] = useState(() => new Date())
+
   const lines = cart?.lines ?? []
-  const subtotalInr = lines
-    .filter((line) => line.status === 'active')
-    .reduce((sum, line) => sum + line.priceAtAddInr, 0)
+  const activeLines = lines.filter((line) => line.status === 'active')
+  const subtotalInr = activeLines.reduce((sum, line) => sum + line.priceAtAddInr, 0)
 
   const discount = Math.floor((subtotalInr * delivery.discountPercent) / 100)
   const total = subtotalInr - discount + delivery.feeInr
+
+  // Contained in the prices above, not added to them. See the note on the
+  // arithmetic — this figure is why the total does not change.
+  const gst = orderGst({
+    lineInr: activeLines.map((line) => line.priceAtAddInr),
+    discountInr: discount,
+    deliveryInr: delivery.feeInr,
+  })
+
+  const arrival = checkout.delivery.arrives(formatArrival(delivery.lead, now))
+
+  // The dialog names the method back to the shopper rather than showing an id.
+  const paymentLabel =
+    checkout.payment.methods.find((entry) => entry.id === paymentMethod)?.label ?? ''
 
   if (placed !== null) return <Placed reference={placed} />
 
@@ -123,19 +163,23 @@ export function CheckoutView() {
                   subtotalInr={subtotalInr}
                   selected={delivery.id}
                   onChange={setDelivery}
+                  now={now}
                 />
               </Stack>
 
               <Stack gap={3} className="border-t border-line pt-6">
                 <Eyebrow as="h2">{checkout.payment.heading}</Eyebrow>
-                <MockPayment onValidityChange={setPaymentReady} />
+                <MockPayment onValidityChange={setPaymentReady} onMethodChange={setPaymentMethod} />
               </Stack>
 
               <div className="border-t border-line pt-6">
                 <ConfirmOrder
-                  lines={lines.filter((line) => line.status === 'active')}
+                  lines={activeLines}
+                  subtotalInr={subtotalInr}
+                  savingInr={discount}
                   totalInr={total}
-                  deliveryWindow={delivery.window}
+                  deliveryWindow={arrival}
+                  paymentLabel={paymentLabel}
                   disabled={!paymentReady || lines.length === 0}
                   onPlaced={() => {
                     setPlaced(reference())
@@ -167,6 +211,7 @@ export function CheckoutView() {
                           alt={line.product.primaryImage.alt}
                           fill
                           sizes="64px"
+                          quality={PHOTO_QUALITY}
                           className="object-cover"
                         />
                       </div>
@@ -199,27 +244,66 @@ export function CheckoutView() {
               <Stack gap={2}>
                 <SummaryRow label={checkout.summary.subtotal} value={formatInr(subtotalInr)} />
 
+                {/*
+                  A negative number in the accent read as an error — red for
+                  "− ₹1,845" tells a shopper something went wrong, when it is
+                  the one line on the summary that is purely in their favour.
+                  Green, and the same green as the tier that produced it, so
+                  the two are visibly the same fact. See `--positive`.
+                */}
                 {discount > 0 && (
                   <SummaryRow
                     label={`${checkout.summary.discount} (${delivery.discountPercent}%)`}
                     value={`− ${formatInr(discount)}`}
-                    accent
+                    positive
                   />
                 )}
 
+                {/*
+                  One delivery row, labelled just "Delivery".
+
+                  It used to read "Delivery · 15% off — Included", which was two
+                  faults in one line: it repeated the tier name that the green
+                  discount row above already carries, and "Included" described a
+                  charge that now exists. The tier is named once, on the row that
+                  says what it saved.
+                */}
                 <SummaryRow
-                  label={`${checkout.summary.deliveryLabel} · ${delivery.label}`}
-                  value={
-                    delivery.feeInr > 0 ? formatInr(delivery.feeInr) : checkout.summary.deliveryFree
-                  }
+                  label={checkout.summary.deliveryLabel}
+                  value={formatInr(delivery.feeInr)}
+                />
+
+                {/*
+                  GST. Inside the total rather than added to it, hence the
+                  "included" qualifier — without it a shopper reasonably reads a
+                  tax row as a further charge and expects the total to be higher
+                  than the arithmetic above it.
+                */}
+                <SummaryRow
+                  label={`${checkout.summary.gst} (${checkout.summary.gstIncluded})`}
+                  value={formatInr(gst)}
                 />
               </Stack>
 
               <Rule />
               <SummaryRow label={checkout.summary.total} value={formatInr(total)} strong />
 
+              {/*
+                When it lands. The page never said this outside the confirmation
+                dialog, which meant the one fact a shopper most wants before
+                committing was behind the commit button.
+              */}
+              <Row gap={3} justify="between" align="baseline" wrap={false} className="pt-1">
+                <Type as="span" size="sm" tone="muted">
+                  {checkout.delivery.arrivingLabel}
+                </Type>
+                <Type as="span" size="sm" weight="emphasis" numeric suppressHydrationWarning>
+                  {formatArrival(delivery.lead, now)}
+                </Type>
+              </Row>
+
               <Type size="xs" tone="subtle">
-                {checkout.summary.taxNote}
+                {checkout.delivery.provisionalNote}
               </Type>
             </Stack>
           </Col>
@@ -335,23 +419,24 @@ function SummaryRow({
   label,
   value,
   strong = false,
-  accent = false,
+  positive = false,
 }: {
   label: string
   value: string
   strong?: boolean
-  accent?: boolean
+  /** Money the shopper keeps. Savings only — never a total, never a charge. */
+  positive?: boolean
 }) {
   return (
     <Row gap={3} justify="between" align="baseline" wrap={false}>
-      <Type as="span" size="sm" tone={accent ? 'accent' : 'muted'}>
+      <Type as="span" size="sm" tone={positive ? 'positive' : 'muted'}>
         {label}
       </Type>
       <Type
         as="span"
         size={strong ? 'lg' : 'sm'}
-        weight={strong ? 'heading' : 'regular'}
-        tone={accent ? 'accent' : 'default'}
+        weight={strong ? 'heading' : positive ? 'emphasis' : 'regular'}
+        tone={positive ? 'positive' : 'default'}
         numeric
       >
         {value}

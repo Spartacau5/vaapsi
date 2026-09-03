@@ -1,13 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { CardBagButton, CardChoiceLabel } from './card-bag-button'
-import { ColorSwatch } from './color-swatch'
-import { PassportMark } from './passport-mark'
+import { CardPurchaseBlock } from './card-purchase-block'
 import { Price } from './price'
 import { Row, Stack } from '@/components/primitives/layout'
 import { Type } from '@/components/primitives/type'
 import { conditionCopy, productCard, productPage } from '@/content/product'
+import { PHOTO_QUALITY } from '@/lib/image'
 import type { ProductImage, ProductSummary } from '@/lib/types'
+import { formatComposition, formatSizeRange } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 /**
@@ -20,21 +20,32 @@ import { cn } from '@/lib/utils'
  *
  * ## What a card states
  *
- * Four facts, in a fixed place on every card: **price, size, colour and what it
- * is made of**. They
- * are what a shopper is actually choosing between, and before this they were
- * either buried in a subtitle or absent — colour was not on the card at all, so
- * a grid of denim gave no way to tell a raw indigo from an ecru except by
- * squinting at thumbnails.
+ * The name, then one line of facts — **sizes, composition, and the grade where
+ * there is one** — then the price. Colourways are shown as swatches rather than
+ * named, because the swatch row already says what is available and naming one
+ * colour described a default rather than the offer.
+ *
+ * **Sizes are a span, not a single label.** New stock carries several sizes
+ * across its colourways, so "W28–W36" is the offer where "W30" was just
+ * whichever size happened to be the product's default. A pre-loved garment is
+ * one physical object and still shows its own single size — that is not a
+ * default, it is the only one there is. See `formatSizeRange`.
  *
  * **The garment's own name leads, and it is the only name shown.** Every listing
  * is a Vaapsi piece, so the brand distinguished nothing — eleven identical
- * headings. `subcategory` is gone from the card too, for the same reason in
- * miniature: under "Ravi Straight Jean" it read "Straight jeans", which is the
- * name again with a word removed. The name already says what the garment is.
+ * headings. `subcategory` went the same way: under "Ravi Straight Jean" it read
+ * "Straight jeans", which is the name again with a word removed.
  *
- * What replaced it is composition, which is a fact a shopper cannot infer and
- * genuinely chooses on.
+ * Composition is shortened for the line — "98% cotton", not "98% cotton, 2%
+ * elastane" — while keeping the percentage, because dropping it would imply
+ * 100% and quietly lose the stretch. See `formatComposition`.
+ *
+ * ## The block below the title
+ *
+ * `CardPurchaseBlock` owns the facts line, the swatches, the size buttons and
+ * the price/action row together, because they interleave: colours sit beside the
+ * facts, the action sits beside the price. It is a client component for the
+ * selection state; this card stays a server component.
  *
  * **Condition appears on pre-loved cards only.** New stock has no grade: it has
  * not been worn, so there is nothing to grade, and `condition` is null on those
@@ -101,6 +112,13 @@ export function ProductCard({
   const condition = product.condition === null ? null : (conditionCopy[product.condition] ?? null)
   const withCondition = (showCondition ?? product.listingType === 'pre_loved') && condition !== null
 
+  // New stock spans its colourways' sizes; a one-of-one garment has exactly the
+  // size on its own label.
+  const sizeText =
+    product.colorVariants.length > 0
+      ? formatSizeRange(product.colorVariants.flatMap((variant) => variant.sizes))
+      : product.size.label
+
   return (
     <Component className={cn('group/card relative', className)}>
       {/* 3:4, always. The grid reserves the space before the image loads. */}
@@ -110,6 +128,7 @@ export function ProductCard({
           alt={product.primaryImage.alt}
           fill
           sizes={sizes}
+          quality={PHOTO_QUALITY}
           priority={priority}
           className={cn(
             'ease object-cover transition-opacity duration-slow',
@@ -125,6 +144,7 @@ export function ProductCard({
             aria-hidden
             fill
             sizes={sizes}
+            quality={PHOTO_QUALITY}
             className={cn(
               'ease object-cover opacity-0 transition-opacity duration-slow group-hover/card:opacity-100',
               sold && 'saturate-0',
@@ -134,73 +154,48 @@ export function ProductCard({
       </div>
 
       <Stack gap={1} className="pt-3">
-        <Row gap={2} justify="between" align="start" wrap={false}>
-          <Type as="h3" size="sm" weight="emphasis" truncate tone={sold ? 'muted' : 'default'}>
-            {product.title}
-          </Type>
-          <PassportMark hasPassport={product.passportId !== null} className="shrink-0" />
-        </Row>
-
         {/*
-          The three facts. Size and colour on one line, price and the bag button
-          on the next, so the price always lands in the same place down a column
-          however long a colour name runs.
+          No passport mark. Every garment has a record, so a badge on some cards
+          and not others was reporting the state of our data rather than telling
+          a shopper anything about the garment. The record itself lives in the
+          product page's details, where there is room to show what is actually
+          in it.
         */}
-        <Row gap={2} align="center" className="pt-0.5 text-ink-subtle">
-          <Type as="span" size="xs" tone="inherit">
-            <span className="sr-only">{productCard.sizeLabel} </span>
-            {product.size.label}
-          </Type>
-          <span aria-hidden>·</span>
-          <Row gap={1} align="center" wrap={false} className="min-w-0">
-            <ColorSwatch color={product.color} />
-            <Type as="span" size="xs" tone="inherit" truncate>
-              <span className="sr-only">{productCard.colorLabel} </span>
-              {product.color.name}
-            </Type>
-          </Row>
-          {withCondition && (
-            <>
-              <span aria-hidden>·</span>
-              <Type as="span" size="xs" tone="inherit">
-                {condition.label}
-              </Type>
-            </>
-          )}
-        </Row>
-
-        {/*
-          Composition, on its own line and unlabelled. "100% cotton" needs no
-          prefix — nobody reads it as anything else — and on a denim catalogue
-          it is a real differentiator, since the elastane content is the
-          difference between a jean that holds its shape and one that gives.
-        */}
-        <Type as="p" size="xs" tone="subtle" truncate>
-          {product.composition}
+        <Type as="h3" size="sm" weight="emphasis" truncate tone={sold ? 'muted' : 'default'}>
+          {product.title}
         </Type>
 
-        {/*
-          Price left, the bag control right. With colourways the control grows a
-          swatch row and a size row above the button, so this becomes a column on
-          narrow cards rather than squeezing both into one line.
-        */}
-        <div className="flex flex-col gap-3 pt-1 tablet:flex-row tablet:items-end tablet:justify-between">
-          <Price
+        {showBagButton ? (
+          <CardPurchaseBlock
+            productId={product.id}
+            availability={product.availability}
+            sizeText={sizeText}
+            composition={formatComposition(product.composition)}
             priceInr={product.priceInr}
             originalRetailInr={product.originalRetailInr}
-            availability={product.availability}
+            variants={product.colorVariants}
+            conditionLabel={withCondition ? condition.label : null}
           />
-          {showBagButton && (
-            <div className="relative z-10 tablet:max-w-[9.5rem]">
-              {product.colorVariants.length > 0 && <CardChoiceLabel title={product.title} />}
-              <CardBagButton
-                productId={product.id}
-                availability={product.availability}
-                variants={product.colorVariants}
-              />
-            </div>
-          )}
-        </div>
+        ) : (
+          // Somewhere adding is not the action — the cart's own "goes with"
+          // rail, for instance. Facts and price, no controls.
+          <Stack gap={1} className="pt-2">
+            <Row gap={2} align="center" wrap={false} className="min-w-0 text-ink-subtle">
+              <Type as="span" size="xs" tone="inherit" numeric>
+                {sizeText}
+              </Type>
+              <span aria-hidden>·</span>
+              <Type as="span" size="xs" tone="inherit" truncate>
+                {formatComposition(product.composition)}
+              </Type>
+            </Row>
+            <Price
+              priceInr={product.priceInr}
+              originalRetailInr={product.originalRetailInr}
+              availability={product.availability}
+            />
+          </Stack>
+        )}
       </Stack>
 
       {/*
@@ -216,7 +211,10 @@ export function ProductCard({
           {productCard.linkLabel({
             name: product.title,
             garment: product.subcategory,
-            size: product.size.label,
+            // The spoken name keeps the *span* of sizes and the colour count,
+            // matching what is visible. `product.size.label` here would name a
+            // default the card no longer shows.
+            size: sizeText,
             color: product.color.name,
           })}
         </span>

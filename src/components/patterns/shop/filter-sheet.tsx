@@ -10,6 +10,7 @@ import { Row } from '@/components/primitives/layout'
 import { Type } from '@/components/primitives/type'
 import { shop } from '@/content/shop'
 import type { ProductFacets } from '@/lib/data'
+import type { ListingType } from '@/lib/types'
 import { activeFilterCount, serialisePlpState } from '@/lib/plp/search-params'
 import type { PlpState } from '@/lib/plp/search-params'
 
@@ -30,7 +31,19 @@ import type { PlpState } from '@/lib/plp/search-params'
  * identical to the nav drawer and the cart drawer by construction rather than by
  * three copies of the same forty lines agreeing with each other.
  */
-export function FilterSheet({ facets, category }: { facets: ProductFacets; category?: string }) {
+export function FilterSheet({
+  facets,
+  category,
+  listingType,
+  categoryLocked,
+}: {
+  facets: ProductFacets
+  category?: string
+  /** Which half of the catalogue this panel filters. */
+  listingType: ListingType
+  /** True when the route already fixes the category, so Type is hidden. */
+  categoryLocked?: boolean
+}) {
   const { state, applyFilters } = usePlpUrl()
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<FilterDraft>(() => toDraft(state))
@@ -101,7 +114,13 @@ export function FilterSheet({ facets, category }: { facets: ProductFacets; categ
         </Row>
 
         <div className="flex-1 overflow-y-auto px-gutter py-6">
-          <FilterControls facets={facets} draft={draft} onChange={setDraft} />
+          <FilterControls
+            facets={facets}
+            draft={draft}
+            onChange={setDraft}
+            listingType={listingType}
+            categoryLocked={categoryLocked}
+          />
         </div>
 
         {/* Sticky CTA carrying the live count. */}

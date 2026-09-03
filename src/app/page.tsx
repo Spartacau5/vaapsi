@@ -1,3 +1,4 @@
+import { AudienceTiles } from '@/components/patterns/home/audience-tiles'
 import { CategoryGrid } from '@/components/patterns/home/category-grid'
 import { EditorialBand } from '@/components/patterns/home/editorial-band'
 import { HeroTiles } from '@/components/patterns/home/hero-tiles'
@@ -11,8 +12,16 @@ import { listProducts } from '@/lib/data'
  * single-file change away from a real endpoint.
  *
  * Section order is the argument the page makes: here are the three ways in
- * (tiles) → here is what just arrived (rail) → here is how to find things
- * (categories) → and here is why any of this matters (editorial).
+ * (tiles) → here is what just arrived (rail) → here is who it is cut for
+ * (womenswear / menswear) → here is how to find a kind of thing (categories) →
+ * and here is why any of this matters (editorial).
+ *
+ * The audience split sits between the rail and the categories because that is
+ * the order the decision is actually made in. Before it existed the page went
+ * from a rail of individual garments straight to a grid of garment *types*,
+ * which asked a shopper to narrow by category before they had narrowed by half
+ * the catalogue — and left the primary nav's Women and Men links as the only
+ * route to a split the home page never mentioned.
  *
  * The explanatory sections that used to sit here — how a passport is made, what
  * the five condition grades mean — are gone from the home page deliberately.
@@ -37,6 +46,7 @@ export default async function HomePage() {
     <>
       <HeroTiles />
       <NewInRail products={recent.items.filter((p) => p.availability !== 'sold')} />
+      <AudienceTiles />
       <CategoryGrid />
       <EditorialBand />
     </>

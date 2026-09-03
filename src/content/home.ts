@@ -107,6 +107,69 @@ export const home = {
     ],
   },
 
+  /**
+   * ==========================================================================
+   * WHO IT IS CUT FOR
+   * ==========================================================================
+   *
+   * The split above the category grid, and the two are answering different
+   * questions on purpose. "Who is it for" narrows the catalogue by half in one
+   * click; "what kind of garment" narrows it by type. A shopper almost always
+   * knows the first before the second, which is why it sits first.
+   *
+   * ## Why not "gender"
+   *
+   * Because the word is wrong for what the control actually does. This is not
+   * asking who the shopper is — it is filtering by how a garment is *cut*, and
+   * `Gender` in the product contract is documented in exactly those terms:
+   * "who a garment is cut for". Using the data model's own words keeps the
+   * interface and the record speaking the same language, and it sidesteps a
+   * label that reads as a question about the person rather than the trousers.
+   *
+   * It also happens to be the honest description of the behaviour. A unisex
+   * garment answers to **both** halves rather than to neither, so neither
+   * listing is a closed set — see the filter in `lib/data/mock`. "Gender" would
+   * imply a partition that the data deliberately does not make.
+   *
+   * ## Two tiles, and no third
+   *
+   * There is no "unisex" tile, even though `unisex` is a real value. It is not
+   * a third audience a shopper shops from; it is a property of the garment that
+   * puts it in both lists. A third tile would read as a separate department and
+   * would be the smallest of the three, which is the opposite of what it means.
+   *
+   * `/shop/unisex` does resolve — the listing route accepts any gender segment —
+   * but nothing links to it, here or in the nav. That is the right split: the URL
+   * being valid costs nothing, while advertising it would make the two halves
+   * above look like closed sets.
+   */
+  audience: {
+    eyebrow: 'Browse',
+    title: 'Who it is cut for',
+    /** Says out loud that the two lists overlap, rather than letting it surprise. */
+    note: 'Pieces cut straight show up in both.',
+    items: [
+      {
+        label: 'Women',
+        note: 'Dresses, skirts, jeans and jackets',
+        href: '/shop/women',
+        image: {
+          src: '/products/beas-denim-skirt/4-worn.jpg',
+          alt: 'A woman in a dark indigo denim corset top and wide-leg jeans, carrying a straw basket',
+        },
+      },
+      {
+        label: 'Men',
+        note: 'Truckers, chore coats and straight jeans',
+        href: '/shop/men',
+        image: {
+          src: '/products/kaveri-trucker-jacket/2-worn.jpg',
+          alt: 'A man in a mid-wash denim tailored jacket over an open white shirt',
+        },
+      },
+    ],
+  },
+
   categories: {
     eyebrow: 'Browse',
     title: 'By category',
@@ -114,13 +177,56 @@ export const home = {
      * Every href points at a category that actually has stock. A dead category
      * link on the home page is worse than a shorter list — and because the
      * category route validates against the live facets, an empty one 404s.
+     *
+     * ## The photographs
+     *
+     * Real garment photography, chosen frame by frame, replacing the
+     * `picsum.photos` placeholders that were here — five unrelated landscapes on
+     * a denim shop's home page, which said nothing about what is behind each
+     * link and made the section read as unfinished.
+     *
+     * Each cell crops to 4:3, so the frame is picked for what survives a
+     * landscape crop rather than for being the best photograph of the garment:
+     * a flat-laid jacket and a shoulder bag are wide subjects, a worn full-length
+     * shot crops to the middle of the body, and a construction close-up crops
+     * anywhere. Frames whose subject sits at the top or bottom of the portrait
+     * original are not usable here however good they are.
+     *
+     * The images are decorative — `alt=""`. The link already announces
+     * "Jackets, truckers and chore coats", and describing the photograph on top
+     * of that makes a screen reader read the same tile twice.
      */
     items: [
-      { label: 'Jackets', href: '/shop/outerwear', note: 'Truckers and chore coats' },
-      { label: 'Jeans and skirts', href: '/shop/bottoms', note: 'Broken in already' },
-      { label: 'Dresses', href: '/shop/dresses', note: 'Shirt dresses and jumpsuits' },
-      { label: 'Shirts and waistcoats', href: '/shop/tops' },
-      { label: 'Bags', href: '/shop/accessories' },
+      {
+        label: 'Jackets',
+        href: '/shop/outerwear',
+        note: 'Truckers and chore coats',
+        image: '/products/chenab-trucker-jacket/1-primary.jpg',
+      },
+      {
+        label: 'Jeans and skirts',
+        href: '/shop/bottoms',
+        note: 'Broken in already',
+        image: '/products/ravi-straight-jean/2-worn.jpg',
+      },
+      {
+        label: 'Dresses',
+        href: '/shop/dresses',
+        note: 'Shirt dresses and jumpsuits',
+        image: '/products/sutlej-shirt-dress/2-worn.jpg',
+      },
+      {
+        label: 'Shirts and waistcoats',
+        href: '/shop/tops',
+        image: '/products/yamuna-chambray-shirt/3-detail.jpg',
+      },
+      {
+        label: 'Bags',
+        href: '/shop/accessories',
+        // The one high-resolution frame in the set — 2048px, and a Vaapsi
+        // patchwork tote rather than a stock photograph.
+        image: '/hero/4-bag.jpg',
+      },
     ],
   },
 

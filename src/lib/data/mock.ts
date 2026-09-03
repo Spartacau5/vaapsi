@@ -1,10 +1,21 @@
+import { account, orders, RESALE_SHOTS } from './fixtures/account'
+import { assess } from './resale'
+import { DataError } from './adapter'
+import { materialLabel, primaryMaterial } from '@/lib/format/composition'
 import { sizeSortIndex } from '@/lib/format/size'
-import { CONDITIONS } from '@/lib/types'
+import { CONDITIONS, GENDERS } from '@/lib/types'
 import type {
+  Account,
   Cart,
   CartLine,
   CartTotals,
   Condition,
+  ListingType,
+  Order,
+  OrderLineId,
+  ResaleAssessment,
+  ResaleRequest,
+  ResaleShot,
   Page,
   Passport,
   PassportId,
@@ -58,6 +69,7 @@ function toSummary(product: Product): ProductSummary {
     category: product.category,
     subcategory: product.subcategory,
     listingType: product.listingType,
+    gender: product.gender,
     condition: product.condition,
     color: product.color,
     composition: product.composition,
@@ -74,6 +86,26 @@ function toSummary(product: Product): ProductSummary {
 
 function matches(product: Product, filters: ProductFilters): boolean {
   if (filters.category !== undefined && product.category !== filters.category) return false
+  if (
+    filters.category === undefined &&
+    filters.categories !== undefined &&
+    filters.categories.length > 0 &&
+    !filters.categories.includes(product.category)
+  ) {
+    return false
+  }
+  if (filters.listingType !== undefined && product.listingType !== filters.listingType) {
+    return false
+  }
+  if (filters.genders !== undefined && filters.genders.length > 0) {
+    // A unisex garment answers to every gender rather than to none. Excluding
+    // it from both listings is the failure mode here, and it is silent.
+    if (product.gender !== 'unisex' && !filters.genders.includes(product.gender)) return false
+  }
+  if (filters.materials !== undefined && filters.materials.length > 0) {
+    const material = primaryMaterial(product.composition)
+    if (material === null || !filters.materials.includes(material)) return false
+  }
   if (filters.brands !== undefined && filters.brands.length > 0) {
     if (!filters.brands.includes(product.brand)) return false
   }
@@ -220,29 +252,84 @@ export const mockAdapter: DataAdapter = {
     return products.find((p) => p.id === idOrSlug || p.slug === idOrSlug) ?? null
   },
 
-  async getProductFacets(): Promise<ProductFacets> {
-    const prices = products.map((p) => p.priceInr)
-    const sizes = countBy(products.map((p) => p.size.normalized))
+  async getProductFacets(listingType?: ListingType): Promise<ProductFacets> {
+    // Scoped, so the New listing is never offered a condition grade nothing in
+    // it has. Counted against the listing type's whole set rather than against
+    // the current filters, so a count does not collapse to zero as a shopper
+    // narrows down.
+    const scope =
+      listingType === undefined
+        ? products
+        : products.filter((product) => product.listingType === listingType)
+
+    const count = <T>(values: readonly T[]): Map<T, number> => {
+      const out = new Map<T, number>()
+      for (const value of values) out.set(value, (out.get(value) ?? 0) + 1)
+      return out
+    }
+
+    const brands = count(scope.map((product) => product.brand))
+    const categories = count(scope.map((product) => product.category))
+    const conditions = count(
+      scope
+        .map((product) => product.condition)
+        .filter((condition): condition is Condition => condition !== null),
+    )
+    const genders = count(scope.map((product) => product.gender))
+
+    const materials = new Map<string, number>()
+    for (const product of scope) {
+      const material = primaryMaterial(product.composition)
+      if (material === null) continue
+      materials.set(material, (materials.get(material) ?? 0) + 1)
+    }
+
+    // Every size a shopper could buy, which for new stock means the colourways'
+    // sizes and not the product's own default label.
+    const sizes = new Map<string, { label: string; count: number }>()
+    for (const product of scope) {
+      const offered =
+        product.colorVariants.length > 0
+          ? product.colorVariants.flatMap((variant) => variant.sizes)
+          : [product.size]
+      for (const size of new Map(offered.map((s) => [s.normalized, s])).values()) {
+        const existing = sizes.get(size.normalized)
+        sizes.set(size.normalized, {
+          label: size.label,
+          count: (existing?.count ?? 0) + 1,
+        })
+      }
+    }
+
+    const prices = scope.map((product) => product.priceInr)
+
     return {
-      brands: countBy(products.map((p) => p.brand)),
-      categories: countBy(products.map((p) => p.category)) as readonly {
-        value: ProductCategory
-        count: number
-      }[],
-      // Fixed order, best to worst — a condition filter sorted by count reads
-      // as arbitrary to a shopper.
-      conditions: CONDITIONS.map((value: Condition) => ({
-        value,
-        count: products.filter((p) => p.condition === value).length,
-      })).filter((entry) => entry.count > 0),
-      sizes: [...sizes]
-        .sort((a, b) => sizeSortIndex(a.value) - sizeSortIndex(b.value))
-        .map((entry) => ({
-          value: entry.value,
-          label: products.find((p) => p.size.normalized === entry.value)?.size.label ?? entry.value,
-          count: entry.count,
-        })),
-      priceRangeInr: { min: Math.min(...prices), max: Math.max(...prices) },
+      brands: [...brands.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => a.value.localeCompare(b.value)),
+      categories: [...categories.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => a.value.localeCompare(b.value)),
+      // Best to worst, not by count. The scale has an order and a filter that
+      // reordered it by popularity would read as arbitrary.
+      conditions: CONDITIONS.filter((condition) => conditions.has(condition)).map((condition) => ({
+        value: condition,
+        count: conditions.get(condition) ?? 0,
+      })),
+      sizes: [...sizes.entries()]
+        .map(([value, entry]) => ({ value, label: entry.label, count: entry.count }))
+        .sort((a, b) => sizeSortIndex(a.value) - sizeSortIndex(b.value)),
+      genders: GENDERS.filter((gender) => genders.has(gender)).map((gender) => ({
+        value: gender,
+        count: genders.get(gender) ?? 0,
+      })),
+      materials: [...materials.entries()]
+        .map(([value, count]) => ({ value, label: materialLabel(value), count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value)),
+      priceRangeInr:
+        prices.length === 0
+          ? { min: 0, max: 0 }
+          : { min: Math.min(...prices), max: Math.max(...prices) },
     }
   },
 
@@ -312,6 +399,76 @@ export const mockAdapter: DataAdapter = {
         .slice(0, limit)
         .map(toSummary)
     )
+  },
+
+  // ---- account, purchases and resale
+
+  async getAccount(): Promise<Account> {
+    return account
+  },
+
+  async listResaleShots(): Promise<readonly ResaleShot[]> {
+    return RESALE_SHOTS
+  },
+
+  async listOrders(): Promise<readonly Order[]> {
+    // Newest first. A purchase history read in any other order is a filing
+    // cabinet rather than a page.
+    return [...orders].sort((a, b) => Date.parse(b.placedAt) - Date.parse(a.placedAt))
+  },
+
+  async getOrderLine(orderLineId: OrderLineId) {
+    for (const order of orders) {
+      const line = order.lines.find((candidate) => candidate.id === orderLineId)
+      if (line !== undefined) return { order, line }
+    }
+    return null
+  },
+
+  async assessResale(input: {
+    orderLineId: OrderLineId
+    shotIds: readonly string[]
+    declaredFlaws?: readonly string[]
+    hasCustomisations?: boolean
+  }): Promise<ResaleAssessment> {
+    const found = await mockAdapter.getOrderLine(input.orderLineId)
+    if (found === null) {
+      throw new DataError('not_found', `No order line ${input.orderLineId}`)
+    }
+    return assess({
+      order: found.order,
+      line: found.line,
+      shotIds: input.shotIds,
+      declaredFlaws: input.declaredFlaws,
+      hasCustomisations: input.hasCustomisations,
+    })
+  },
+
+  async createResaleRequest(input: {
+    orderLineId: OrderLineId
+    askingInr: number
+    assessment: ResaleAssessment
+  }): Promise<ResaleRequest> {
+    const found = await mockAdapter.getOrderLine(input.orderLineId)
+    if (found === null) {
+      throw new DataError('not_found', `No order line ${input.orderLineId}`)
+    }
+    // A garment we could not identify must not become a listing. This is the
+    // one place the verification verdict is load-bearing rather than
+    // informational — see the note in `lib/data/resale`.
+    if (input.assessment.verification === 'no_match') {
+      throw new DataError('unavailable', 'Cannot list a garment we could not verify')
+    }
+
+    return {
+      id: `rsl_${found.line.id}`,
+      orderLineId: input.orderLineId,
+      productId: found.line.product.id,
+      createdAt: new Date().toISOString(),
+      askingInr: input.askingInr,
+      assessment: input.assessment,
+      status: 'submitted',
+    }
   },
 
   async resolveCart(items: readonly CartItemRef[]): Promise<Cart> {

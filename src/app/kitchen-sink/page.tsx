@@ -3,7 +3,6 @@ import { PassportRecord } from '@/components/patterns/passport/record'
 import { PassportStory } from '@/components/patterns/passport/story'
 import { ProvenanceDot, ProvenanceLegend } from '@/components/patterns/passport/provenance-dot'
 import { Seal } from '@/components/patterns/passport/seal'
-import { PassportMark } from '@/components/patterns/passport-mark'
 import { Price } from '@/components/patterns/price'
 import { ProductCard } from '@/components/patterns/product-card'
 import { ConditionBlock } from '@/components/patterns/product/condition-block'
@@ -134,23 +133,6 @@ export default async function KitchenSinkPage() {
           </Case>
           <Case label="Lakh grouping">
             <Price priceInr={12_000_000} originalRetailInr={null} availability="available" />
-          </Case>
-        </Stack>
-      </Section>
-
-      {/* ---------------------------------------------------------------- */}
-      <Section title="Passport indicator">
-        <Stack gap={4}>
-          <Case label="Has a passport">
-            <PassportMark hasPassport />
-          </Case>
-          <Case label="No passport — renders nothing at all">
-            <Row gap={2}>
-              <PassportMark hasPassport={false} />
-              <Type size="xs" tone="subtle">
-                (empty by design — an absence that is drawn is still a claim)
-              </Type>
-            </Row>
           </Case>
         </Stack>
       </Section>

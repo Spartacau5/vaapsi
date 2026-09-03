@@ -84,3 +84,56 @@ export function formatSizeWithConversion(size: Size, to: SizeSystem): string {
 export function sizeSortIndex(normalized: string): number {
   return SIZE_TABLE.findIndex((row) => row.normalized === normalized)
 }
+
+/**
+ * The sizes a product is available in, as one short string for a grid card.
+ *
+ * New stock carries several sizes across its colourways, so a card that printed
+ * a single size would be stating the default rather than the offer — and on a
+ * regular ecommerce grid the useful fact is the span:
+ *
+ *   W28, W30, W32, W34, W36  →  W28–W36
+ *   S, M, L                  →  S–L
+ *   M                        →  M
+ *   (nothing)                →  ''
+ *
+ * **A span, not a list.** Five labels do not fit beside the composition, and a
+ * truncated list reads as though the row was cut off rather than summarised.
+ *
+ * ## The gap caveat
+ *
+ * A span implies continuity, and stock is not always continuous — a style with
+ * W28, W30 and W36 in it would render "W28–W36" and imply a W32 nobody can buy.
+ * So the endpoints are only collapsed when the set is **contiguous on the size
+ * ladder**; a gappy set is listed instead, which is honest and rare enough not
+ * to cost the layout anything. The per-colour size buttons remain the
+ * authoritative answer, because availability genuinely differs by colourway.
+ *
+ * Ordering comes from `SIZE_TABLE` rather than from input order, so a caller
+ * that concatenates several colourways' sizes still gets a sane span.
+ */
+export function formatSizeRange(sizes: readonly Size[]): string {
+  const seen = new Map<string, string>()
+  for (const size of sizes) {
+    if (!seen.has(size.normalized)) seen.set(size.normalized, size.label)
+  }
+  if (seen.size === 0) return ''
+
+  const ordered = [...seen.entries()]
+    .map(([normalized, label]) => ({ normalized, label, index: sizeSortIndex(normalized) }))
+    // An unknown label sorts last rather than to the front, where -1 would put
+    // it and silently become the low end of the span.
+    .sort((a, b) => (a.index < 0 ? 1 : b.index < 0 ? -1 : a.index - b.index))
+
+  if (ordered.length === 1) return ordered[0]!.label
+
+  const first = ordered[0]!
+  const last = ordered[ordered.length - 1]!
+
+  const known = ordered.every((entry) => entry.index >= 0)
+  const contiguous = known && last.index - first.index === ordered.length - 1
+
+  return contiguous
+    ? `${first.label}–${last.label}`
+    : ordered.map((entry) => entry.label).join(', ')
+}

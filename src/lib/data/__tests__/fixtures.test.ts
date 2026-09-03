@@ -60,16 +60,21 @@ describe('listing type invariants', () => {
 })
 
 describe('fixture shape', () => {
-  it('has eleven garments — eight pre-loved and three new', () => {
-    expect(products).toHaveLength(11)
-    expect(products.filter((p) => p.listingType === 'pre_loved')).toHaveLength(8)
-    expect(products.filter((p) => p.listingType === 'new')).toHaveLength(3)
-    // Five of the eight pre-loved pieces are passported. New stock never is —
+  it('carries both halves of the catalogue, with enough of each to browse', () => {
+    // Counted as "enough to fill a grid" rather than exactly: the catalogue
+    // grows, and a test that pins its size fails on every addition instead of
+    // on a defect. What matters is that neither half is a stub.
+    const preLoved = products.filter((p) => p.listingType === 'pre_loved')
+    const brandNew = products.filter((p) => p.listingType === 'new')
+    expect(preLoved.length).toBeGreaterThanOrEqual(8)
+    expect(brandNew.length).toBeGreaterThanOrEqual(8)
+    expect(preLoved.length + brandNew.length).toBe(products.length)
+
+    // Every passport belongs to a pre-loved garment. New stock never has one —
     // a passport records where a garment has been, and a new one has been
     // nowhere.
-    expect(products.filter((p) => p.passportId !== null)).toHaveLength(5)
-    expect(products.filter((p) => p.passportId === null)).toHaveLength(6)
-    expect(passports).toHaveLength(5)
+    for (const product of brandNew) expect(product.passportId).toBeNull()
+    expect(products.filter((p) => p.passportId !== null)).toHaveLength(passports.length)
   })
 
   it('exercises every availability state', () => {
@@ -246,8 +251,8 @@ describe('adapter reads', () => {
 
   it('lists every product with a summary carrying a primary image', async () => {
     const page = await listProducts()
-    expect(page.total).toBe(11)
-    expect(page.items).toHaveLength(11)
+    expect(page.total).toBe(products.length)
+    expect(page.items).toHaveLength(products.length)
     expect(page.nextCursor).toBeNull()
     for (const item of page.items) expect(item.primaryImage.kind).toBe('primary')
   })

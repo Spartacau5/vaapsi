@@ -1,5 +1,3 @@
-import { PASSPORT_NAME } from './passport'
-
 /** Listing page copy. */
 export const shop = {
   title: 'Everything available',
@@ -18,11 +16,29 @@ export const shop = {
     groups: {
       brand: 'Brand',
       condition: 'Condition',
+      gender: 'For',
+      type: 'Type',
+      material: 'Material',
       size: 'Size',
       price: 'Price',
-      passport: PASSPORT_NAME.title,
     },
-    passportToggle: `Only pieces with ${PASSPORT_NAME.withArticle}`,
+    /** "For" reads better than "Gender" on a shop filter and asks the same thing. */
+    genderLabels: {
+      women: 'Women',
+      men: 'Men',
+      unisex: 'Unisex',
+    },
+    /** Garment type, in shopper words rather than in catalogue words. */
+    typeLabels: {
+      tops: 'Shirts and tops',
+      bottoms: 'Jeans and trousers',
+      dresses: 'Dresses and jumpsuits',
+      outerwear: 'Jackets',
+      knitwear: 'Knitwear',
+      ethnicwear: 'Ethnicwear',
+      suiting: 'Blazers and suiting',
+      accessories: 'Bags and accessories',
+    },
     priceMin: 'From',
     priceMax: 'To',
     priceUnit: '₹',
@@ -72,9 +88,11 @@ export const shop = {
   filterLabels: {
     brands: 'Brand',
     conditions: 'Condition',
+    genders: 'For',
+    materials: 'Material',
+    types: 'Type',
     sizes: 'Size',
     price: 'Price',
-    passport: PASSPORT_NAME.title,
     query: 'Search',
   },
 } as const

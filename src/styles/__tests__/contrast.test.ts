@@ -111,6 +111,11 @@ const BODY_PAIRS: readonly [string, string][] = [
   ['ink-muted', 'background'],
   ['ink-muted', 'surface'],
   ['accent-ink', 'accent'],
+  // `positive` is always a small numeral — "You save ₹1,230", "− ₹1,845" — so
+  // it is held to the body threshold rather than the 3:1 UI one. It appears on
+  // the page ground and inside the tinted delivery band, hence both.
+  ['positive', 'background'],
+  ['positive', 'surface'],
 ]
 
 /**

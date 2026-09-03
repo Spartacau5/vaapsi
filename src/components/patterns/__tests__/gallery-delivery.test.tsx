@@ -5,6 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { DeliveryOptions } from '../checkout/delivery-options'
 import { Gallery } from '../product/gallery'
 import { checkout } from '@/content/checkout'
+import { formatArrival } from '@/lib/format/arrival'
+import { formatInr } from '@/lib/format/currency'
 import type { DeliveryOptionId } from '@/content/checkout'
 import { productPage } from '@/content/product'
 import type { ProductImage } from '@/lib/types'
@@ -118,6 +120,9 @@ describe('Gallery', () => {
  */
 describe('DeliveryOptions', () => {
   const SUBTOTAL = 400_000 // ₹4,000
+  // A Monday, so working-day arithmetic has a known answer and the suite does
+  // not behave differently depending on the day it runs.
+  const NOW = new Date(2026, 8, 7)
 
   function setup(initial: DeliveryOptionId = 'standard') {
     function Harness() {
@@ -127,15 +132,19 @@ describe('DeliveryOptions', () => {
           subtotalInr={SUBTOTAL}
           selected={selected}
           onChange={(option) => setSelected(option.id)}
+          now={NOW}
         />
       )
     }
     return render(<Harness />)
   }
 
-  it('offers four options across two bands', () => {
+  it('renders every configured option, across two bands', () => {
     setup()
-    expect(screen.getAllByRole('radio')).toHaveLength(4)
+    // Counted from the content rather than hardcoded: which tiers exist is a
+    // commercial decision that has already changed once, and a test that
+    // hardcodes it fails on the decision rather than on a defect.
+    expect(screen.getAllByRole('radio')).toHaveLength(checkout.delivery.options.length)
     expect(screen.getByRole('group', { name: checkout.delivery.soonHeading })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: checkout.delivery.waitHeading })).toBeInTheDocument()
   })
@@ -152,17 +161,36 @@ describe('DeliveryOptions', () => {
     expect(within(soon).queryByRole('radio', { name: /10% off/ })).toBeNull()
   })
 
-  it('shows Express as a difference, not as its own total', () => {
-    setup()
-    // "+₹250" is the number the decision turns on. "₹250" would make a shopper
-    // subtract two totals themselves.
-    expect(screen.getByText(checkout.delivery.extra('₹250'))).toBeInTheDocument()
+  it('charges one flat delivery fee across every tier', () => {
+    // Flat on purpose. The consolidated tiers give their benefit as a discount
+    // on the garments, so a second variable in the delivery line would mean two
+    // numbers moving at once for one choice.
+    const fees = new Set(checkout.delivery.options.map((option) => option.feeInr))
+    expect(fees.size).toBe(1)
+    expect([...fees][0]).toBeGreaterThan(0)
   })
 
-  it('shows Standard as included rather than as zero', () => {
+  it('states the delivery fee as an amount, never as "Included"', () => {
+    // "Included" was honest while delivery was free and became a lie the moment
+    // it was not. A shopper adding up an order should see every rupee in it.
     setup()
-    expect(screen.getByText(checkout.summary.deliveryFree)).toBeInTheDocument()
-    expect(screen.queryByText('₹0')).toBeNull()
+    expect(screen.getByText(formatInr(checkout.delivery.options[0]!.feeInr))).toBeInTheDocument()
+    expect(screen.queryByText(/included/i)).toBeNull()
+  })
+
+  it('gives every tier a date rather than a duration', () => {
+    setup()
+    // Ordering on Monday 7 Sep 2026 with a 4–6 working-day window lands
+    // Fri 11 – Tue 15 Sep: the weekend is skipped, which is exactly the
+    // arithmetic a shopper reading "4–6 working days" has to do themselves.
+    expect(screen.getByText('Arrives Fri 11 – Tue 15 Sep')).toBeInTheDocument()
+    for (const option of checkout.delivery.options) {
+      expect(
+        screen.getByText(checkout.delivery.arrives(formatArrival(option.lead, NOW))),
+      ).toBeInTheDocument()
+    }
+    expect(screen.queryByText(/working days/)).toBeNull()
+    expect(screen.queryByText(/about 30 days/)).toBeNull()
   })
 
   it('states each saving in rupees, not only as a percentage', () => {
@@ -180,10 +208,12 @@ describe('DeliveryOptions', () => {
   it('reports the chosen option upward, with its fee and discount', async () => {
     const user = userEvent.setup()
     const onChange = jest.fn()
-    render(<DeliveryOptions subtotalInr={SUBTOTAL} selected="standard" onChange={onChange} />)
+    render(
+      <DeliveryOptions subtotalInr={SUBTOTAL} selected="standard" onChange={onChange} now={NOW} />,
+    )
     await user.click(screen.getByRole('radio', { name: /15% off/ }))
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ id: 'save15', discountPercent: 15, feeInr: 0 }),
+      expect.objectContaining({ id: 'save15', discountPercent: 15, feeInr: 9_900 }),
     )
   })
 
@@ -195,11 +225,13 @@ describe('DeliveryOptions', () => {
     expect(screen.getByText(checkout.delivery.applied)).toBeInTheDocument()
   })
 
-  it('names the wait in days on each discount tier', () => {
+  it('dates the long wait too, so a month is not left abstract', () => {
     setup()
-    // The trade has to be legible at the moment of choosing, not in a footnote.
-    expect(screen.getByText(/about 30 days/)).toBeInTheDocument()
-    expect(screen.getByText(/about 40 days/)).toBeInTheDocument()
+    // 28–32 and 38–42 calendar days from Mon 7 Sep 2026. Counted as calendar
+    // days, not working days — "about 30 days" means a month, and 30 working
+    // days would quietly be six weeks.
+    expect(screen.getByText('Arrives Mon 5 – Fri 9 Oct')).toBeInTheDocument()
+    expect(screen.getByText('Arrives Thu 15 – Mon 19 Oct')).toBeInTheDocument()
   })
 
   it('floors a saving, so rounding never favours us over the shopper', () => {
@@ -210,6 +242,7 @@ describe('DeliveryOptions', () => {
           subtotalInr={999}
           selected={selected}
           onChange={(option) => setSelected(option.id)}
+          now={NOW}
         />
       )
     }

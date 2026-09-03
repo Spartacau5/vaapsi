@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react'
 import { Row, Stack } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { productPage } from '@/content/product'
+import { PHOTO_QUALITY } from '@/lib/image'
 import { formatInr } from '@/lib/format/currency'
 import { conditionCopy } from '@/content/product'
 import type { Paise, ProductSummary } from '@/lib/types'
@@ -74,6 +75,7 @@ export function PreLovedAlternatives({
                     alt={product.primaryImage.alt}
                     fill
                     sizes="(min-width: 1024px) 14vw, 40vw"
+                    quality={PHOTO_QUALITY}
                     className="ease object-cover transition-transform duration-slow group-hover/alt:scale-[1.03]"
                   />
                 </div>

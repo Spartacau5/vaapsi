@@ -1,5 +1,7 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { AudienceTiles } from '@/components/patterns/home/audience-tiles'
+import { CategoryGrid } from '@/components/patterns/home/category-grid'
 import { HeroTiles } from '@/components/patterns/home/hero-tiles'
 import { NewInRail } from '@/components/patterns/home/new-in-rail'
 import { home } from '@/content/home'
@@ -44,6 +46,89 @@ describe('HeroTiles', () => {
     render(<HeroTiles />)
     for (const tile of home.heroTiles.tiles) {
       expect(screen.getByAltText(tile.image.alt)).toBeInTheDocument()
+    }
+  })
+})
+
+/**
+ * The audience split, between the rail and the category grid.
+ *
+ * The two things worth guarding: the links have to actually resolve — they
+ * point at `/shop/women` and `/shop/men`, which 404'd for most of this
+ * project's life — and there must be no third tile, because `unisex` means
+ * "appears under both" rather than "a third department".
+ */
+describe('AudienceTiles', () => {
+  it('splits the catalogue in two, and only two', () => {
+    render(<AudienceTiles />)
+    expect(screen.getAllByRole('link')).toHaveLength(2)
+    expect(screen.queryByRole('link', { name: /unisex/i })).toBeNull()
+  })
+
+  it('points each half where its copy says', () => {
+    render(<AudienceTiles />)
+    for (const item of home.audience.items) {
+      expect(screen.getByRole('link', { name: new RegExp(item.label) })).toHaveAttribute(
+        'href',
+        item.href,
+      )
+    }
+  })
+
+  it('says out loud that the two halves overlap', () => {
+    // A straight-cut garment is in both listings. Letting a shopper discover
+    // that by seeing the same jacket twice is worse than one line of copy.
+    render(<AudienceTiles />)
+    expect(screen.getByText(home.audience.note)).toBeInTheDocument()
+  })
+
+  it('titles each half under the section heading, not as another h2', () => {
+    render(<AudienceTiles />)
+    for (const item of home.audience.items) {
+      expect(screen.getByRole('heading', { level: 3, name: item.label })).toBeInTheDocument()
+    }
+  })
+
+  it('describes both photographs', () => {
+    render(<AudienceTiles />)
+    for (const item of home.audience.items) {
+      expect(screen.getByAltText(item.image.alt)).toBeInTheDocument()
+    }
+  })
+})
+
+/**
+ * The category grid.
+ *
+ * These images used to be `picsum.photos` landscapes — a Scottish hillside
+ * under "Jackets". The test that matters is that every cell now carries a real
+ * file from this repo, because the failure mode of the old version was a page
+ * that looked finished and said nothing.
+ */
+describe('CategoryGrid', () => {
+  it('uses photography from this repo, not a placeholder service', () => {
+    render(<CategoryGrid />)
+    for (const item of home.categories.items) {
+      expect(item.image.startsWith('/')).toBe(true)
+      expect(item.image).not.toContain('picsum')
+    }
+  })
+
+  it('leaves the photographs decorative, so a tile is not read twice', () => {
+    // The link already announces "Jackets, truckers and chore coats".
+    const { container } = render(<CategoryGrid />)
+    for (const img of Array.from(container.querySelectorAll('img'))) {
+      expect(img).toHaveAttribute('alt', '')
+    }
+  })
+
+  it('links every category where its copy says', () => {
+    render(<CategoryGrid />)
+    for (const item of home.categories.items) {
+      expect(screen.getByRole('link', { name: new RegExp(item.label) })).toHaveAttribute(
+        'href',
+        item.href,
+      )
     }
   })
 })

@@ -230,9 +230,12 @@ describe('SiteHeader', () => {
 
 describe('MobileNav', () => {
   it('is hidden and unfocusable while closed, with no JavaScript involved', () => {
-    const { container } = render(<MobileNav />)
-    const shell = container.firstElementChild
-    expect(shell).toHaveAttribute('aria-hidden', 'true')
+    render(<MobileNav />)
+    // Portalled to `document.body`, so the panel's z-index is compared against
+    // the header rather than against whatever opened it — which means it is not
+    // in the render container. See `Overlay`.
+    const shell = document.body.querySelector('[aria-hidden="true"]')
+    expect(shell).not.toBeNull()
     // `invisible` is what removes the closed drawer from the tab order. It has
     // to be a class rather than an imperatively-set `inert`, or the drawer's
     // links are focusable in the server-rendered HTML before hydration.
@@ -241,10 +244,11 @@ describe('MobileNav', () => {
   })
 
   it('becomes visible when opened', async () => {
-    const { container } = render(<MobileNav />)
+    render(<MobileNav />)
     act(() => useUiStore.getState().openMobileNav())
-    await screen.findByRole('dialog')
-    expect(container.firstElementChild?.className).not.toContain('invisible')
+    const dialog = await screen.findByRole('dialog')
+    // The shell is the portalled wrapper the dialog sits inside.
+    expect(dialog.closest('.fixed')?.className).not.toContain('invisible')
   })
 
   it('opens, moves focus inside the panel, and closes on Escape', async () => {

@@ -39,3 +39,10 @@ export const getPassportByProduct: DataAdapter['getPassportByProduct'] = (...arg
   data.getPassportByProduct(...args)
 export const getSeller: DataAdapter['getSeller'] = (...args) => data.getSeller(...args)
 export const resolveCart: DataAdapter['resolveCart'] = (...args) => data.resolveCart(...args)
+export const getAccount: DataAdapter['getAccount'] = () => data.getAccount()
+export const listOrders: DataAdapter['listOrders'] = () => data.listOrders()
+export const listResaleShots: DataAdapter['listResaleShots'] = () => data.listResaleShots()
+export const getOrderLine: DataAdapter['getOrderLine'] = (...args) => data.getOrderLine(...args)
+export const assessResale: DataAdapter['assessResale'] = (...args) => data.assessResale(...args)
+export const createResaleRequest: DataAdapter['createResaleRequest'] = (...args) =>
+  data.createResaleRequest(...args)

@@ -1,4 +1,13 @@
 import type {
+  Account,
+  Gender,
+  ListingType,
+  Order,
+  OrderLine,
+  OrderLineId,
+  ResaleAssessment,
+  ResaleRequest,
+  ResaleShot,
   Cart,
   Page,
   Passport,
@@ -40,7 +49,25 @@ export type ProductSort =
  * the `Inr` suffix that the rest of the contract uses for paise.
  */
 export type ProductFilters = {
+  /** A single category, from the `/shop/[category]` route. Wins over `categories`. */
   category?: ProductCategory
+  /** Several types, from the filter panel. Ignored when `category` is set. */
+  categories?: readonly ProductCategory[]
+  /**
+   * `new` for the New listing, `pre_loved` for the marketplace. The two halves
+   * of the catalogue are browsed separately: they answer different questions and
+   * carry different filters, and a shopper looking at new stock is not choosing
+   * between it and something second-hand.
+   */
+  listingType?: ListingType
+  /** Who the garment is cut for. `unisex` pieces answer to every value. */
+  genders?: readonly Gender[]
+  /**
+   * Dominant fibre, lower-cased — `cotton`, `linen`. Matched against the
+   * composition label rather than a separate field, so it cannot drift from what
+   * the garment says it is made of. See `primaryMaterial`.
+   */
+  materials?: readonly string[]
   brands?: readonly string[]
   conditions?: readonly Condition[]
   /** `Size.normalized` values, not printed labels. */
@@ -70,6 +97,9 @@ export type ProductFacets = {
   categories: readonly { value: ProductCategory; count: number }[]
   conditions: readonly { value: Condition; count: number }[]
   sizes: readonly { value: string; label: string; count: number }[]
+  genders: readonly { value: Gender; count: number }[]
+  /** Dominant fibre. `value` is the handle, `label` is what a shopper reads. */
+  materials: readonly { value: string; label: string; count: number }[]
   priceRangeInr: { min: number; max: number }
 }
 
@@ -77,8 +107,16 @@ export interface DataAdapter {
   // ---- catalogue
   listProducts(input?: ListProductsInput): Promise<Page<ProductSummary>>
   getProduct(idOrSlug: ProductId | string): Promise<Product | null>
-  /** Facet counts for the filter panel. */
-  getProductFacets(): Promise<ProductFacets>
+  /**
+   * Facet counts for the filter panel.
+   *
+   * **Scoped to a listing type**, because the two halves of the catalogue are
+   * browsed separately. Facets computed across everything would offer the New
+   * listing a condition grade nothing in it has, and would put counts on sizes
+   * that only exist second-hand. Omitting the argument counts the whole
+   * catalogue, which is what an internal or admin view wants.
+   */
+  getProductFacets(listingType?: ListingType): Promise<ProductFacets>
   /**
    * Editorial selection for the home page. Curated, not algorithmic — Phase 1
    * excludes recommendations, and a home page that pretends to personalise
@@ -142,6 +180,61 @@ export interface DataAdapter {
    * in a way nobody notices until an invoice is read.
    */
   resolveCart(items: readonly CartItemRef[]): Promise<Cart>
+
+  // ---- account, purchases and resale
+  /**
+   * The signed-in shopper.
+   *
+   * No auth exists in this repo, so the mock returns a fixture account. When
+   * real auth lands this takes a session rather than nothing, and no caller
+   * changes — see `docs/integration.md`.
+   */
+  getAccount(): Promise<Account>
+
+  /** Past purchases, newest first. The only legitimate way into a listing. */
+  listOrders(): Promise<readonly Order[]>
+
+  /**
+   * The frames a seller is asked for, and why each one is wanted.
+   *
+   * Behind the adapter rather than imported as a constant because it is a brief
+   * the studio owns, not a UI detail: which shots make a garment gradeable is an
+   * operations decision, and it will change when intake does.
+   */
+  listResaleShots(): Promise<readonly ResaleShot[]>
+
+  getOrderLine(orderLineId: OrderLineId): Promise<{ order: Order; line: OrderLine } | null>
+
+  /**
+   * Read a set of uploaded frames and return provenance, condition and a price.
+   *
+   * ⚠️ **There is no model behind this.** The mock derives a deterministic
+   * result from the order line — age, material, declared flaws, customisations
+   * — so the flow, the arithmetic and the copy can all be exercised. It is a
+   * demonstration of the mechanism and the UI says so on the page.
+   *
+   * When a real assessment service exists it replaces this method and nothing
+   * above it moves. The important part of the contract is the *shape*: a
+   * verification verdict, per-flaw deductions that can each be shown next to
+   * the thing they deduct for, and a list of price factors rather than one
+   * opaque number.
+   */
+  assessResale(input: {
+    orderLineId: OrderLineId
+    /** Which prescribed shots the seller supplied. */
+    shotIds: readonly string[]
+    /** Flaws the seller declared before we looked. */
+    declaredFlaws?: readonly string[]
+    /** True when the seller says they had work done to it. */
+    hasCustomisations?: boolean
+  }): Promise<ResaleAssessment>
+
+  /** Submit a listing request. The studio still has to receive the garment. */
+  createResaleRequest(input: {
+    orderLineId: OrderLineId
+    askingInr: number
+    assessment: ResaleAssessment
+  }): Promise<ResaleRequest>
 }
 
 /**

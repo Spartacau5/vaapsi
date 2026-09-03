@@ -34,8 +34,30 @@ the index is what turns into the `1-`, `2-`, `3-` prefix.
 
 ## Format
 
-JPEG or WebP, 4:5, at least 1200px on the short edge. `next/image` handles the
-responsive variants, so one high-quality original per frame is enough.
+JPEG or WebP, 4:5, **2000px on the short edge**, saved at quality 90 or above
+(roughly 250 KB per megapixel for a JPEG). `next/image` handles the responsive
+variants, so one high-quality original per frame is enough — but it will only
+ever downscale, never invent detail, so the original sets the ceiling for every
+surface.
+
+2000px is not a round number picked for comfort. The PDP hero frame is declared
+`50vw` on desktop, so on a wide retina display the browser asks for ~1600–1900
+device pixels of width. Above the original's width the optimizer stops and hands
+back the original, which the browser then stretches to fill the slot — that is
+what soft product photography on a Mac or a modern phone actually is. The hero
+shots in `public/hero/` are 2048px for the same reason.
+
+The quality floor matters as much as the pixel count. Every frame here gets one
+more lossy pass from the optimizer on the way out (see `PHOTO_QUALITY` in
+`src/lib/image.ts`), so an original that is already over-compressed loses its
+weave twice. Denim is the worst subject for that: twill, topstitching and wash
+streaks are the first thing both passes discard.
+
+**The current set does not meet this.** Every garment except
+`tapti-straight-leg-jean` is 638–1107px wide, and several sit at 65–100 KB per
+megapixel — a third of the density of the hero shots. They need re-exporting
+from the originals, not upscaling; nothing downstream can recover detail that is
+not in the file.
 
 ## Rights
 

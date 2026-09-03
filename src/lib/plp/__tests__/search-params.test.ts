@@ -56,9 +56,15 @@ describe('parsePlpParams', () => {
     expect(parsePlpParams({ max: '-40' }).maxRupees).toBeNull()
     expect(parsePlpParams({ page: '0' }).page).toBe(1)
     expect(parsePlpParams({ brand: ',,,' }).brands).toEqual([])
-    // Only the literal '1' turns the passport filter on.
-    expect(parsePlpParams({ passport: 'yes' }).hasPassport).toBe(false)
-    expect(parsePlpParams({ passport: '1' }).hasPassport).toBe(true)
+  })
+
+  it('ignores the retired passport param that old links still carry', () => {
+    // The filter is gone — every garment has a record, so filtering on one
+    // sorted the catalogue by how complete our data was. A bookmarked
+    // `?passport=1` has to keep working rather than 404 or throw.
+    const state = parsePlpParams({ passport: '1' })
+    expect(state).toEqual(emptyPlpState())
+    expect(Object.keys(state)).not.toContain('hasPassport')
   })
 })
 
@@ -74,17 +80,32 @@ describe('serialisePlpState', () => {
     expect(serialisePlpState(state)).not.toContain('sizes=')
   })
 
+  it('normalises list order, so one selection is always one URL', () => {
+    // Two shoppers who tick the same boxes in a different order must get the
+    // same link — otherwise the same result set has several URLs, which costs
+    // cache hits and makes "has this been filtered?" unanswerable from the URL.
+    const a = serialisePlpState({ ...emptyPlpState(), types: ['tops', 'bottoms'] })
+    const b = serialisePlpState({ ...emptyPlpState(), types: ['bottoms', 'tops'] })
+    expect(a).toBe(b)
+
+    const women = serialisePlpState({ ...emptyPlpState(), genders: ['men', 'women'] })
+    // Ladder order, not selection order.
+    expect(women).toContain('for=women%2Cmen')
+  })
+
   it('round-trips every field', () => {
     const state: PlpState = {
       brands: ['COS', 'Zara'],
       conditions: ['pristine', 'good'],
+      genders: ['women', 'men'],
+      materials: ['cotton'],
+      types: ['bottoms', 'tops'],
       sizes: ['m', 'w30'],
       minRupees: 1000,
       maxRupees: 20000,
-      hasPassport: true,
       sort: 'price_desc',
       page: 3,
-      sizeSystem: 'UK',
+      sizeSystem: 'IN',
       query: 'linen',
     }
     const round = parsePlpParams(
@@ -123,9 +144,10 @@ describe('toProductFilters', () => {
     expect(toProductFilters(emptyPlpState(), 'knitwear').category).toBe('knitwear')
   })
 
-  it('only sets hasPassport when the toggle is on', () => {
+  it('never asks the adapter to filter on the passport', () => {
+    // The capability still exists in the data layer; the storefront does not
+    // use it, and a filter nobody can set must not leak into a query.
     expect(toProductFilters(emptyPlpState()).hasPassport).toBeUndefined()
-    expect(toProductFilters({ ...emptyPlpState(), hasPassport: true }).hasPassport).toBe(true)
   })
 })
 
@@ -153,7 +175,6 @@ describe('clearFilter', () => {
     sizes: ['m'],
     minRupees: 500,
     maxRupees: 900,
-    hasPassport: true,
     page: 4,
   }
 
@@ -161,7 +182,6 @@ describe('clearFilter', () => {
     const next = clearFilter(full, 'sizes')
     expect(next.sizes).toEqual([])
     expect(next.brands).toEqual(['COS'])
-    expect(next.hasPassport).toBe(true)
   })
 
   it('clears both price bounds together', () => {
@@ -171,7 +191,7 @@ describe('clearFilter', () => {
   })
 
   it('always returns to page 1, so nobody lands past the end of a shorter result', () => {
-    for (const key of ['brands', 'conditions', 'sizes', 'price', 'passport', 'query'] as const) {
+    for (const key of ['brands', 'conditions', 'sizes', 'price', 'query'] as const) {
       expect(clearFilter(full, key).page).toBe(1)
     }
   })

@@ -4,6 +4,7 @@ import { Chip, ChipRow } from '@/components/primitives/chip'
 import { Col, Grid, Row, Stack } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { conditionCopy, productPage } from '@/content/product'
+import { PHOTO_QUALITY } from '@/lib/image'
 import type { Product } from '@/lib/types'
 
 /**
@@ -103,6 +104,7 @@ export function ConditionBlock({
                           alt={image.alt}
                           fill
                           sizes="80px"
+                          quality={PHOTO_QUALITY}
                           className="object-cover"
                         />
                       </div>

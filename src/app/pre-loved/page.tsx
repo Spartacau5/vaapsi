@@ -4,9 +4,9 @@ import { Reveal } from '@/components/patterns/reveal'
 import { Col, Container, Grid, Rule, Stack } from '@/components/primitives/layout'
 import { Section } from '@/components/primitives/section'
 import { Eyebrow, Type } from '@/components/primitives/type'
-import { ProductGrid } from '@/components/patterns/shop/product-grid'
+import { ShopView } from '@/components/patterns/shop/shop-view'
 import { preLoved } from '@/content/pre-loved'
-import { listProducts } from '@/lib/data'
+import type { RawSearchParams } from '@/lib/plp/search-params'
 
 export const metadata: Metadata = {
   title: preLoved.eyebrow,
@@ -31,14 +31,7 @@ export const metadata: Metadata = {
  * When auth lands, `preLoved.cta` is the only thing that changes — swap the
  * not-built block for the real entry point and delete the phase note.
  */
-export default async function PreLovedPage() {
-  // Pre-loved stock only. The adapter contract has no listing-type filter —
-  // adding one is the backend's API to change, not ours — so this filters the
-  // page it gets. Sold pieces stay in, because on a one-of-one marketplace a
-  // marked-sold garment is proof that things here move.
-  const page = await listProducts({ limit: 12 })
-  const preLovedStock = page.items.filter((item) => item.listingType === 'pre_loved')
-
+export default function PreLovedPage({ searchParams }: { searchParams: RawSearchParams }) {
   return (
     <>
       <Container>
@@ -107,33 +100,28 @@ export default async function PreLovedPage() {
       </Reveal>
 
       {/*
-        The stock. Condition grades are shown here and not on the general shop
-        grid — see `preLoved.grid`.
+        The stock, with its own filters.
+
+        **This is where condition lives.** It is the first question about a
+        second-hand garment and has no meaning on unworn stock, so the grade
+        filter belongs here and nowhere else — the New listing's panel does not
+        offer it, and the facets behind both are scoped by listing type so
+        neither can.
+
+        Rendered through the same `ShopView` as /shop rather than a bespoke grid:
+        the two listings differ in which half of the catalogue they show and
+        which filters that half deserves, and nothing else. A second grid
+        implementation would drift.
       */}
       <Reveal>
-        <Section
-          divider
-          eyebrow={preLoved.grid.eyebrow}
-          heading={preLoved.grid.title}
-          headingSize="3xl"
-          lede={preLoved.grid.lede}
-          action={
-            <Link
-              href={preLoved.grid.ctaHref}
-              className="ease inline-flex border-b border-line-strong pb-1 text-sm text-ink transition-colors duration-base hover:border-ink"
-            >
-              {preLoved.grid.cta}
-            </Link>
-          }
-        >
-          {preLovedStock.length === 0 ? (
-            <Type size="sm" tone="muted">
-              {preLoved.grid.empty}
-            </Type>
-          ) : (
-            <ProductGrid products={preLovedStock} />
-          )}
-        </Section>
+        <div className="border-t border-line">
+          <ShopView
+            searchParams={searchParams}
+            listingType="pre_loved"
+            eyebrow={preLoved.grid.eyebrow}
+            title={preLoved.grid.title}
+          />
+        </div>
       </Reveal>
 
       {/*

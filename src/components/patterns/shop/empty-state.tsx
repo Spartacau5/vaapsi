@@ -23,14 +23,7 @@ import type { FilterKey } from '@/lib/plp/search-params'
  */
 
 /** Narrowest first. Order is the heuristic. */
-const CULPRIT_ORDER: readonly FilterKey[] = [
-  'query',
-  'sizes',
-  'brands',
-  'price',
-  'conditions',
-  'passport',
-]
+const CULPRIT_ORDER: readonly FilterKey[] = ['query', 'sizes', 'brands', 'price', 'conditions']
 
 export function EmptyState() {
   const { state, setState } = usePlpUrl()

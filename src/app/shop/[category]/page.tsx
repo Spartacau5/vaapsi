@@ -6,19 +6,24 @@ import { ShopView } from '@/components/patterns/shop/shop-view'
 import { Container } from '@/components/primitives/layout'
 import { getProductFacets } from '@/lib/data'
 import type { RawSearchParams } from '@/lib/plp/search-params'
-import type { ProductCategory } from '@/lib/types'
+import { GENDERS } from '@/lib/types'
+import type { Gender, ProductCategory } from '@/lib/types'
 
 type Params = { category: string }
 
 /**
- * Category listing.
+ * The listing under `/shop/[segment]`, where a segment is either a **gender** or
+ * a **garment type**.
  *
- * The segment is validated against the live facets rather than a hardcoded list,
- * so a category that has no stock 404s instead of rendering an empty grid that
- * looks like a bug. `/shop/women` and `/shop/men` are gender segments rather
- * than categories and are not in the contract yet — they currently 404, which is
- * honest, and they are the reason `Product` needs a gender field (flagged in
- * lib/format/size).
+ * `/shop/women` and `/shop/men` used to 404 despite sitting in the primary nav,
+ * because gender was a segment the contract had no field for. `Product.gender`
+ * now exists, so this route resolves both kinds of segment: gender first, then
+ * category. A `unisex` garment appears under both women and men, which is what
+ * unisex means and the reason it is not offered as a third department.
+ *
+ * A type segment is still validated against the live facets rather than a
+ * hardcoded list, so a type with no stock 404s instead of rendering an empty
+ * grid that looks like a bug.
  */
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   return { title: toTitle(params.category) }
@@ -31,13 +36,18 @@ export default async function CategoryPage({
   params: Params
   searchParams: RawSearchParams
 }) {
-  const facets = await getProductFacets()
-  const known = facets.categories.some((facet) => facet.value === params.category)
-  if (!known) notFound()
+  const segment = params.category
+  const gender = (GENDERS as readonly string[]).includes(segment) ? (segment as Gender) : null
+
+  // New stock only — `/shop` and everything under it is the New listing.
+  const facets = await getProductFacets('new')
+  const isType = facets.categories.some((facet) => facet.value === segment)
+
+  if (gender === null && !isType) notFound()
 
   return (
     <Suspense
-      key={`${params.category}:${JSON.stringify(searchParams)}`}
+      key={`${segment}:${JSON.stringify(searchParams)}`}
       fallback={
         <Container>
           <div className="pt-24">
@@ -47,10 +57,16 @@ export default async function CategoryPage({
       }
     >
       <ShopView
-        searchParams={searchParams}
-        category={params.category as ProductCategory}
+        searchParams={
+          // A gender segment seeds the gender filter rather than being a
+          // separate concept: /shop/women and /shop?for=women are the same
+          // listing, so they resolve through one code path and the panel shows
+          // the segment as an applied filter a shopper can widen.
+          gender === null ? searchParams : { ...searchParams, for: gender }
+        }
+        category={gender === null ? (segment as ProductCategory) : undefined}
         eyebrow="Shop"
-        title={toTitle(params.category)}
+        title={toTitle(segment)}
       />
     </Suspense>
   )

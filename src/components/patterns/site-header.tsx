@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Heart, Menu, Search, ShoppingBag } from 'lucide-react'
+import { Menu, Search, ShoppingBag } from 'lucide-react'
 import { Logo } from './logo'
+import { ProfileMenu } from './account/profile-menu'
 import { MobileNav } from './mobile-nav'
 import { NavLink } from './nav-link'
 import { CartBadge } from './cart/cart-badge'
@@ -46,7 +47,7 @@ export function SiteHeader() {
       <header
         data-scrolled={scrolled}
         className={cn(
-          'ease sticky top-0 z-40 border-b transition-colors duration-base',
+          'ease sticky top-0 z-header border-b transition-colors duration-base',
           scrolled ? 'border-line bg-background' : 'border-transparent bg-transparent',
         )}
       >
@@ -73,9 +74,15 @@ export function SiteHeader() {
               <Search className="size-5" strokeWidth={1.5} aria-hidden />
             </HeaderAction>
 
-            <HeaderAction href="/wishlist" label={navLabels.wishlist}>
-              <Heart className="size-5" strokeWidth={1.5} aria-hidden />
-            </HeaderAction>
+            {/*
+              The profile, where the wishlist heart used to be. The saved list
+              is not gone — it is the second item in the menu, which is a
+              demotion it earns: a saved list is one of the things an account is
+              for, not the only one. Everything else an account holds
+              (purchases, addresses, cards, and the resale flow that runs off a
+              purchase) previously had nowhere in the header at all.
+            */}
+            <ProfileMenu />
 
             {/*
               A button, not a link. It opens the drawer rather than navigating —
