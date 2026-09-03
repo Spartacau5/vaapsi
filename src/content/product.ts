@@ -137,6 +137,19 @@ export const productPage = {
    * page is built on saying exactly how much we know.
    */
   goesWith: 'Goes with this',
+
+  /**
+   * The downward cross-sell. Phrased as an offer of a cheaper route, not as a
+   * warning that the new one is expensive — and never "Save money", which makes
+   * the brand sound like it is apologising for its own prices.
+   */
+  preLoved: {
+    eyebrow: 'Also available pre-loved',
+    lede: 'The same kind of piece, worn before, graded by hand and priced for it.',
+    saving: (amount: string) => `${amount} less`,
+    browseAll: 'Browse everything pre-loved',
+  },
+
   noPassport:
     'This garment has no passport yet. What we know about it is what the seller told us and what we could see.',
   originalRetail: 'Originally',

@@ -13,6 +13,7 @@ import { Customiser } from '@/components/patterns/product/customiser'
 import { SizeAndMeasurements } from '@/components/patterns/product/measurements'
 import { SizeGuide } from '@/components/patterns/product/size-guide'
 import { CompleteTheLook } from '@/components/patterns/product/complete-the-look'
+import { PreLovedAlternatives } from '@/components/patterns/product/preloved-alternatives'
 import { ConditionBlock } from '@/components/patterns/product/condition-block'
 import { Gallery } from '@/components/patterns/product/gallery'
 import { PincodeCheck } from '@/components/patterns/product/pincode-check'
@@ -30,6 +31,7 @@ import {
   getProduct,
   getSeller,
   listProducts,
+  listPreLovedAlternatives,
   listRelatedProducts,
 } from '@/lib/data'
 import { formatMonthYear } from '@/lib/format/date'
@@ -87,10 +89,13 @@ export default async function ProductPage({ params }: { params: Params }) {
   const product = await getProduct(params.slug)
   if (product === null) notFound()
 
-  const [passport, seller, related] = await Promise.all([
+  const [passport, seller, related, preLovedAlternatives] = await Promise.all([
     getPassportByProduct(product.id),
     getSeller(product.sellerId),
     listRelatedProducts(product.id, 8),
+    // The cheaper, second-hand route. Same category, strictly cheaper — the
+    // adapter enforces both.
+    listPreLovedAlternatives(product.id, 4),
   ])
 
   const images = orderGalleryImages(product.images)
@@ -305,10 +310,23 @@ export default async function ProductPage({ params }: { params: Params }) {
                 <ProductDrawers tabs={tabs} />
               </div>
 
-              {/* Goes with this — under the drawer triggers, as asked. */}
               <div className="border-t border-line pt-5">
                 <CompleteTheLook products={related} heading={productPage.goesWith} />
               </div>
+
+              {/*
+                The cheaper route, directly under "Goes with this". Both are
+                ways out of this page; this one is the one that also introduces
+                the resale side to a shopper who arrived through the front door.
+              */}
+              {preLovedAlternatives.length > 0 && (
+                <div className="border-t border-line pt-5">
+                  <PreLovedAlternatives
+                    products={preLovedAlternatives}
+                    comparedToInr={product.priceInr}
+                  />
+                </div>
+              )}
 
               <div className="border-t border-line pt-5">
                 <PincodeCheck />

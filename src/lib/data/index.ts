@@ -32,6 +32,8 @@ export const listFeaturedProducts: DataAdapter['listFeaturedProducts'] = (...arg
   data.listFeaturedProducts(...args)
 export const listRelatedProducts: DataAdapter['listRelatedProducts'] = (...args) =>
   data.listRelatedProducts(...args)
+export const listPreLovedAlternatives: DataAdapter['listPreLovedAlternatives'] = (...args) =>
+  data.listPreLovedAlternatives(...args)
 export const getPassport: DataAdapter['getPassport'] = (...args) => data.getPassport(...args)
 export const getPassportByProduct: DataAdapter['getPassportByProduct'] = (...args) =>
   data.getPassportByProduct(...args)

@@ -102,6 +102,22 @@ export interface DataAdapter {
    */
   listRelatedProducts(productId: ProductId, limit?: number): Promise<readonly ProductSummary[]>
 
+  /**
+   * The same kind of garment, second-hand and cheaper.
+   *
+   * A cross-sell that runs the opposite way to a normal one: it moves a shopper
+   * *down* in price, from new stock to a one-of-one piece someone already wore.
+   * That is the business — a garment kept in use is the point — and it is also
+   * the honest thing to surface next to a new jean when a used one at half the
+   * price is sitting in the same catalogue.
+   *
+   * Rules, so this cannot become a generic recommender: same category, pre-loved
+   * only, available only, and **strictly cheaper than the garment being viewed**.
+   * A pre-loved piece that costs more is not an alternative, it is an upsell
+   * wearing the word "alternative".
+   */
+  listPreLovedAlternatives(productId: ProductId, limit?: number): Promise<readonly ProductSummary[]>
+
   // ---- passport
   getPassport(id: PassportId): Promise<Passport | null>
   getPassportByProduct(productId: ProductId): Promise<Passport | null>
