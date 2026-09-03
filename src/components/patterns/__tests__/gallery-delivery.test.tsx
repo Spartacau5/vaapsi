@@ -1,9 +1,11 @@
 import { axe, toHaveNoViolations } from 'jest-axe'
+import { useState } from 'react'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DeliveryOptions } from '../checkout/delivery-options'
 import { Gallery } from '../product/gallery'
 import { checkout } from '@/content/checkout'
+import type { DeliveryOptionId } from '@/content/checkout'
 import { productPage } from '@/content/product'
 import type { ProductImage } from '@/lib/types'
 import { useWishlistStore } from '@/lib/store/wishlist'
@@ -107,71 +109,117 @@ describe('Gallery', () => {
 })
 
 /**
- * The slower-delivery discount.
+ * The delivery choice.
  *
- * The saving is a commercial commitment, so the arithmetic is asserted rather
- * than eyeballed — and it must round in the shopper's favour, never against.
+ * The arithmetic is a commercial commitment, so it is asserted rather than
+ * eyeballed — and it must round in the shopper's favour, never against. The
+ * grouping is asserted too, because the whole point of the layout is that the
+ * two discount tiers read as one choice rather than as two more options.
  */
 describe('DeliveryOptions', () => {
   const SUBTOTAL = 400_000 // ₹4,000
 
-  it('offers the discount as a question until it is taken', () => {
-    render(<DeliveryOptions subtotalInr={SUBTOTAL} />)
-    expect(screen.getByText(checkout.delivery.discountTag)).toBeInTheDocument()
-    expect(screen.queryByText(checkout.delivery.discountApplied)).toBeNull()
+  function setup(initial: DeliveryOptionId = 'standard') {
+    function Harness() {
+      const [selected, setSelected] = useState<DeliveryOptionId>(initial)
+      return (
+        <DeliveryOptions
+          subtotalInr={SUBTOTAL}
+          selected={selected}
+          onChange={(option) => setSelected(option.id)}
+        />
+      )
+    }
+    return render(<Harness />)
+  }
+
+  it('offers four options across two bands', () => {
+    setup()
+    expect(screen.getAllByRole('radio')).toHaveLength(4)
+    expect(screen.getByRole('group', { name: checkout.delivery.soonHeading })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: checkout.delivery.waitHeading })).toBeInTheDocument()
   })
 
-  it('puts the discount only on the slowest option', () => {
-    render(<DeliveryOptions subtotalInr={SUBTOTAL} />)
-    // One offer on the page, not one per option.
-    expect(screen.getAllByText(checkout.delivery.discountTag)).toHaveLength(1)
-    expect(screen.getByText('Unhurried')).toBeInTheDocument()
+  it('keeps both discount tiers inside the wait band, and neither outside it', () => {
+    setup()
+    const wait = screen.getByRole('group', { name: checkout.delivery.waitHeading })
+    // The grouping is the design: one dial with two positions.
+    expect(within(wait).getAllByRole('radio')).toHaveLength(2)
+    expect(within(wait).getByRole('radio', { name: /10% off/ })).toBeInTheDocument()
+    expect(within(wait).getByRole('radio', { name: /15% off/ })).toBeInTheDocument()
+
+    const soon = screen.getByRole('group', { name: checkout.delivery.soonHeading })
+    expect(within(soon).queryByRole('radio', { name: /10% off/ })).toBeNull()
   })
 
-  it('shows the saving in rupees, not only as a percentage', () => {
-    render(<DeliveryOptions subtotalInr={SUBTOTAL} />)
-    // 15% of ₹4,000.
-    expect(screen.getByText('− ₹600')).toBeInTheDocument()
+  it('shows Express as a difference, not as its own total', () => {
+    setup()
+    // "+₹250" is the number the decision turns on. "₹250" would make a shopper
+    // subtract two totals themselves.
+    expect(screen.getByText(checkout.delivery.extra('₹250'))).toBeInTheDocument()
   })
 
-  it('confirms rather than keeps asking once chosen', async () => {
-    const user = userEvent.setup()
-    render(<DeliveryOptions subtotalInr={SUBTOTAL} />)
-    await user.click(screen.getByRole('radio', { name: /Unhurried/ }))
-
-    expect(screen.getByText(checkout.delivery.discountApplied)).toBeInTheDocument()
-    expect(screen.queryByText(checkout.delivery.discountTag)).toBeNull()
+  it('shows Standard as included rather than as zero', () => {
+    setup()
+    expect(screen.getByText(checkout.summary.deliveryFree)).toBeInTheDocument()
+    expect(screen.queryByText('₹0')).toBeNull()
   })
 
-  it('starts on standard, so the discount is opted into and never assumed', () => {
-    render(<DeliveryOptions subtotalInr={SUBTOTAL} />)
+  it('states each saving in rupees, not only as a percentage', () => {
+    setup()
+    // 10% and 15% of ₹4,000.
+    expect(screen.getByText(checkout.delivery.saves('₹400'))).toBeInTheDocument()
+    expect(screen.getByText(checkout.delivery.saves('₹600'))).toBeInTheDocument()
+  })
+
+  it('starts on standard, so a discount is always opted into', () => {
+    setup()
     expect(screen.getByRole('radio', { name: /Standard/ })).toBeChecked()
   })
 
-  it('reports the chosen option upward', async () => {
+  it('reports the chosen option upward, with its fee and discount', async () => {
     const user = userEvent.setup()
     const onChange = jest.fn()
-    render(<DeliveryOptions subtotalInr={SUBTOTAL} onChange={onChange} />)
-    await user.click(screen.getByRole('radio', { name: /Unhurried/ }))
-    expect(onChange).toHaveBeenLastCalledWith({ id: 'consolidated', discountPercent: 15 })
+    render(<DeliveryOptions subtotalInr={SUBTOTAL} selected="standard" onChange={onChange} />)
+    await user.click(screen.getByRole('radio', { name: /15% off/ }))
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'save15', discountPercent: 15, feeInr: 0 }),
+    )
   })
 
-  it('floors the saving, so rounding never favours us over the shopper', () => {
-    // 15% of 999 paise is 149.85. Floored to 149 paise — ₹1.49. Flooring the
-    // *saving* is the conservative direction for us and the honest one for the
-    // shopper: they are never shown a discount larger than they will receive.
-    render(<DeliveryOptions subtotalInr={999} />)
-    expect(screen.getByText('− ₹1.49')).toBeInTheDocument()
+  it('marks the chosen discount tier as applied', async () => {
+    const user = userEvent.setup()
+    setup()
+    expect(screen.queryByText(checkout.delivery.applied)).toBeNull()
+    await user.click(screen.getByRole('radio', { name: /10% off/ }))
+    expect(screen.getByText(checkout.delivery.applied)).toBeInTheDocument()
   })
 
-  it('is a real radio group with a legend', () => {
-    render(<DeliveryOptions subtotalInr={SUBTOTAL} />)
-    const group = screen.getByRole('group', { name: checkout.delivery.heading })
-    expect(within(group).getAllByRole('radio')).toHaveLength(3)
+  it('names the wait in days on each discount tier', () => {
+    setup()
+    // The trade has to be legible at the moment of choosing, not in a footnote.
+    expect(screen.getByText(/about 30 days/)).toBeInTheDocument()
+    expect(screen.getByText(/about 40 days/)).toBeInTheDocument()
+  })
+
+  it('floors a saving, so rounding never favours us over the shopper', () => {
+    function Harness() {
+      const [selected, setSelected] = useState<DeliveryOptionId>('standard')
+      return (
+        <DeliveryOptions
+          subtotalInr={999}
+          selected={selected}
+          onChange={(option) => setSelected(option.id)}
+        />
+      )
+    }
+    render(<Harness />)
+    // 10% of 999 paise is 99.9 → 99 paise. Never quoted larger than it is.
+    expect(screen.getByText(checkout.delivery.saves('₹0.99'))).toBeInTheDocument()
   })
 
   it('has no accessibility violations', async () => {
-    const { container } = render(<DeliveryOptions subtotalInr={SUBTOTAL} />)
+    const { container } = setup()
     expect(await axe(container)).toHaveNoViolations()
   })
 })

@@ -1,40 +1,65 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
+import { ConfirmOrder } from './confirm-order'
 import { DeliveryOptions } from './delivery-options'
-import { Col, Container, Grid, Rule, Stack, Row } from '@/components/primitives/layout'
+import { MockPayment } from './mock-payment'
+import { useCart } from '../cart/use-cart'
+import { Col, Container, Grid, Row, Rule, Stack } from '@/components/primitives/layout'
 import { Eyebrow, Type } from '@/components/primitives/type'
 import { checkout } from '@/content/checkout'
+import type { DeliveryOption } from '@/content/checkout'
 import { formatInr } from '@/lib/format/currency'
 import { useCartStore } from '@/lib/store/cart'
 
 /**
- * The checkout details step.
+ * The checkout page.
  *
- * ## What is real here and what is not
+ * ## What is real and what is a mock
  *
- * The form is real markup — labels tied to inputs, sensible `autoComplete` and
- * `inputMode`, a working delivery choice that moves the order summary. **Nothing
- * is submitted anywhere**, and payment is a stated boundary rather than a fake
- * card form. That distinction is the whole reason this page can exist without
- * misleading anyone: a shopper can fill in details and see the 15% offer in
- * context, and no reviewer can mistake the page for a finished checkout.
+ * The form, the delivery choice and the totals are real. **Payment is a demo
+ * mock, labelled as one on screen** — see `MockPayment`, which documents the
+ * four safeguards that keep it impossible to mistake for a live checkout.
+ * Nothing on this page is sent anywhere; there is no network call in the flow
+ * except the one that resolves the bag.
  *
- * ## Why the summary is not a live cart resolve
+ * ## The summary shows the garments
  *
- * It totals from the persisted store's line count against a nominal figure
- * rather than calling `resolveCart`. Two reasons: this is a client component and
- * `resolveCart` is the adapter's job, and — more to the point — real totals need
- * the GST treatment that is still open (PRD #6). Showing an authoritative-looking
- * total that is missing tax is worse than showing an indicative one that says so.
+ * It used to show a subtotal and a count, which meant a shopper reached the last
+ * step of a purchase without ever seeing what they were buying. It now lists
+ * every line with its photograph, the chosen colour and size, and its price —
+ * resolved live through `useCart`, so a garment that sells while someone fills
+ * in their address is caught here rather than after payment.
+ *
+ * ## The arithmetic
+ *
+ * Subtotal comes from the resolved lines. A delivery fee adds; a delivery
+ * discount subtracts and is floored, so a saving is never quoted larger than it
+ * is. Tax is absent and the summary says so — the GST treatment on resale is
+ * unresolved (PRD #6), and an authoritative-looking total missing tax is worse
+ * than an indicative one that admits it.
  */
-export function CheckoutView({ subtotalInr }: { subtotalInr: number }) {
-  const [discountPercent, setDiscountPercent] = useState(0)
-  const itemCount = useCartStore((state) => state.items.length)
+export function CheckoutView() {
+  const { cart, isLoading } = useCart()
+  const clear = useCartStore((state) => state.clear)
 
-  const discount = Math.floor((subtotalInr * discountPercent) / 100)
-  const total = subtotalInr - discount
+  const [delivery, setDelivery] = useState<DeliveryOption>(checkout.delivery.options[0]!)
+  const [paymentReady, setPaymentReady] = useState(false)
+  const [placed, setPlaced] = useState<string | null>(null)
+
+  const lines = cart?.lines ?? []
+  const subtotalInr = lines
+    .filter((line) => line.status === 'active')
+    .reduce((sum, line) => sum + line.priceAtAddInr, 0)
+
+  const discount = Math.floor((subtotalInr * delivery.discountPercent) / 100)
+  const total = subtotalInr - discount + delivery.feeInr
+
+  if (placed !== null) return <Placed reference={placed} />
+
+  if (!isLoading && lines.length === 0) return <EmptyBag />
 
   return (
     <Container>
@@ -71,7 +96,6 @@ export function CheckoutView({ subtotalInr }: { subtotalInr: number }) {
                 <Field label={checkout.address.name} autoComplete="name" />
                 <Field label={checkout.address.line1} autoComplete="address-line1" />
                 <Field label={checkout.address.line2} autoComplete="address-line2" />
-                <Field label={checkout.address.landmark} />
                 <Row gap={3} wrap>
                   <div className="min-w-0 flex-1">
                     <Field label={checkout.address.city} autoComplete="address-level2" />
@@ -90,57 +114,106 @@ export function CheckoutView({ subtotalInr }: { subtotalInr: number }) {
               </Fieldset>
 
               {/*
-                The delivery choice, and with it the 15% offer. It sits after the
-                address on purpose: the windows below only mean something once a
-                shopper has said where the parcel is going.
+                Delivery after the address: the windows below only mean anything
+                once a shopper has said where the parcel is going.
               */}
-              <DeliveryOptions
-                subtotalInr={subtotalInr}
-                onChange={(option) => setDiscountPercent(option.discountPercent)}
-              />
-
-              {/* ---- The payment boundary. Not a fake card form. */}
-              <Stack gap={2} className="border-t border-line pt-6">
-                <Eyebrow as="h2">{checkout.steps.payment}</Eyebrow>
-                <Type as="p" size="lg" weight="emphasis">
-                  {checkout.payment.notBuiltTitle}
-                </Type>
-                <Type size="sm" tone="muted" measure="default">
-                  {checkout.payment.notBuiltBody}
-                </Type>
-                <Link
-                  href="/cart"
-                  className="ease mt-2 self-start bg-ink px-6 py-3 text-sm text-background transition-colors duration-fast hover:bg-ink-muted"
-                >
-                  {checkout.payment.notBuiltAction}
-                </Link>
+              <Stack gap={3}>
+                <Eyebrow as="h2">{checkout.delivery.heading}</Eyebrow>
+                <DeliveryOptions
+                  subtotalInr={subtotalInr}
+                  selected={delivery.id}
+                  onChange={setDelivery}
+                />
               </Stack>
+
+              <Stack gap={3} className="border-t border-line pt-6">
+                <Eyebrow as="h2">{checkout.payment.heading}</Eyebrow>
+                <MockPayment onValidityChange={setPaymentReady} />
+              </Stack>
+
+              <div className="border-t border-line pt-6">
+                <ConfirmOrder
+                  lines={lines.filter((line) => line.status === 'active')}
+                  totalInr={total}
+                  deliveryWindow={delivery.window}
+                  disabled={!paymentReady || lines.length === 0}
+                  onPlaced={() => {
+                    setPlaced(reference())
+                    clear()
+                  }}
+                />
+              </div>
             </Stack>
           </Col>
 
-          {/* ---- The summary */}
+          {/* ---- The summary, with the actual garments in it */}
           <Col mobile={4} tablet={8} desktop={5}>
-            <Stack gap={3} className="border border-line p-6">
-              <Eyebrow as="h2">{checkout.summary.heading}</Eyebrow>
+            <Stack gap={4} className="border border-line p-6 desktop:sticky desktop:top-6">
+              <Row gap={3} justify="between" align="baseline">
+                <Eyebrow as="h2">{checkout.summary.heading}</Eyebrow>
+                <Type as="span" size="xs" tone="subtle" numeric>
+                  {checkout.summary.itemsHeading(lines.length)}
+                </Type>
+              </Row>
               <Rule />
 
-              <SummaryRow
-                label={`${checkout.summary.subtotal} (${itemCount})`}
-                value={formatInr(subtotalInr)}
-              />
+              <Stack gap={4} as="ul">
+                {lines.map((line) => (
+                  <li key={line.id}>
+                    <Row gap={3} align="start" wrap={false}>
+                      <div className="relative h-20 w-16 shrink-0 overflow-hidden bg-surface">
+                        <Image
+                          src={line.product.primaryImage.url}
+                          alt={line.product.primaryImage.alt}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      </div>
 
-              {discount > 0 && (
+                      <Stack gap={0} className="min-w-0 flex-1">
+                        <Type as="span" size="sm" weight="emphasis" truncate>
+                          {line.product.title}
+                        </Type>
+                        {/* What is actually being charged for: the variant. */}
+                        <Type as="span" size="xs" tone="muted" truncate>
+                          {line.selection !== null
+                            ? `${line.selection.colorName} · ${line.selection.sizeLabel}`
+                            : `${line.product.color.name} · ${line.product.size.label}`}
+                        </Type>
+                        <Type as="span" size="xs" tone="subtle" truncate>
+                          {line.product.composition}
+                        </Type>
+                      </Stack>
+
+                      <Type as="span" size="sm" numeric className="shrink-0">
+                        {formatInr(line.priceAtAddInr)}
+                      </Type>
+                    </Row>
+                  </li>
+                ))}
+              </Stack>
+
+              <Rule />
+
+              <Stack gap={2}>
+                <SummaryRow label={checkout.summary.subtotal} value={formatInr(subtotalInr)} />
+
+                {discount > 0 && (
+                  <SummaryRow
+                    label={`${checkout.summary.discount} (${delivery.discountPercent}%)`}
+                    value={`− ${formatInr(discount)}`}
+                    accent
+                  />
+                )}
+
                 <SummaryRow
-                  label={checkout.summary.discount}
-                  value={`− ${formatInr(discount)}`}
-                  accent
+                  label={`${checkout.summary.deliveryLabel} · ${delivery.label}`}
+                  value={
+                    delivery.feeInr > 0 ? formatInr(delivery.feeInr) : checkout.summary.deliveryFree
+                  }
                 />
-              )}
-
-              <SummaryRow
-                label={checkout.summary.deliveryLabel}
-                value={checkout.summary.deliveryFree}
-              />
+              </Stack>
 
               <Rule />
               <SummaryRow label={checkout.summary.total} value={formatInr(total)} strong />
@@ -151,6 +224,59 @@ export function CheckoutView({ subtotalInr }: { subtotalInr: number }) {
             </Stack>
           </Col>
         </Grid>
+      </Stack>
+    </Container>
+  )
+}
+
+/** A demo order reference. Not an order number — there is no order. */
+function reference(): string {
+  return `VP-DEMO-${Math.floor(Math.random() * 9000 + 1000)}`
+}
+
+function Placed({ reference }: { reference: string }) {
+  return (
+    <Container>
+      <Stack gap={4} className="max-w-measure py-section">
+        <Eyebrow>{checkout.placed.eyebrow}</Eyebrow>
+        <Type as="h1" family="display" size="3xl" weight="heading">
+          {checkout.placed.title}
+        </Type>
+        <Type size="lg" tone="muted">
+          {checkout.placed.body}
+        </Type>
+        <Row gap={2} align="baseline">
+          <Type as="span" size="sm" tone="subtle">
+            {checkout.placed.reference}
+          </Type>
+          <Type as="span" size="sm" numeric weight="emphasis">
+            {reference}
+          </Type>
+        </Row>
+        <Link
+          href="/shop"
+          className="ease mt-4 self-start bg-ink px-6 py-3 text-sm text-background transition-colors duration-fast hover:bg-ink-muted"
+        >
+          {checkout.placed.continueAction}
+        </Link>
+      </Stack>
+    </Container>
+  )
+}
+
+function EmptyBag() {
+  return (
+    <Container>
+      <Stack gap={4} className="max-w-measure py-section">
+        <Type as="h1" family="display" size="2xl" weight="heading">
+          {checkout.summary.empty}
+        </Type>
+        <Link
+          href="/shop"
+          className="ease self-start bg-ink px-6 py-3 text-sm text-background transition-colors duration-fast hover:bg-ink-muted"
+        >
+          {checkout.summary.emptyAction}
+        </Link>
       </Stack>
     </Container>
   )
@@ -168,11 +294,9 @@ function Fieldset({ legend, children }: { legend: string; children: React.ReactN
 }
 
 /**
- * One field.
- *
- * A visible `<label>` wrapping its input rather than a placeholder standing in
- * for one — a placeholder disappears the moment someone types, which is exactly
- * when they most need to know what the box is for.
+ * One field. A visible `<label>` wrapping its input rather than a placeholder
+ * standing in for one — a placeholder disappears the moment someone types, which
+ * is exactly when they most need to know what the box is for.
  */
 function Field({
   label,

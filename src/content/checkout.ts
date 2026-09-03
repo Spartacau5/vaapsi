@@ -3,14 +3,14 @@
  *
  * ## What this route is, and what it deliberately still is not
  *
- * The details step is real: contact, address, and a delivery choice. Payment is
- * not, and the page says so at the boundary rather than rendering a card form
- * with a dead Pay button — the same reasoning that has always applied here. A
- * stubbed payment screen gets believed, and then the phase that builds it stops
- * being estimated seriously.
+ * The details step is real: contact, address, a delivery choice, and — as of the
+ * demo build — a **mock payment step that is labelled as a mock on every screen
+ * it appears on**. See the long note on `payment` below for exactly how it is
+ * kept impossible to mistake for a live checkout, and why that exception was
+ * made deliberately rather than by drift.
  *
- * So this collects nothing and submits nowhere. It exists because the delivery
- * choice below has to live somewhere a shopper actually meets it.
+ * Nothing here is submitted anywhere. There is no network call in the whole
+ * flow, no card is accepted except one test number, and no field is persisted.
  */
 export const checkout = {
   title: 'Checkout',
@@ -42,82 +42,201 @@ export const checkout = {
 
   /**
    * ============================================================================
-   * THE SLOWER-DELIVERY DISCOUNT
+   * DELIVERY
    * ============================================================================
    *
-   * Three delivery options, and the slowest one carries 15% off.
+   * Two groups, and the split is the whole design.
    *
-   * ## Why the discount sits on the slow option rather than a promo box
+   * **Get it soon** — Standard, and Express for a few rupees more. Express shows
+   * the *difference* rather than its own total price ("+₹250"), because that is
+   * the number the decision actually turns on. A shopper comparing two totals
+   * has to do the subtraction themselves.
    *
-   * Consolidated, unhurried shipping genuinely costs less and emits less: it
-   * lets parcels travel full rather than half-empty, and on ground rather than
-   * air. So the saving is real and it can be passed on. That makes this the one
-   * discount on the site that is not a margin giveaway — it is the shopper being
-   * paid for the flexibility they just gave us, which is also the only framing
-   * that fits a business built on keeping clothes in use.
+   * **Wait, and pay less** — two tiers of the same trade, banded together so
+   * they read as one choice with a dial rather than as two unrelated options
+   * competing with Standard. 10% for 30 days, 15% for 40.
    *
-   * ## Why it is phrased as a question
+   * ## Why the discount tiers are grouped
    *
-   * "Would you like 15% off?" invites a choice. "SAVE 15%" in a coloured flash
-   * is a nudge, and a nudge toward the slow option is exactly the kind of thing
-   * a shopper resents once the parcel is late. The tag names the trade in the
-   * same breath: cheaper, and it takes longer.
+   * Four flat radio rows make a shopper compare four things. Two groups of two
+   * make them answer one question first — do I want it soon, or cheap — and then
+   * pick within that. It is the same information arranged so the decision is
+   * smaller.
    *
-   * ⚠️ **NEEDS SIGN-OFF ON TWO NUMBERS.** The 15% and the 8–11 day window are
-   * both placeholders until the courier contract is settled (PRD open question
-   * #8). A discount is a commercial commitment, not a design detail — if the
-   * consolidation saving turns out to be under 15%, this is a loss on every
-   * order that takes it. Do not ship the number without finance agreeing it.
+   * ## What the copy does not do
+   *
+   * It does not call the slow option "unhurried" or dress the wait up as a
+   * lifestyle. The offer is plain: wait this long, pay this much less. A shopper
+   * choosing a 40-day window is making a real sacrifice and the interface should
+   * treat it as a transaction, not a virtue.
+   *
+   * ⚠️ **NEEDS SIGN-OFF, AND THE WINDOWS ARE THE RISK.** 30 and 40 days are very
+   * long for apparel — long enough that cancellations and "where is my order"
+   * contacts become the dominant cost, which can exceed the margin the discount
+   * was meant to buy. The percentages and the windows both need finance and the
+   * courier contract behind them (PRD open question #8) before this is live.
    */
   delivery: {
-    heading: 'How it gets to you',
-    /** The tag on the slow option. Phrased as an offer, not a nudge. */
-    discountTag: 'Would you like 15% off?',
-    discountBody:
-      'Choosing the slower window lets us send your order with others going the same way, on the ground rather than by air. That costs us less, so it costs you less.',
-    /** Shown once the slow option is chosen. Confirms, without congratulating. */
-    discountApplied: '15% off applied',
-    discountPercent: 15,
+    heading: 'Delivery',
+    soonHeading: 'Get it soon',
+    waitHeading: 'Wait longer, pay less',
+    /** Sits under the discount group and states the trade in one line. */
+    waitNote: 'We hold your order and send it with others going the same way.',
+
+    /** Shown on the selected discount tier. */
+    applied: 'Applied',
+    /** The Express differential, e.g. "+₹250". */
+    extra: (amount: string) => `+${amount}`,
+    /** The saving on a discount tier, in rupees. */
+    saves: (amount: string) => `You save ${amount}`,
+
     isProvisional: true,
-    provisionalNote: 'Rates and windows are provisional until the courier is confirmed.',
+    provisionalNote: 'Windows and rates are provisional until the courier is confirmed.',
 
     options: [
       {
         id: 'standard',
+        group: 'soon',
         label: 'Standard',
         window: '4–6 working days',
-        note: 'Our usual service.',
+        /** Integer paise added to the order. */
+        feeInr: 0,
         discountPercent: 0,
       },
       {
         id: 'express',
+        group: 'soon',
         label: 'Express',
         window: '1–2 working days',
-        note: 'Air freight, dispatched the same day where possible.',
+        feeInr: 25_000,
         discountPercent: 0,
       },
       {
-        id: 'consolidated',
-        label: 'Unhurried',
-        window: '8–11 working days',
-        note: 'Ground freight, sent with other orders heading your way.',
+        id: 'save10',
+        group: 'wait',
+        label: '10% off',
+        window: 'Arrives in about 30 days',
+        feeInr: 0,
+        discountPercent: 10,
+      },
+      {
+        id: 'save15',
+        group: 'wait',
+        label: '15% off',
+        window: 'Arrives in about 40 days',
+        feeInr: 0,
         discountPercent: 15,
       },
     ],
   },
 
-  /** The payment boundary. See the note at the top of this file. */
+  /**
+   * ============================================================================
+   * PAYMENT — A DEMO MOCK, LABELLED AS ONE
+   * ============================================================================
+   *
+   * This repo held the line for a long time that `/checkout` must not contain a
+   * fake payment screen, on the grounds that a stub gets believed and the phase
+   * that builds it stops being estimated honestly. That reasoning still stands,
+   * and this is a deliberate, scoped exception for a demo — not a reversal.
+   *
+   * So the mock is built to be **impossible to mistake for the real thing**:
+   *
+   * - A persistent banner on the payment step saying it is a demo and that no
+   *   payment is taken. It is not dismissible and it is not small print.
+   * - **No real card capture.** The card field accepts only the one test number
+   *   below and rejects anything else, so a real card cannot be typed in even by
+   *   accident. Nothing is transmitted; there is no network call at all.
+   * - No card details are persisted, logged, or put in component state beyond
+   *   the render that shows them.
+   * - The route stays `noindex`.
+   *
+   * When real payment lands, this whole object and `MockPayment` are deleted
+   * together. Do not evolve this into the real integration — start again against
+   * the provider's SDK, because the shape below is designed to look right rather
+   * than to be right.
+   */
   payment: {
-    notBuiltTitle: 'Payment is the next phase',
-    notBuiltBody:
-      'Everything above is a working form and nothing on this page is sent anywhere. Card, UPI and net banking are wired up in the phase after this one, which is why there is deliberately no payment screen here pretending otherwise.',
-    notBuiltAction: 'Back to your bag',
+    heading: 'Payment',
+    /** The banner. Deliberately blunt. */
+    demoTitle: 'Demo only — no payment is taken',
+    demoBody:
+      'This is a prototype for review. Nothing on this page is sent anywhere, no real card is accepted, and no money moves.',
+
+    methodLabel: 'How you would like to pay',
+    methods: [
+      { id: 'card', label: 'Card', note: 'Visa, Mastercard, RuPay' },
+      { id: 'upi', label: 'UPI', note: 'GPay, PhonePe, Paytm' },
+      { id: 'netbanking', label: 'Net banking', note: 'All major banks' },
+    ],
+
+    card: {
+      number: 'Card number',
+      /** The only value the field accepts. A real card cannot be entered. */
+      testNumber: '4111 1111 1111 1111',
+      testHint: 'Use the demo card 4111 1111 1111 1111',
+      rejected: 'Only the demo card number is accepted here.',
+      expiry: 'Expiry',
+      expiryPlaceholder: 'MM/YY',
+      cvv: 'CVV',
+      name: 'Name on card',
+    },
+
+    upi: {
+      id: 'UPI ID',
+      placeholder: 'yourname@bank',
+      hint: 'Nothing is sent. Any value is fine in the demo.',
+    },
+
+    netbanking: {
+      label: 'Bank',
+      banks: ['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank', 'Kotak Mahindra'],
+    },
+  },
+
+  /**
+   * The confirmation gate.
+   *
+   * The last thing between a filled-in form and a placed order, and it exists
+   * because "Pay" as a bare button is the most consequential control on the site
+   * with the least ceremony around it. It restates what is being bought, what it
+   * costs, and when it arrives — the three things someone regrets getting wrong
+   * — and requires a second, explicit action.
+   *
+   * It is a dialog rather than an inline expander on purpose: it should
+   * interrupt. Everything else on this page can be skimmed; this cannot.
+   */
+  confirm: {
+    trigger: 'Review and pay',
+    title: 'Are you sure you want to buy?',
+    body: 'Check the order below. Once confirmed, a pre-loved garment is gone from the catalogue — there is only one of each.',
+    itemsLabel: 'What you are buying',
+    totalLabel: 'You will pay',
+    deliveryLabel: 'Arriving',
+    cancel: 'Not yet',
+    confirm: 'Yes, place the order',
+    /** Shown while the mock "processes". */
+    placing: 'Placing your order…',
+  },
+
+  /** The result. A demo order, and it says so. */
+  placed: {
+    eyebrow: 'Order placed',
+    title: 'Thank you',
+    body: 'This is a demo order, so nothing has actually been charged or dispatched.',
+    reference: 'Reference',
+    continueAction: 'Keep shopping',
   },
 
   summary: {
     heading: 'Your order',
+    /** The line items. A checkout that does not show what is being bought is
+        asking for a card number on trust. */
+    itemsHeading: (count: number) => `${count} ${count === 1 ? 'item' : 'items'}`,
+    empty: 'Your bag is empty.',
+    emptyAction: 'Back to the shop',
     subtotal: 'Subtotal',
-    discount: 'Slower delivery discount',
+    discount: 'Delivery discount',
     deliveryLabel: 'Delivery',
     deliveryFree: 'Included',
     total: 'Total',
@@ -127,3 +246,4 @@ export const checkout = {
 } as const
 
 export type DeliveryOptionId = (typeof checkout.delivery.options)[number]['id']
+export type DeliveryOption = (typeof checkout.delivery.options)[number]

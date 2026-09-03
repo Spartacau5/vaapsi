@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { CheckoutView } from '@/components/patterns/checkout/checkout-view'
 import { checkout } from '@/content/checkout'
-import { listProducts } from '@/lib/data'
 
 export const metadata: Metadata = {
   title: checkout.title,
@@ -9,31 +8,17 @@ export const metadata: Metadata = {
 }
 
 /**
- * Checkout — the details step.
+ * Checkout.
  *
- * ## What changed here, and what did not
+ * A client boundary and nothing else: the bag lives in the persisted client
+ * store, so the whole flow — lines, totals, delivery, the mock payment — runs in
+ * `CheckoutView`, which resolves the cart through `/api/cart` the same way the
+ * bag page does. There is no server data to fetch here, and the nominal subtotal
+ * this page used to compute is gone: it was a stand-in from before the summary
+ * showed real lines, and two different subtotals on one page is worse than none.
  *
- * This used to be a single honest placeholder saying checkout did not exist. It
- * is now a working details step — contact, address, and the delivery choice that
- * carries the slower-shipping discount — and **payment is still a stated
- * boundary rather than a fake card form.** That line has not moved: a stubbed
- * payment screen gets believed, and then the phase that builds it never gets
- * estimated seriously. See `content/checkout.ts`.
- *
- * Nothing on the page is submitted anywhere.
- *
- * ## The subtotal
- *
- * Passed in from the server as a nominal figure over available stock, because
- * the real one needs the GST treatment that is still open (PRD #6). The summary
- * says on its face that tax comes at payment, so the number is indicative and
- * admits it rather than looking authoritative and being wrong.
+ * Payment is a demo mock, labelled on screen. See `MockPayment`.
  */
-export default async function CheckoutPage() {
-  const page = await listProducts({ limit: 3 })
-  const subtotalInr = page.items
-    .filter((item) => item.availability === 'available')
-    .reduce((sum, item) => sum + item.priceInr, 0)
-
-  return <CheckoutView subtotalInr={subtotalInr} />
+export default function CheckoutPage() {
+  return <CheckoutView />
 }

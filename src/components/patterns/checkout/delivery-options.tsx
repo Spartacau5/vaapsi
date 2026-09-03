@@ -1,142 +1,181 @@
 'use client'
 
-import { useState } from 'react'
+import { Check } from 'lucide-react'
 import { Row, Stack } from '@/components/primitives/layout'
-import { Eyebrow, Type } from '@/components/primitives/type'
+import { Type } from '@/components/primitives/type'
 import { checkout } from '@/content/checkout'
-import type { DeliveryOptionId } from '@/content/checkout'
+import type { DeliveryOption, DeliveryOptionId } from '@/content/checkout'
 import { formatInr } from '@/lib/format/currency'
 import { cn } from '@/lib/utils'
 
 /**
- * The delivery choice, and the discount that hangs off it.
+ * The delivery choice, in two bands.
  *
- * ## The offer
+ * ## Two groups, not four rows
  *
- * The slowest option carries 15% off, and it is announced as a question —
- * "Would you like 15% off?" — because it is a trade being offered, not a deal
- * being pushed. The reason is stated in the same block: slower means
- * consolidated ground freight, which costs less to run, so the saving is real
- * rather than a margin giveaway. See the long note in `content/checkout.ts`,
- * including the two numbers that still need finance to sign them off.
+ * **Get it soon** holds Standard and Express. **Wait longer, pay less** holds
+ * the two discount tiers. Four flat radios would ask a shopper to compare four
+ * things at once; two bands ask one question — soon, or cheap — and then a
+ * smaller one inside the answer.
  *
- * ## Why the tag is on the option and not at the top of the page
+ * The discount tiers sit inside a single tinted panel so they read as one dial
+ * with two positions rather than as two separate offers competing with
+ * Standard. That grouping is the point of the layout.
  *
- * A banner offering a discount before a shopper knows what they are choosing
- * between is an interruption. Sitting the offer on the option it belongs to
- * means it is read at the exact moment the decision is being made, and it
- * disappears from the conversation once another option is picked.
+ * ## Express states the difference, not its price
  *
- * ## The saving is shown in rupees, not only as a percentage
+ * "+₹250", not "₹250". The number a shopper is deciding on is the extra, and
+ * making them subtract two totals is work the interface should have done.
+ * Standard shows "Included" for the same reason — it is the absence of a
+ * charge, and "₹0" invites a second look.
  *
- * "15% off" is an abstraction; "₹585 off" is the thing a shopper is actually
- * choosing. Both are shown, because the percentage is what makes it feel like an
- * offer and the amount is what makes it a decision.
+ * ## The saving is in rupees
  *
- * ## Radios, not cards-that-happen-to-be-clickable
+ * "10% off" is the label; "You save ₹390" is what makes it a decision. Both are
+ * shown, and the amount is floored so nobody is quoted a saving larger than they
+ * receive.
  *
- * Real `<input type="radio">` in a real `<fieldset>` with a `<legend>`. Arrow
- * keys move between options, the group is announced as a group, and a screen
- * reader hears the discount as part of the option's label rather than as an
- * orphaned bit of text nearby.
+ * ## Real radios
+ *
+ * Two `<fieldset>`s with legends, native `<input type="radio">` sharing one
+ * `name`, so arrow keys move across both bands as a single group and each option
+ * is announced with its window and its price effect rather than as bare text
+ * sitting nearby.
  */
 export function DeliveryOptions({
   subtotalInr,
+  selected,
   onChange,
 }: {
   subtotalInr: number
-  /** Lets the order summary reflect the choice. */
-  onChange?: (option: { id: DeliveryOptionId; discountPercent: number }) => void
+  selected: DeliveryOptionId
+  onChange: (option: DeliveryOption) => void
 }) {
-  const [selected, setSelected] = useState<DeliveryOptionId>('standard')
-
-  function pick(id: DeliveryOptionId, discountPercent: number) {
-    setSelected(id)
-    onChange?.({ id, discountPercent })
-  }
+  const soon = checkout.delivery.options.filter((option) => option.group === 'soon')
+  const wait = checkout.delivery.options.filter((option) => option.group === 'wait')
 
   return (
-    <fieldset>
-      <legend className="mb-3">
-        <Eyebrow as="span">{checkout.delivery.heading}</Eyebrow>
-      </legend>
-
-      <Stack gap={2}>
-        {checkout.delivery.options.map((option) => {
-          const isSelected = option.id === selected
-          const discounted = option.discountPercent > 0
-          // Integer paise throughout. Money is never a float here — see
-          // lib/types/common — so the saving is floored rather than rounded up,
-          // which errs toward the shopper being charged less, not more.
-          const saving = Math.floor((subtotalInr * option.discountPercent) / 100)
-
-          return (
-            <label
+    <Stack gap={4}>
+      <fieldset>
+        <legend className="mb-2">
+          <Type as="span" size="xs" tone="subtle" tracking="caps">
+            {checkout.delivery.soonHeading}
+          </Type>
+        </legend>
+        <Stack gap={2}>
+          {soon.map((option) => (
+            <OptionRow
               key={option.id}
-              className={cn(
-                'ease flex cursor-pointer gap-3 border p-4 transition-colors duration-fast',
-                isSelected ? 'border-ink' : 'border-line hover:border-line-strong',
-              )}
-            >
-              <input
-                type="radio"
-                name="delivery-option"
-                value={option.id}
-                checked={isSelected}
-                onChange={() => pick(option.id, option.discountPercent)}
-                className="mt-1 h-4 w-4 shrink-0 accent-ink"
-              />
+              option={option}
+              subtotalInr={subtotalInr}
+              selected={selected === option.id}
+              onSelect={() => onChange(option)}
+            />
+          ))}
+        </Stack>
+      </fieldset>
 
-              <Stack gap={1} className="min-w-0 flex-1">
-                <Row gap={3} justify="between" align="baseline" wrap={false}>
-                  <Type as="span" size="sm" weight="emphasis">
-                    {option.label}
-                  </Type>
-                  <Type as="span" size="sm" tone="muted" numeric className="shrink-0">
-                    {option.window}
-                  </Type>
-                </Row>
+      {/*
+        The discount band. One tinted panel around both tiers, so they read as a
+        single choice with a dial rather than two more options in a flat list.
+      */}
+      <fieldset className="border border-line bg-surface p-4">
+        <legend className="px-1">
+          <Type as="span" size="xs" tone="subtle" tracking="caps">
+            {checkout.delivery.waitHeading}
+          </Type>
+        </legend>
 
-                <Type size="xs" tone="muted">
-                  {option.note}
-                </Type>
+        <Type size="xs" tone="muted" className="mb-3">
+          {checkout.delivery.waitNote}
+        </Type>
 
-                {discounted && (
-                  <Stack gap={1} className="mt-2 border-t border-line pt-3">
-                    <Row gap={2} align="baseline" wrap>
-                      {/*
-                        The offer. Selected, it becomes a statement of fact
-                        rather than staying a question — a question that persists
-                        after you have said yes reads as though it did not
-                        register.
-                      */}
-                      <Type as="span" size="sm" weight="emphasis" tone="accent">
-                        {isSelected
-                          ? checkout.delivery.discountApplied
-                          : checkout.delivery.discountTag}
-                      </Type>
-                      {saving > 0 && (
-                        <Type as="span" size="sm" tone="muted" numeric>
-                          − {formatInr(saving)}
-                        </Type>
-                      )}
-                    </Row>
-                    <Type size="xs" tone="muted">
-                      {checkout.delivery.discountBody}
-                    </Type>
-                  </Stack>
-                )}
-              </Stack>
-            </label>
-          )
-        })}
-      </Stack>
+        <Stack gap={2}>
+          {wait.map((option) => (
+            <OptionRow
+              key={option.id}
+              option={option}
+              subtotalInr={subtotalInr}
+              selected={selected === option.id}
+              onSelect={() => onChange(option)}
+              tinted
+            />
+          ))}
+        </Stack>
+      </fieldset>
 
       {checkout.delivery.isProvisional && (
-        <Type size="xs" tone="subtle" className="mt-3">
+        <Type size="xs" tone="subtle">
           {checkout.delivery.provisionalNote}
         </Type>
       )}
-    </fieldset>
+    </Stack>
+  )
+}
+
+function OptionRow({
+  option,
+  subtotalInr,
+  selected,
+  onSelect,
+  tinted = false,
+}: {
+  option: DeliveryOption
+  subtotalInr: number
+  selected: boolean
+  onSelect: () => void
+  /** Inside the discount band, which already has a fill of its own. */
+  tinted?: boolean
+}) {
+  // Integer paise. Floored, so a saving is never quoted larger than it is.
+  const saving = Math.floor((subtotalInr * option.discountPercent) / 100)
+
+  return (
+    <label
+      className={cn(
+        'ease flex cursor-pointer items-center gap-3 border p-3 transition-colors duration-fast',
+        tinted ? 'bg-background' : '',
+        selected ? 'border-ink' : 'border-line hover:border-line-strong',
+      )}
+    >
+      <input
+        type="radio"
+        name="delivery-option"
+        value={option.id}
+        checked={selected}
+        onChange={onSelect}
+        className="h-4 w-4 shrink-0 accent-ink"
+      />
+
+      <Stack gap={0} className="min-w-0 flex-1">
+        <Row gap={3} justify="between" align="baseline" wrap={false}>
+          <Type as="span" size="sm" weight="emphasis">
+            {option.label}
+          </Type>
+
+          <Type as="span" size="sm" tone="muted" numeric className="shrink-0">
+            {option.feeInr > 0
+              ? checkout.delivery.extra(formatInr(option.feeInr))
+              : option.discountPercent > 0
+                ? checkout.delivery.saves(formatInr(saving))
+                : checkout.summary.deliveryFree}
+          </Type>
+        </Row>
+
+        <Row gap={2} align="baseline" wrap={false}>
+          <Type as="span" size="xs" tone="subtle" numeric>
+            {option.window}
+          </Type>
+          {selected && option.discountPercent > 0 && (
+            <Row gap={1} align="center" wrap={false}>
+              <Check className="h-3 w-3 text-ink-muted" strokeWidth={2} aria-hidden />
+              <Type as="span" size="xs" tone="muted">
+                {checkout.delivery.applied}
+              </Type>
+            </Row>
+          )}
+        </Row>
+      </Stack>
+    </label>
   )
 }
