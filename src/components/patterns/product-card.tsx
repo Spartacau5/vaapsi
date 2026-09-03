@@ -20,18 +20,21 @@ import { cn } from '@/lib/utils'
  *
  * ## What a card states
  *
- * Three facts, in a fixed place on every card: **price, size and colour**. They
+ * Four facts, in a fixed place on every card: **price, size, colour and what it
+ * is made of**. They
  * are what a shopper is actually choosing between, and before this they were
  * either buried in a subtitle or absent — colour was not on the card at all, so
  * a grid of denim gave no way to tell a raw indigo from an ecru except by
  * squinting at thumbnails.
  *
- * **The garment's own name leads.** Every listing on the site is a Vaapsi piece,
- * so the brand no longer distinguishes one card from another — printing it in
- * black at the top of eleven cards is eleven identical headings. The name does
- * the work ("Ravi Straight Jean"), with `subcategory` under it saying plainly
- * what the thing is. The old descriptive title ("Straight-leg jeans in mid
- * wash") is gone either way: it repeated the size and colour now stated below.
+ * **The garment's own name leads, and it is the only name shown.** Every listing
+ * is a Vaapsi piece, so the brand distinguished nothing — eleven identical
+ * headings. `subcategory` is gone from the card too, for the same reason in
+ * miniature: under "Ravi Straight Jean" it read "Straight jeans", which is the
+ * name again with a word removed. The name already says what the garment is.
+ *
+ * What replaced it is composition, which is a fact a shopper cannot infer and
+ * genuinely chooses on.
  *
  * **Condition appears on pre-loved cards only.** New stock has no grade: it has
  * not been worn, so there is nothing to grade, and `condition` is null on those
@@ -138,10 +141,6 @@ export function ProductCard({
           <PassportMark hasPassport={product.passportId !== null} className="shrink-0" />
         </Row>
 
-        <Type as="p" size="sm" tone="muted" truncate>
-          {product.subcategory}
-        </Type>
-
         {/*
           The three facts. Size and colour on one line, price and the bag button
           on the next, so the price always lands in the same place down a column
@@ -169,6 +168,16 @@ export function ProductCard({
             </>
           )}
         </Row>
+
+        {/*
+          Composition, on its own line and unlabelled. "100% cotton" needs no
+          prefix — nobody reads it as anything else — and on a denim catalogue
+          it is a real differentiator, since the elastane content is the
+          difference between a jean that holds its shape and one that gives.
+        */}
+        <Type as="p" size="xs" tone="subtle" truncate>
+          {product.composition}
+        </Type>
 
         {/*
           Price left, the bag control right. With colourways the control grows a

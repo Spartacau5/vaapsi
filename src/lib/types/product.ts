@@ -189,6 +189,20 @@ export type Product = {
   /** The garment's own colour. Always present — every card shows it. */
   color: ProductColor
   /**
+   * Fibre composition, as it appears on the care label. "100% cotton",
+   * "98% cotton, 2% elastane".
+   *
+   * A plain string rather than a parsed structure, and separate from
+   * `Passport.materials`, which is deliberate. The passport version is
+   * `Sourced<T>` — every fibre carries where the claim came from — because that
+   * is a provenance record making a verifiable claim. This is the label
+   * transcription, present on every garment including new stock that has no
+   * passport, and it is what a grid card shows. Do not derive one from the
+   * other: the passport may know more than the label says, and the label is
+   * what the garment actually claims.
+   */
+  composition: string
+  /**
    * Selectable colourways. **Non-empty only when `listingType` is `new`.**
    * Pre-loved garments are one-of-one and carry an empty array.
    */
@@ -239,6 +253,7 @@ export type ProductSummary = Pick<
   | 'listingType'
   | 'condition'
   | 'color'
+  | 'composition'
   /**
    * Carried on the summary because grid cards take the colour and size choice
    * inline now — a card that had to fetch the product to know its colourways

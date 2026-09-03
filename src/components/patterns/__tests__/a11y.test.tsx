@@ -78,6 +78,7 @@ function summary(source: typeof product): ProductSummary {
     listingType: source.listingType,
     condition: source.condition,
     color: source.color,
+    composition: source.composition,
     colorVariants: source.colorVariants,
     size: source.size,
     priceInr: source.priceInr,

@@ -171,6 +171,7 @@ export const products: readonly Product[] = [
     subcategory: 'Trucker jacket',
     listingType: 'pre_loved',
     color: DENIM_COLORS.raw,
+    composition: '100% cotton',
     // One physical garment. No colourways to pick between.
     colorVariants: [],
     condition: 'pristine',
@@ -233,6 +234,7 @@ export const products: readonly Product[] = [
     subcategory: 'Straight jeans',
     listingType: 'pre_loved',
     color: DENIM_COLORS.midIndigo,
+    composition: '100% cotton',
     // One physical garment. No colourways to pick between.
     colorVariants: [],
     condition: 'good',
@@ -320,6 +322,7 @@ export const products: readonly Product[] = [
     subcategory: 'Maxi skirt',
     listingType: 'pre_loved',
     color: DENIM_COLORS.washedBlue,
+    composition: '98% cotton, 2% elastane',
     // One physical garment. No colourways to pick between.
     colorVariants: [],
     condition: 'excellent',
@@ -384,6 +387,7 @@ export const products: readonly Product[] = [
     subcategory: 'Shirt dress',
     listingType: 'pre_loved',
     color: DENIM_COLORS.indigo,
+    composition: '100% cotton',
     // One physical garment. No colourways to pick between.
     colorVariants: [],
     condition: 'very_good',
@@ -459,6 +463,7 @@ export const products: readonly Product[] = [
     subcategory: 'Shoulder bag',
     listingType: 'pre_loved',
     color: DENIM_COLORS.midWash,
+    composition: '100% cotton, leather trim',
     // One physical garment. No colourways to pick between.
     colorVariants: [],
     condition: 'well_loved',
@@ -550,6 +555,7 @@ export const products: readonly Product[] = [
     subcategory: 'Waistcoat',
     listingType: 'pre_loved',
     color: DENIM_COLORS.lightWash,
+    composition: '99% cotton, 1% elastane',
     // One physical garment. No colourways to pick between.
     colorVariants: [],
     condition: 'good',
@@ -626,6 +632,7 @@ export const products: readonly Product[] = [
     subcategory: 'Jumpsuit',
     listingType: 'pre_loved',
     color: DENIM_COLORS.midWash,
+    composition: '100% cotton',
     // One physical garment. No colourways to pick between.
     colorVariants: [],
     condition: 'excellent',
@@ -690,6 +697,7 @@ export const products: readonly Product[] = [
     subcategory: 'Straight-leg jeans',
     listingType: 'pre_loved',
     color: DENIM_COLORS.midWash,
+    composition: '99% cotton, 1% elastane',
     // One physical garment. No colourways to pick between.
     colorVariants: [],
     condition: 'very_good',
@@ -776,6 +784,7 @@ export const products: readonly Product[] = [
     subcategory: 'Straight jeans',
     listingType: 'new',
     color: DENIM_COLORS.midIndigo,
+    composition: '98% cotton, 2% elastane',
     colorVariants: [
       {
         color: DENIM_COLORS.raw,
@@ -867,6 +876,7 @@ export const products: readonly Product[] = [
     subcategory: 'Trucker jacket',
     listingType: 'new',
     color: DENIM_COLORS.midWash,
+    composition: '100% cotton',
     colorVariants: [
       {
         color: DENIM_COLORS.midWash,
@@ -950,6 +960,7 @@ export const products: readonly Product[] = [
     subcategory: 'Shirt',
     listingType: 'new',
     color: DENIM_COLORS.lightWash,
+    composition: '100% cotton',
     colorVariants: [
       {
         color: DENIM_COLORS.lightWash,

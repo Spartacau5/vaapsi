@@ -60,6 +60,7 @@ function toSummary(product: Product): ProductSummary {
     listingType: product.listingType,
     condition: product.condition,
     color: product.color,
+    composition: product.composition,
     colorVariants: product.colorVariants,
     size: product.size,
     priceInr: product.priceInr,
@@ -284,6 +285,33 @@ export const mockAdapter: DataAdapter = {
 
   async getSeller(idOrHandle: SellerId | string): Promise<Seller | null> {
     return sellers.find((s) => s.id === idOrHandle || s.handle === idOrHandle) ?? null
+  },
+
+  async listPreLovedAlternatives(
+    productId: ProductId,
+    limit = 4,
+  ): Promise<readonly ProductSummary[]> {
+    const subject = products.find((product) => product.id === productId)
+    if (subject === undefined) return []
+
+    return (
+      products
+        .filter(
+          (product) =>
+            product.id !== productId &&
+            product.listingType === 'pre_loved' &&
+            product.availability === 'available' &&
+            product.category === subject.category &&
+            // Strictly cheaper. See the contract note — an "alternative" that
+            // costs more is an upsell.
+            product.priceInr < subject.priceInr,
+        )
+        // Cheapest first: the saving is the reason this row exists, so lead with
+        // the biggest one rather than with whatever is newest.
+        .sort((a, b) => a.priceInr - b.priceInr)
+        .slice(0, limit)
+        .map(toSummary)
+    )
   },
 
   async resolveCart(items: readonly CartItemRef[]): Promise<Cart> {

@@ -33,6 +33,7 @@ function product(overrides: Partial<ProductSummary> = {}): ProductSummary {
     condition: 'very_good',
     color: { slug: 'navy', name: 'Navy', hex: '#25314f' },
     colorVariants: [],
+    composition: '100% merino wool',
     size: { label: 'M', system: 'IN', normalized: 'm' },
     priceInr: 69_000,
     originalRetailInr: 299_000,
@@ -55,19 +56,27 @@ describe('ProductCard', () => {
     expect(link).toHaveAttribute('href', '/product/a-navy-sweater')
   })
 
-  it('states the three facts: price, size and colour', () => {
+  it('states the four facts: price, size, colour and composition', () => {
     render(<ProductCard product={product()} />)
     expect(screen.getByText('₹690')).toBeInTheDocument()
     expect(screen.getByText('M')).toBeInTheDocument()
     expect(screen.getByText('Navy')).toBeInTheDocument()
+    expect(screen.getByText('100% merino wool')).toBeInTheDocument()
   })
 
-  it("leads with the garment's own name, not the brand", () => {
+  it("shows the garment's name once, and nothing that repeats it", () => {
     render(<ProductCard product={product()} />)
-    // Every listing is Vaapsi, so a brand heading distinguishes nothing.
+    // Every listing is Vaapsi, so a brand heading distinguishes nothing — and
+    // "Crewneck" under "Merino Crewneck" is the name again with a word removed.
     expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Merino Crewneck')
-    expect(screen.getByText('Crewneck')).toBeInTheDocument()
     expect(screen.queryByText('Uniqlo')).toBeNull()
+    expect(screen.queryByText('Crewneck', { exact: true })).toBeNull()
+  })
+
+  it('states what it is made of', () => {
+    render(<ProductCard product={product()} />)
+    // A fact a shopper cannot infer from the photograph, and one they choose on.
+    expect(screen.getByText('100% merino wool')).toBeInTheDocument()
   })
 
   it('grades a pre-loved garment', () => {
