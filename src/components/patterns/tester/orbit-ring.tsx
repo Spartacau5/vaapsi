@@ -31,17 +31,22 @@ export const RING = {
 const C = RING.size / 2
 
 /** Ramanujan's approximation; exact enough that the wrap is invisible. */
-export const RING_LENGTH = (() => {
-  const { rx: a, ry: b } = RING
-  return Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)))
-})()
+export function ringLength(rx: number, ry: number) {
+  return Math.PI * (3 * (rx + ry) - Math.sqrt((3 * rx + ry) * (rx + 3 * ry)))
+}
+
+/** Lap length of the default ring. */
+export const RING_LENGTH = ringLength(RING.rx, RING.ry)
 
 /**
- * Starts at the right-hand end and runs anticlockwise on screen, so the near
- * (lower) half is traversed left to right and its copy reads upright.
+ * The ellipse traced twice. Starts at the right-hand end and runs anticlockwise
+ * on screen, so the near (lower) half is traversed left to right and its copy
+ * reads upright.
  */
-const loop = `A ${RING.rx} ${RING.ry} 0 1 0 ${C - RING.rx} ${C} A ${RING.rx} ${RING.ry} 0 1 0 ${C + RING.rx} ${C}`
-const RING_PATH = `M ${C + RING.rx} ${C} ${loop} ${loop}`
+function ringPath(rx: number, ry: number) {
+  const loop = `A ${rx} ${ry} 0 1 0 ${C - rx} ${C} A ${rx} ${ry} 0 1 0 ${C + rx} ${C}`
+  return `M ${C + rx} ${C} ${loop} ${loop}`
+}
 
 export type OrbitRingHandle = {
   /** Distance travelled along the ring, in path units. Any value; it wraps. */
@@ -59,32 +64,52 @@ type Props = {
   /** Stroke of the ellipse itself, in screen pixels (it does not scale with the ring). */
   lineWeight?: number
   letterSpacing?: number
+  /**
+   * Half-height of the ellipse in ring units (default 66). Taller rings have a
+   * longer lap, which is what lets the copy be set larger.
+   */
+  ry?: number
+  /** Degrees; negative lifts the right end. Default -20. */
+  tilt?: number
 }
 
 export const OrbitRing = forwardRef<OrbitRingHandle, Props>(function OrbitRing(
-  { id, phrases, layer, className, style, fontSize = 11.5, letterSpacing = 1.6, lineWeight = 1.1 },
+  {
+    id,
+    phrases,
+    layer,
+    className,
+    style,
+    fontSize = 11.5,
+    letterSpacing = 1.6,
+    lineWeight = 1.1,
+    ry = RING.ry,
+    tilt = RING.tilt,
+  },
   ref,
 ) {
+  const rx = RING.rx
+  const length = ringLength(rx, ry)
   const paths = useRef<(SVGTextPathElement | null)[]>([])
   /** Where each phrase starts on a resting ring, spaced by its measured width. */
-  const slots = useRef<number[]>(phrases.map((_, i) => (i * RING_LENGTH) / phrases.length))
+  const slots = useRef<number[]>(phrases.map((_, i) => (i * length) / phrases.length))
 
   useEffect(() => {
     const widths = paths.current.map((el) => el?.getComputedTextLength() ?? 0)
     const total = widths.reduce((sum, w) => sum + w, 0)
     if (total === 0) return
-    const gap = Math.max(0, (RING_LENGTH - total) / phrases.length)
+    const gap = Math.max(0, (length - total) / phrases.length)
     let cursor = 0
     slots.current = widths.map((w) => {
       const start = cursor
       cursor += w + gap
       return start
     })
-  }, [phrases])
+  }, [phrases, length])
 
   useImperativeHandle(ref, () => ({
     setTravel(travel) {
-      const L = RING_LENGTH
+      const L = length
       paths.current.forEach((el, i) => {
         if (!el) return
         const offset = (((travel + (slots.current[i] ?? 0)) % L) + L) % L
@@ -106,7 +131,7 @@ export const OrbitRing = forwardRef<OrbitRingHandle, Props>(function OrbitRing(
       overflow="visible"
     >
       <defs>
-        <path id={pathId} d={RING_PATH} />
+        <path id={pathId} d={ringPath(rx, ry)} />
         {/* Clip in the ring's own (untilted) space: near half is below centre. */}
         <clipPath id={clipId}>
           <rect
@@ -118,13 +143,13 @@ export const OrbitRing = forwardRef<OrbitRingHandle, Props>(function OrbitRing(
         </clipPath>
       </defs>
 
-      <g transform={`rotate(${RING.tilt} ${C} ${C})`}>
+      <g transform={`rotate(${tilt} ${C} ${C})`}>
         <g clipPath={`url(#${clipId})`} opacity={isFront ? 1 : 0.7}>
           <ellipse
             cx={C}
             cy={C}
-            rx={RING.rx}
-            ry={RING.ry}
+            rx={rx}
+            ry={ry}
             fill="none"
             stroke="currentColor"
             strokeWidth={lineWeight}

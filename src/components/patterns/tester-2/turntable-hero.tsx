@@ -38,11 +38,13 @@ const COPY = {
 } as const
 
 /**
- * The ring is drawn at 74% of the frame's width — round her hips — so its
- * copy is set larger in ring units to stay readable. Five phrases at this size
- * just fit one lap; go bigger and they collide.
+ * The ring is sized to the screen, not to her: 125% of the phone's width (so
+ * the hoop sweeps past both edges, as an orbit does), capped by height on
+ * desktop. It is also taller than the default ellipse (ry 108 vs 66), because
+ * the lap length is what limits the type size — all five phrases have to fit
+ * once round. At 17 units they just do, with small gaps.
  */
-const RING_TYPE = { size: 14.5, tracking: 0.5, line: 2.4 }
+const RING_TYPE = { size: 17, tracking: 0.4, line: 2.6, ry: 108 }
 
 /** Seconds for the copy to travel once round the ring. */
 const ORBIT_PERIOD = 26
@@ -124,10 +126,11 @@ export function TurntableHero() {
               id={id}
               layer="back"
               phrases={COPY.ring}
-              className={`${styles.ring} absolute left-1/2 top-[45%] w-[74%] -translate-x-1/2 -translate-y-1/2`}
+              className={`${styles.ring} absolute left-1/2 top-[45%] w-[min(125vw,95svh)] -translate-x-1/2 -translate-y-1/2`}
               fontSize={RING_TYPE.size}
               letterSpacing={RING_TYPE.tracking}
               lineWeight={RING_TYPE.line}
+              ry={RING_TYPE.ry}
             />
 
             <div
@@ -148,15 +151,16 @@ export function TurntableHero() {
               id={id}
               layer="front"
               phrases={COPY.ring}
-              className={`${styles.ring} pointer-events-none absolute left-1/2 top-[45%] w-[74%] -translate-x-1/2 -translate-y-1/2`}
+              className={`${styles.ring} pointer-events-none absolute left-1/2 top-[45%] w-[min(125vw,95svh)] -translate-x-1/2 -translate-y-1/2`}
               fontSize={RING_TYPE.size}
               letterSpacing={RING_TYPE.tracking}
               lineWeight={RING_TYPE.line}
+              ry={RING_TYPE.ry}
             />
           </div>
 
           <p
-            className={`${styles.headline} absolute inset-x-0 bottom-[9%] text-center text-[clamp(1.15rem,5.2vw,1.9rem)] font-medium leading-[1.2] tracking-[0.08em]`}
+            className={`${styles.headline} absolute inset-x-0 bottom-[9%] px-5 text-center text-[clamp(0.95rem,5vw,1.9rem)] font-medium leading-[1.2] tracking-[0.06em]`}
           >
             {COPY.headline[0]}
             <br />
