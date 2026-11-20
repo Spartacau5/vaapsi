@@ -42,11 +42,11 @@ const COPY = {
  * the hoop sweeps past both edges, as an orbit does), capped by height on
  * desktop. It is also taller than the default ellipse (ry 128 vs 66), because
  * the lap length is what limits the type size — all five phrases have to fit
- * once round. At 14 units (plus a little word spacing) they fill ~79% of
+ * once round. At 15 units (plus a little word spacing) they fill ~82% of
  * the lap, leaving clear space between phrases. `lift` keeps the caps sitting
  * on the line rather than floating above it.
  */
-const RING_TYPE = { size: 14, tracking: 0.4, words: 1.5, lift: 1.5, line: 2.6, ry: 128 }
+const RING_TYPE = { size: 15, tracking: 0.4, words: 0.75, lift: 1.5, line: 2.6, ry: 128 }
 
 /** Seconds for the copy to travel once round the ring. */
 const ORBIT_PERIOD = 26
