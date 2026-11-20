@@ -71,6 +71,10 @@ type Props = {
   ry?: number
   /** Degrees; negative lifts the right end. Default -20. */
   tilt?: number
+  /** Lift of the copy off the line, in ring units (default 5). 0 sits it on the line. */
+  lift?: number
+  /** Extra space between words, in ring units (default 0). */
+  wordSpacing?: number
 }
 
 export const OrbitRing = forwardRef<OrbitRingHandle, Props>(function OrbitRing(
@@ -85,6 +89,8 @@ export const OrbitRing = forwardRef<OrbitRingHandle, Props>(function OrbitRing(
     lineWeight = 1.1,
     ry = RING.ry,
     tilt = RING.tilt,
+    lift = 5,
+    wordSpacing = 0,
   },
   ref,
 ) {
@@ -160,7 +166,8 @@ export const OrbitRing = forwardRef<OrbitRingHandle, Props>(function OrbitRing(
             fontSize={fontSize}
             fontWeight={500}
             letterSpacing={letterSpacing}
-            dy={-5}
+            wordSpacing={wordSpacing}
+            dy={-lift}
             style={{ fontFamily: 'var(--font-jost), system-ui, sans-serif' }}
           >
             {phrases.map((phrase, i) => (
