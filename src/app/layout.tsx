@@ -64,8 +64,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main id="main" tabIndex={-1} className="flex-1 scroll-mt-20 focus:outline-none">
               {children}
             </main>
-            {/* Alt 1 draws its own footer in the new identity. */}
-            <RouteGate hideOn={['/alt-1']}>
+            {/* Alt 1 and Alt 2 draw their own footers. */}
+            <RouteGate hideOn={['/alt-1', '/alt-2']}>
               <SiteFooter />
             </RouteGate>
             {/*

@@ -1,0 +1,36 @@
+/*
+ * Alt 2 — styled only from the Vaapsi brand guide.
+ *
+ * Colours are sampled from the guide's web UI kit (page 11.2) and its primary
+ * palette (page 11). Nothing here comes from Alt 1.
+ *
+ *   paper     #FDF9F5  kit background
+ *   ink       #1F2F21  kit headings and body text
+ *   muted     #7A766F  kit placeholder text
+ *   rust      #A5572F  kit primary  (Add to Bag, Bestseller, active page)
+ *   clay      #C47246  kit secondary (Buy Now, New In)
+ *   rule      #D5A58C  kit outline (Learn More, inputs, chips)
+ *   sand      #E6D3C0  kit "off" surface (toggle track)
+ *   natural   #F5E9D7  guide primary: Natural
+ *   forest    #1F3B2E  guide primary: Forest Green (the logo)
+ *
+ * Type: DM Sans, the closest loaded face to the kit's rounded geometric sans,
+ * set in sentence case at regular/medium weights as the kit does.
+ */
+.root {
+  --paper: #fdf9f5;
+  --ink: #1f2f21;
+  --muted: #7a766f;
+  --rust: #a5572f;
+  --rust-deep: #8c4626;
+  --clay: #c47246;
+  --clay-deep: #ad5f37;
+  --rule: #d5a58c;
+  --sand: #e6d3c0;
+  --natural: #f5e9d7;
+  --forest: #1f3b2e;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+}

@@ -34,7 +34,7 @@ const SCROLL_THRESHOLD = 8
  * Routes that draw their own masthead. The header bar steps aside, but the
  * drawers stay mounted so the page's own menu button can still open them.
  */
-const BARE_ROUTES = ['/tester', '/alt-1']
+const BARE_ROUTES = ['/tester', '/alt-1', '/alt-2']
 
 export function SiteHeader() {
   const pathname = usePathname()

@@ -38,7 +38,7 @@ const COPY = {
 } as const
 
 /**
- * The ring is drawn at 66% of the frame's width — snug round her hips — so its
+ * The ring is drawn at 74% of the frame's width — round her hips — so its
  * copy is set larger in ring units to stay readable. Five phrases at this size
  * just fit one lap; go bigger and they collide.
  */
@@ -124,7 +124,7 @@ export function TurntableHero() {
               id={id}
               layer="back"
               phrases={COPY.ring}
-              className={`${styles.ring} absolute left-1/2 top-[45%] w-[66%] -translate-x-1/2 -translate-y-1/2`}
+              className={`${styles.ring} absolute left-1/2 top-[45%] w-[74%] -translate-x-1/2 -translate-y-1/2`}
               fontSize={RING_TYPE.size}
               letterSpacing={RING_TYPE.tracking}
               lineWeight={RING_TYPE.line}
@@ -148,7 +148,7 @@ export function TurntableHero() {
               id={id}
               layer="front"
               phrases={COPY.ring}
-              className={`${styles.ring} pointer-events-none absolute left-1/2 top-[45%] w-[66%] -translate-x-1/2 -translate-y-1/2`}
+              className={`${styles.ring} pointer-events-none absolute left-1/2 top-[45%] w-[74%] -translate-x-1/2 -translate-y-1/2`}
               fontSize={RING_TYPE.size}
               letterSpacing={RING_TYPE.tracking}
               lineWeight={RING_TYPE.line}
