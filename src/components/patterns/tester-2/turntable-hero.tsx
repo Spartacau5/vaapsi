@@ -38,13 +38,14 @@ const COPY = {
 } as const
 
 /**
- * The ring is sized to the screen, not to her: 125% of the phone's width (so
+ * The ring is sized to the screen, not to her: 115% of the phone's width (so
  * the hoop sweeps past both edges, as an orbit does), capped by height on
- * desktop. It is also taller than the default ellipse (ry 108 vs 66), because
+ * desktop. It is also taller than the default ellipse (ry 128 vs 66), because
  * the lap length is what limits the type size — all five phrases have to fit
- * once round. At 17 units they just do, with small gaps.
+ * once round. At 16 units they fill ~86% of the lap, leaving clear space
+ * between phrases.
  */
-const RING_TYPE = { size: 17, tracking: 0.4, line: 2.6, ry: 108 }
+const RING_TYPE = { size: 16, tracking: 0.4, line: 2.6, ry: 128 }
 
 /** Seconds for the copy to travel once round the ring. */
 const ORBIT_PERIOD = 26
@@ -126,7 +127,7 @@ export function TurntableHero() {
               id={id}
               layer="back"
               phrases={COPY.ring}
-              className={`${styles.ring} absolute left-1/2 top-[45%] w-[min(125vw,95svh)] -translate-x-1/2 -translate-y-1/2`}
+              className={`${styles.ring} absolute left-1/2 top-[45%] w-[min(115vw,88svh)] -translate-x-1/2 -translate-y-1/2`}
               fontSize={RING_TYPE.size}
               letterSpacing={RING_TYPE.tracking}
               lineWeight={RING_TYPE.line}
@@ -151,7 +152,7 @@ export function TurntableHero() {
               id={id}
               layer="front"
               phrases={COPY.ring}
-              className={`${styles.ring} pointer-events-none absolute left-1/2 top-[45%] w-[min(125vw,95svh)] -translate-x-1/2 -translate-y-1/2`}
+              className={`${styles.ring} pointer-events-none absolute left-1/2 top-[45%] w-[min(115vw,88svh)] -translate-x-1/2 -translate-y-1/2`}
               fontSize={RING_TYPE.size}
               letterSpacing={RING_TYPE.tracking}
               lineWeight={RING_TYPE.line}
