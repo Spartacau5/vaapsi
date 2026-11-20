@@ -1,0 +1,121 @@
+/*
+ * Splash timeline (seconds from first paint)
+ *
+ *   0.15  v          writes, top-left → point → top-right
+ *   0.50  ∞ (aa)     the infinity draws as one continuous line
+ *   1.30  aa stems   drop in
+ *   1.45  ∞ comet    an olive streak runs once round the loop
+ *   1.45  p          stem drops, bowl draws
+ *   1.85  s          writes, top terminal → bottom terminal
+ *   2.15  i          drops
+ *   2.65  mark       lifts and fades
+ *   2.75  screen     slides up to reveal the page   (done ≈ 3.55)
+ *
+ * Every element starts hidden via `animation-fill-mode: both`, so the
+ * server-rendered splash covers the page from first paint with no JS.
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: #f5e9d7;
+  color: #1f3b2e;
+  animation: lift 0.8s cubic-bezier(0.76, 0, 0.24, 1) 2.75s both;
+  will-change: transform;
+}
+
+.mark {
+  width: min(64vw, 420px);
+  height: auto;
+  overflow: visible;
+  animation: markOut 0.3s ease-in 2.65s both;
+}
+
+/* Lines drawn with pathLength="1": dash and gap of 1, offset 1 = not drawn yet. */
+.draw {
+  stroke-dasharray: 1 1;
+  animation: draw var(--dur) cubic-bezier(0.65, 0, 0.35, 1) var(--at) both;
+}
+
+/* Stems: grow from their top edge. */
+.grow {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: grow var(--dur) cubic-bezier(0.33, 1, 0.68, 1) var(--at) both;
+}
+
+/* One bright segment that laps the infinity once. */
+.comet {
+  stroke-dasharray: 0.16 2;
+  stroke-linecap: round;
+  animation: comet 0.65s cubic-bezier(0.45, 0, 0.55, 1) 1.45s both;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes comet {
+  0% {
+    stroke-dashoffset: 0.16;
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -1;
+    opacity: 0;
+  }
+}
+
+@keyframes markOut {
+  to {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+}
+
+@keyframes lift {
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+/* No drawing for reduced motion: show the mark, then a short fade. */
+@media (prefers-reduced-motion: reduce) {
+  .draw,
+  .grow,
+  .mark {
+    animation: none;
+  }
+  .comet {
+    display: none;
+  }
+  .overlay {
+    animation: fade 0.35s ease 0.6s both;
+  }
+}
+
+@keyframes fade {
+  to {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,42 @@
+/*
+ * The new-identity type voice, shared by the Tester 2 sections. Colours come
+ * from the --vaapsi-* variables set by tester.module.css `.root`, which wraps
+ * the whole page.
+ */
+
+.jost {
+  font-family: var(--font-jost), system-ui, sans-serif;
+}
+
+/* Small tracked caps: eyebrows, badges, buttons. Same voice as the ring copy. */
+.label {
+  font-family: var(--font-jost), system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Section titles: geometric caps, a little tracking, the logo's weight. */
+.title {
+  font-family: var(--font-jost), system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+/* Hairlines in Forest, at the weight the ring's line is drawn. */
+.rule {
+  border-color: rgb(31 59 46 / 0.15);
+}
+
+.ruleOnDark {
+  border-color: rgb(245 233 215 / 0.18);
+}
+
+/* Image well behind a product shot: a shade under Natural, so cutouts and
+   white-background shots both sit on something rather than floating. */
+.well {
+  background: #ecdcc4;
+}

@@ -1,0 +1,81 @@
+/*
+ * Brand primaries from the Vaapsi guidelines, scoped to the Tester page.
+ * They live here, not in tokens.css, until the new identity replaces the
+ * current preset — at which point these become the preset and this block goes.
+ */
+.root {
+  --vaapsi-natural: #f5e9d7;
+  --vaapsi-olive: #6b7f44;
+  --vaapsi-forest: #1f3b2e;
+
+  background: var(--vaapsi-natural);
+  color: var(--vaapsi-forest);
+}
+
+/*
+ * The studio wall behind the model, matched stop for stop to the photo's own
+ * edges (both shots, averaged) so the feathered photo dissolves into it
+ * without a seam. The floor line sits at ~70% in both.
+ */
+.wall {
+  background: linear-gradient(
+    to bottom,
+    #606b3a 0%,
+    #687341 15%,
+    #62703e 30%,
+    #5e6b3b 45%,
+    #5f6d3b 60%,
+    #77834a 70%,
+    #6f7d45 76%,
+    #747f47 80%,
+    #707c45 88%,
+    #7a884e 100%
+  );
+}
+
+/* Raking window light. Moves on its own axis — the parallax layer. */
+.light {
+  background: repeating-linear-gradient(
+    -62deg,
+    rgb(255 255 240 / 0) 0 70px,
+    rgb(255 255 240 / 0.55) 110px,
+    rgb(255 255 240 / 0) 170px 260px
+  );
+  filter: blur(22px);
+  mix-blend-mode: soft-light;
+}
+
+.photo {
+  /* Dissolve the photo's sides into .wall; both shots keep her feet inside 10–90%. */
+  mask-image: linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 10%,
+    #000 90%,
+    transparent 100%
+  );
+}
+
+/* A photo that is already a cutout needs no feathering. */
+.photo[data-cutout='true'] {
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.ring {
+  color: #fff;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.25));
+}
+
+.headline {
+  color: #fff;
+  font-family: var(--font-jost), system-ui, sans-serif;
+  text-shadow: 0 2px 10px rgb(0 0 0 / 0.35);
+}
+
+/* Where her shoes meet the floor. Soft, wide, darker at the centre. */
+.contact {
+  background: radial-gradient(closest-side, rgb(30 38 14 / 0.45), rgb(30 38 14 / 0));
+  filter: blur(6px);
+}

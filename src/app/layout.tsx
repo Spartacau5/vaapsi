@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { RouteGate } from '@/components/patterns/route-gate'
 import { SiteFooter } from '@/components/patterns/site-footer'
 import { SiteHeader } from '@/components/patterns/site-header'
 import { SkipLink } from '@/components/patterns/skip-link'
@@ -63,7 +64,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main id="main" tabIndex={-1} className="flex-1 scroll-mt-20 focus:outline-none">
               {children}
             </main>
-            <SiteFooter />
+            {/* Alt 1 draws its own footer in the new identity. */}
+            <RouteGate hideOn={['/alt-1']}>
+              <SiteFooter />
+            </RouteGate>
             {/*
             The studio panel. Gated on `?studio=1`, dynamically imported, and
             wrapped in Suspense because `useSearchParams` opts its subtree into
